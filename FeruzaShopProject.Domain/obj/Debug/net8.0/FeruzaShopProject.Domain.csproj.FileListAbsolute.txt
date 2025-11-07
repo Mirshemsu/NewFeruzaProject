@@ -1,0 +1,12 @@
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.deps.json
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.AssemblyReference.cache
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfoInputs.cache
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfo.cs
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\refint\FeruzaShopProject.Domain.dll
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Miraj\source\repos\FeruzaShopProject\FeruzaShopProject.Domain\obj\Debug\net8.0\ref\FeruzaShopProject.Domain.dll
