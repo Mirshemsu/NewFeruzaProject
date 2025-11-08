@@ -5280,23 +5280,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Miraj\\.nuget\\packages\\": {},
+    "C:\\Users\\Hp\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
+      "projectUniqueName": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
       "projectName": "FeruzaShopProject.Infrastructre",
-      "projectPath": "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
-      "packagesPath": "C:\\Users\\Miraj\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Infrastructre\\obj\\",
+      "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
+      "packagesPath": "C:\\Users\\Hp\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Miraj\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -5311,11 +5311,11 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
-              "projectPath": "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj"
+            "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
+              "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj"
             },
-            "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
-              "projectPath": "C:\\Users\\Miraj\\source\\repos\\FeruzaShopProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
+            "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
+              "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
             }
           }
         }
@@ -5385,7 +5385,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -49,7 +49,7 @@ builder.Services.AddAuthentication(options =>
         OnAuthenticationFailed = context =>
         {
             context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>()
-                .LogError($"Authentication failed: {context.Exception.Message}");
+                .LogError($"Authentication failed already: {context.Exception.Message}");
             return Task.CompletedTask;
         }
     };
