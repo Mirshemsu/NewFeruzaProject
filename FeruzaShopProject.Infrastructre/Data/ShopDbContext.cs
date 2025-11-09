@@ -8,6 +8,7 @@ namespace FeruzaShopProject.Infrastructre.Data
     public class ShopDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     {
         public DbSet<Branch> Branches { get; set; }
+        public DbSet<BankAccount> BankAccounts { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Stock> Stocks { get; set; }

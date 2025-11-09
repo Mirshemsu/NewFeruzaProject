@@ -22,6 +22,46 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.BankAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("AccountOwner")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("BankAccounts");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Branch", b =>
                 {
                     b.Property<Guid>("Id")
@@ -418,6 +458,15 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasBaseType("FeruzaShopProject.Domain.Entities.User");
 
                     b.HasDiscriminator().HasValue("GlobalUser");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.BankAccount", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Product", b =>

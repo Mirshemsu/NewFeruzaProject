@@ -95,6 +95,80 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.BankAccountController",
+    "Method": "CreateBankAccount",
+    "RelativePath": "api/BankAccount",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.CreateBankAccountDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.BankAccountController",
+    "Method": "UpdateBankAccount",
+    "RelativePath": "api/BankAccount",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.UpdateBankAccountDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.BankAccountController",
+    "Method": "GetAllBankAccounts",
+    "RelativePath": "api/BankAccount",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.BankAccountController",
+    "Method": "GetBankAccountById",
+    "RelativePath": "api/BankAccount/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.BankAccountController",
+    "Method": "DeleteBankAccount",
+    "RelativePath": "api/BankAccount/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "FeruzaShopProject.Api.Controllers.BranchesController",
     "Method": "GetAll",
     "RelativePath": "api/Branches",

@@ -19,4 +19,11 @@ namespace FeruzaShopProject.Domain.Entities
         MG = 2,
         Pcs = 3
     }
+    public enum PaymentMethod
+    {
+        Cash,
+        Bank,
+        Credit,
+       
+    }
 }
