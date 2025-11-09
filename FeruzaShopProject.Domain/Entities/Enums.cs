@@ -12,4 +12,11 @@ namespace FeruzaShopProject.Domain.Entities
         Sales,
         Finance
     }
+    public enum UnitType
+    {
+        Kg = 0,
+        Lit = 1,
+        MG = 2,
+        Pcs = 3
+    }
 }

@@ -1,8 +1,10 @@
 using FeruzaShopProject.Application.Interface;
+using FeruzaShopProject.Application.Mapper;
 using FeruzaShopProject.Domain.Entities;
 using FeruzaShopProject.Infrastructre.Authorization;
 using FeruzaShopProject.Infrastructre.Data;
 using FeruzaShopProject.Infrastructre.Services;
+using FeruzaShopProject.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -57,14 +59,22 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("BranchAccess es", policy => policy.AddRequirements(new BranchAccessRequirement()));
+    options.AddPolicy("BranchAccess", policy => policy.AddRequirements(new BranchAccessRequirement()));
     options.AddPolicy("RequireSalesRole", policy => policy.RequireRole(Role.Sales.ToString()));
     options.AddPolicy("RequireManagerOrFinanceRole", policy =>
         policy.RequireRole(Role.Manager.ToString(), Role.Finance.ToString()));
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, BranchAccessHandler>();
+
+builder.Services.AddAutoMapper(typeof(BranchMapper));
+builder.Services.AddAutoMapper(typeof(CategoryMapper));
+builder.Services.AddAutoMapper(typeof(ProductMapper));
+
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService,ProductService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
