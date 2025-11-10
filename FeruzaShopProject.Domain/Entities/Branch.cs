@@ -19,6 +19,10 @@ namespace FeruzaShopProject.Domain.Entities
         [StringLength(100)]
         public string? ContactInfo { get; private set; }
         public List<Stock> Stocks { get; set; } = new();
+        public List<StockMovement> StockMovements { get; private set; } = new();
+        public List<Transaction> Transactions { get; private set; } = new();
+        public List<DailySales> DailySales { get; private set; } = new();
+        public List<BankAccount> BankAccounts { get; private set; } = new();
         public List<BranchUser> Users { get; private set; } = new();
         
     }

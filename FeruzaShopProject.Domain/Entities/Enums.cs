@@ -26,4 +26,13 @@ namespace FeruzaShopProject.Domain.Entities
         Credit,
        
     }
+    public enum StockMovementType
+    {
+        Purchase,
+        Sale,
+        Adjustment,
+        Return,
+        Damage,
+        Transfer
+    }
 }

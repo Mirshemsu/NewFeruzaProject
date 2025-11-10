@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FeruzaShopProject.Domain.Entities
 {
-    public class SalesTransaction : BaseEntity
+    public class Transaction : BaseEntity
     {
         [Required]
         public Guid BranchId { get; set; }
@@ -47,6 +47,9 @@ namespace FeruzaShopProject.Domain.Entities
         public Product Product { get; set; }
         public Customer Customer { get; set; }
         public Painter Painter { get; set; }
+        public List<DailySales> DailySales { get; private set; } = new();
+        public List<StockMovement> StockMovements { get; private set; } = new();
+        public List<CreditPayment> CreditPayments { get; private set; } = new();
 
         // Validation method
         public void Validate()

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FeruzaShopProject.Infrastructre.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    [Migration("20251109202940_BankAccount")]
-    partial class BankAccount
+    [Migration("20251110105938_initial migrate12345")]
+    partial class initialmigrate12345
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,8 +38,8 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.Property<string>("AccountOwner")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("BankName")
                         .IsRequired()
@@ -129,6 +129,196 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.CreditPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentDate");
+
+                    b.HasIndex("TransactionId");
+
+                    b.ToTable("CreditPayments");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Customer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique();
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.DailySales", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("CommissionAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("CommissionPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("CommissionRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("PainterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("SaleDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("PainterId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SaleDate");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("BranchId", "SaleDate");
+
+                    b.HasIndex("SaleDate", "PaymentMethod");
+
+                    b.ToTable("DailySales");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Painter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique();
+
+                    b.ToTable("Painters");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -174,8 +364,10 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<int>("ReorderLevel")
                         .HasColumnType("int");
 
-                    b.Property<int>("Unit")
-                        .HasColumnType("int");
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(18, 2)
@@ -209,8 +401,9 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -223,6 +416,137 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .IsUnique();
 
                     b.ToTable("Stocks");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("MovementDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("NewQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("PreviousQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("CommissionPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("CommissionRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("PainterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("PainterId");
+
+                    b.HasIndex("PaymentMethod");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TransactionDate");
+
+                    b.HasIndex("BranchId", "TransactionDate");
+
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.User", b =>
@@ -466,10 +790,63 @@ namespace FeruzaShopProject.Infrastructre.Migrations
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.BankAccount", b =>
                 {
                     b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId");
+                        .WithMany("BankAccounts")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.CreditPayment", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Transaction", "Transaction")
+                        .WithMany("CreditPayments")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.DailySales", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany("DailySales")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Customer", "Customer")
+                        .WithMany("DailySales")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Painter", "Painter")
+                        .WithMany("DailySales")
+                        .HasForeignKey("PainterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "Product")
+                        .WithMany("DailySales")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Transaction", "Transaction")
+                        .WithMany("DailySales")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Painter");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Transaction");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Product", b =>
@@ -488,16 +865,76 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
                         .WithMany("Stocks")
                         .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("FeruzaShopProject.Domain.Entities.Product", "Product")
                         .WithMany("Stocks")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Branch");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "Product")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Transaction", "Transaction")
+                        .WithMany("StockMovements")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany("Transactions")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Customer", "Customer")
+                        .WithMany("Transactions")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Painter", "Painter")
+                        .WithMany("Transactions")
+                        .HasForeignKey("PainterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "Product")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Painter");
 
                     b.Navigation("Product");
                 });
@@ -566,7 +1003,15 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Branch", b =>
                 {
+                    b.Navigation("BankAccounts");
+
+                    b.Navigation("DailySales");
+
+                    b.Navigation("StockMovements");
+
                     b.Navigation("Stocks");
+
+                    b.Navigation("Transactions");
 
                     b.Navigation("Users");
                 });
@@ -576,9 +1021,38 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Customer", b =>
+                {
+                    b.Navigation("DailySales");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Painter", b =>
+                {
+                    b.Navigation("DailySales");
+
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Product", b =>
                 {
+                    b.Navigation("DailySales");
+
+                    b.Navigation("StockMovements");
+
                     b.Navigation("Stocks");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
+                {
+                    b.Navigation("CreditPayments");
+
+                    b.Navigation("DailySales");
+
+                    b.Navigation("StockMovements");
                 });
 #pragma warning restore 612, 618
         }

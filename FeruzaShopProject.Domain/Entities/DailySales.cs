@@ -49,7 +49,7 @@ namespace FeruzaShopProject.Domain.Entities
         // Navigation properties
         public Branch Branch { get; set; }
         public Product Product { get; set; }
-        public SalesTransaction Transaction { get; set; }
+        public Transaction Transaction { get; set; }
         public Customer Customer { get; set; }
         public Painter Painter { get; set; }
     }

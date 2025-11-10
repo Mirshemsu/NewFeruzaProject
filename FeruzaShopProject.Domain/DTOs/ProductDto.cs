@@ -118,7 +118,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public string Quantity { get; set; } // e.g., "25 kg", "1 Pcs"
         public Guid BranchId { get; set; }
         public string BranchName { get; set; }
-        public int QuantityRemaining { get; set; }
+        public Decimal QuantityRemaining { get; set; }
         public int ReorderLevel { get; set; }
     }
 
@@ -131,7 +131,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public string Quantity { get; set; } // e.g., "25 kg", "1 Pcs"
         public Guid BranchId { get; set; }
         public string BranchName { get; set; }
-        public int QuantityRemaining { get; set; }
+        public Decimal QuantityRemaining { get; set; }
     }
 
     public class AdjustStockDto

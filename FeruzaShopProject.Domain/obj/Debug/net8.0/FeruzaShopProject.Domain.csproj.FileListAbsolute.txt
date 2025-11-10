@@ -23,3 +23,16 @@ C:\Users\Hp\Desktop\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debu
 C:\Users\Hp\Desktop\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\refint\FeruzaShopProject.Domain.dll
 C:\Users\Hp\Desktop\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.pdb
 C:\Users\Hp\Desktop\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\ref\FeruzaShopProject.Domain.dll
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.deps.json
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.AssemblyReference.cache
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfoInputs.cache
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfo.cs
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.CoreCompileInputs.cache
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.sourcelink.json
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\refint\FeruzaShopProject.Domain.dll
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\ref\FeruzaShopProject.Domain.dll

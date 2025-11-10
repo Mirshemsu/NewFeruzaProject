@@ -71,6 +71,10 @@ builder.Services.AddAutoMapper(typeof(BranchMapper));
 builder.Services.AddAutoMapper(typeof(CategoryMapper));
 builder.Services.AddAutoMapper(typeof(ProductMapper));
 builder.Services.AddAutoMapper(typeof(BankAccountMapper));
+builder.Services.AddAutoMapper(typeof(TransactionMapper));
+builder.Services.AddAutoMapper(typeof(DailySalesMapper));
+builder.Services.AddAutoMapper(typeof(CustomerMapper));
+builder.Services.AddAutoMapper(typeof(PainterMapper));
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -78,6 +82,7 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService,ProductService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

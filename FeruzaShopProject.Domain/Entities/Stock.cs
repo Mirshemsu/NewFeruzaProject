@@ -14,7 +14,7 @@ namespace FeruzaShopProject.Domain.Entities
         [Required]
         public Guid ProductId { get; set; }
         [Required, Range(0, int.MaxValue)]
-        public int Quantity { get; set; }
+        public Decimal Quantity { get; set; }
 
         public Branch Branch { get; set; }
         public Product Product { get; set; }

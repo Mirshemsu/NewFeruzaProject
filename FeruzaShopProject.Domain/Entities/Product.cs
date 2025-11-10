@@ -42,6 +42,9 @@
 
             public Category Category { get; set; }
             public ICollection<Stock> Stocks { get; set; } = new List<Stock>();
+            public List<StockMovement> StockMovements { get; private set; } = new();
+            public List<Transaction> Transactions { get; private set; } = new();
+            public List<DailySales> DailySales { get; private set; } = new();
 
         public void ValidateAmount()
         {

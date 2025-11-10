@@ -16,6 +16,7 @@ namespace FeruzaShopProject.Domain.Entities
         public string PhoneNumber { get; set; }
 
         // Navigation properties
-        public List<SalesTransaction> SalesTransactions { get; set; } = new();
+        public List<Transaction> Transactions { get; set; } = new();
+        public List<DailySales> DailySales { get; private set; } = new();
     }
 }
