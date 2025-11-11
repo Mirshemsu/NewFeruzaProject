@@ -18,6 +18,10 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<Painter> Painters { get; set; }
         public DbSet<DailySales> DailySales { get; set; }
         public DbSet<CreditPayment> CreditPayments { get; set; }
+        public DbSet<Supplier> Suppliers { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseHistory> PurchaseHistory { get; set; }
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
 
         public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options) { }
 
@@ -278,7 +282,37 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(ba => ba.BranchId)
                     .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade
             });
+            modelBuilder.Entity<Supplier>().HasQueryFilter(s => s.IsActive);
+            modelBuilder.Entity<Supplier>()
+               .HasIndex(s => s.Name)
+               .IsUnique();
+            modelBuilder.Entity<PurchaseOrder>()
+               .HasIndex(po => po.Id)
+               .IsUnique();
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .Property(p => p.UnitPrice)
+                .HasPrecision(18, 2);
+            modelBuilder.Entity<PurchaseOrder>()
+               .Property(po => po.BranchId)
+               .IsRequired();
 
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasOne(po => po.Supplier)
+                .WithMany(s => s.PurchaseOrders)
+                .HasForeignKey(po => po.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PurchaseOrder>()
+                .HasOne(po => po.Creator)
+                .WithMany(u => u.CreatedPurchaseOrders)
+                .HasForeignKey(po => po.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.Product)
+                .WithMany(p => p.PurchaseOrderItems)
+                .HasForeignKey(poi => poi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
             // ✅ BranchUser configuration
             modelBuilder.Entity<BranchUser>()
                 .HasOne(bu => bu.Branch)

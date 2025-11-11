@@ -18,6 +18,6 @@ namespace FeruzaShopProject.Domain.Entities
         public string? ContactInfo { get; set; }
         public Role Role { get; set; }
 
-
+        public List<PurchaseOrder> CreatedPurchaseOrders { get; private set; } = new();
     }
 }

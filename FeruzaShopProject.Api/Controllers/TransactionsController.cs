@@ -52,7 +52,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get transaction by ID
         /// </summary>
         [HttpGet("{id}")]
-        [Authorize(Roles = "Manager,Sales,Admin")]
+        [Authorize(Roles = "Manager,Sales")]
         public async Task<ActionResult<ApiResponse<TransactionResponseDto>>> GetTransaction(Guid id)
         {
             try
@@ -75,7 +75,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get all transactions
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "Manager,Sales,Admin")]
+        [Authorize(Roles = "Manager,Sales")]
         public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetAllTransactions()
         {
             try
@@ -182,7 +182,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get pending credit transactions
         /// </summary>
         [HttpGet("credit/pending")]
-        [Authorize(Roles = "Manager,Sales,Admin")]
+        [Authorize(Roles = "Manager,Sales")]
         public async Task<ActionResult<ApiResponse<List<CreditTransactionHistoryDto>>>> GetPendingCreditTransactions(
             [FromQuery] Guid? customerId = null,
             [FromQuery] Guid? branchId = null)
@@ -203,7 +203,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Generate daily sales report
         /// </summary>
         [HttpGet("reports/daily")]
-        [Authorize(Roles = "Manager,Admin")]
+        [Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<DailySalesReportDto>>> GenerateDailySalesReport(
             [FromQuery] DateTime date,
             [FromQuery] Guid? branchId = null,
@@ -226,7 +226,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get credit summary
         /// </summary>
         [HttpGet("credit/summary")]
-        [Authorize(Roles = "Manager,Admin")]
+        [Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<CreditSummaryDto>>> GetCreditSummary([FromQuery] Guid? customerId = null)
         {
             try

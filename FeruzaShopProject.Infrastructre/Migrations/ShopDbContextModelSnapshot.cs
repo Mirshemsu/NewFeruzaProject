@@ -375,6 +375,128 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseHistory");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("Id")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PurchaseOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("QuantityApproved")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityOrdered")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuantityReceived")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Stock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -467,6 +589,41 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("TransactionId");
 
                     b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactInfo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
@@ -852,6 +1009,71 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseHistory", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.User", "PerformedByUser")
+                        .WithMany()
+                        .HasForeignKey("PerformedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.PurchaseOrder", "PurchaseOrder")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PerformedByUser");
+
+                    b.Navigation("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.User", "Creator")
+                        .WithMany("CreatedPurchaseOrders")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Supplier", "Supplier")
+                        .WithMany("PurchaseOrders")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrderItem", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "Product")
+                        .WithMany("PurchaseOrderItems")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("PurchaseOrder");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Stock", b =>
                 {
                     b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
@@ -1031,11 +1253,23 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 {
                     b.Navigation("DailySales");
 
+                    b.Navigation("PurchaseOrderItems");
+
                     b.Navigation("StockMovements");
 
                     b.Navigation("Stocks");
 
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Supplier", b =>
+                {
+                    b.Navigation("PurchaseOrders");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
@@ -1045,6 +1279,11 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Navigation("DailySales");
 
                     b.Navigation("StockMovements");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.User", b =>
+                {
+                    b.Navigation("CreatedPurchaseOrders");
                 });
 #pragma warning restore 612, 618
         }

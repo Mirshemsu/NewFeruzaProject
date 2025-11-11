@@ -35,4 +35,23 @@ namespace FeruzaShopProject.Domain.Entities
         Damage,
         Transfer
     }
+
+    public enum PurchaseOrderStatus
+    {
+        // Sales creates → Admin accepts
+        PendingAdminAcceptance,  // Step 1: Sales created, waiting admin approval
+        PendingReceiving,        // Step 2: Admin accepted, ready to receive
+
+        // Receiving flow
+        PartiallyReceived,       // Step 3: Some items received
+        CompletelyReceived,      // Step 3: All items received
+
+        // Finance & Final approval
+        PendingFinanceCheckout,  // Step 4: Goods received, waiting payment
+        FullyApproved,           // Step 5: Payment done, final approval
+
+        // Terminal states
+        Rejected,
+        Cancelled
+    }
 }

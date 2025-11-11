@@ -26,7 +26,7 @@ namespace FeruzaShopProject.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Manager")]
         public async Task<IActionResult> Create([FromBody] CreateProductDto dto)
         {
             if (!ModelState.IsValid)

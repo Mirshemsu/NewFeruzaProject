@@ -184,7 +184,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error creating transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> GetTransactionByIdAsync(Guid id)
         {
             try
@@ -215,7 +214,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error retrieving transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync()
         {
             try
@@ -245,7 +243,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> UpdateTransactionAsync(UpdateTransactionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -293,7 +290,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error updating transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<bool>> DeleteTransactionAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -325,7 +321,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<bool>.Fail($"Error deleting transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -424,7 +419,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving credit history: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetPendingCreditTransactionsAsync(Guid? customerId = null, Guid? branchId = null)
         {
             try
@@ -482,7 +476,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving pending credit transactions: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null)
         {
             try

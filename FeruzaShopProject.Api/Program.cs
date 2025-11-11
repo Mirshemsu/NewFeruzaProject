@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using ShopMgtSys.Infrastructure.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,7 +76,8 @@ builder.Services.AddAutoMapper(typeof(TransactionMapper));
 builder.Services.AddAutoMapper(typeof(DailySalesMapper));
 builder.Services.AddAutoMapper(typeof(CustomerMapper));
 builder.Services.AddAutoMapper(typeof(PainterMapper));
-
+builder.Services.AddAutoMapper(typeof(SupplierMapper));
+builder.Services.AddAutoMapper(typeof(PurchaseMapper));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
@@ -83,6 +85,10 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService,ProductService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
