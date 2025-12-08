@@ -45,3 +45,19 @@ C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\
 C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\refint\FeruzaShopProject.Application.dll
 C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.pdb
 C:\MyProjects\FeruzNew\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\ref\FeruzaShopProject.Application.dll
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\bin\Debug\net8.0\FeruzaShopProject.Application.deps.json
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\bin\Debug\net8.0\FeruzaShopProject.Application.dll
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\bin\Debug\net8.0\FeruzaShopProject.Application.pdb
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\bin\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\bin\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.csproj.AssemblyReference.cache
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.AssemblyInfoInputs.cache
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.AssemblyInfo.cs
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.csproj.CoreCompileInputs.cache
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.sourcelink.json
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaSh.4E50DECD.Up2Date
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.dll
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\refint\FeruzaShopProject.Application.dll
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\FeruzaShopProject.Application.pdb
+C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Application\obj\Debug\net8.0\ref\FeruzaShopProject.Application.dll

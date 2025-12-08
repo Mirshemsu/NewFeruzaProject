@@ -327,17 +327,22 @@ namespace FeruzaShopProject.Infrastructre.Services
             try
             {
                 var creditTransaction = await _context.Transactions
+                    .Include(t => t.Product)
                     .FirstOrDefaultAsync(t => t.Id == dto.TransactionId && t.PaymentMethod == PaymentMethod.Credit);
 
                 if (creditTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Credit transaction not found");
 
                 var paidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
-                var totalAmount = CalculateTotalAmount(creditTransaction); // Use helper
+                var totalAmount = CalculateTotalAmount(creditTransaction);
                 var remainingAmount = totalAmount - paidAmount;
 
                 if (dto.Amount > remainingAmount)
                     return ApiResponse<TransactionResponseDto>.Fail($"Payment amount exceeds remaining balance. Remaining: {remainingAmount}");
+
+                // NEW: Calculate what portion of the payment is being made
+                var paymentPercentage = dto.Amount / remainingAmount;
+                var paidQuantity = creditTransaction.Quantity * paymentPercentage;
 
                 // Create credit payment record
                 var creditPayment = new CreditPayment
@@ -349,6 +354,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                 };
 
                 await _context.CreditPayments.AddAsync(creditPayment);
+
+                // NEW: Update stock proportionally to the payment
+                if (dto.PaymentMethod != PaymentMethod.Credit) // Only reduce stock for cash/bank payments
+                {
+                    await UpdateStockAsync(creditTransaction.ProductId, paidQuantity,
+                        creditTransaction.BranchId, creditTransaction.Id);
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 

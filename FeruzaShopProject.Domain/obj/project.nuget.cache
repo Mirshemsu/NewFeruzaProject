@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "UbmtFQ7311w=",
+  "dgSpecHash": "rkLGi0Qj7u4=",
   "success": true,
-  "projectFilePath": "C:\\MyProjects\\FeruzNew\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
+  "projectFilePath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.aspnetcore.cryptography.internal\\8.0.1\\microsoft.aspnetcore.cryptography.internal.8.0.1.nupkg.sha512",
     "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.aspnetcore.cryptography.keyderivation\\8.0.1\\microsoft.aspnetcore.cryptography.keyderivation.8.0.1.nupkg.sha512",
@@ -21,7 +21,10 @@
     "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.extensions.logging\\8.0.0\\microsoft.extensions.logging.8.0.0.nupkg.sha512",
     "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
     "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.extensions.options\\8.0.1\\microsoft.extensions.options.8.0.1.nupkg.sha512",
-    "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512"
+    "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.22\\microsoft.windowsdesktop.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.22\\microsoft.netcore.app.ref.8.0.22.nupkg.sha512",
+    "C:\\Users\\Miraj\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.22\\microsoft.aspnetcore.app.ref.8.0.22.nupkg.sha512"
   ],
   "logs": []
 }
