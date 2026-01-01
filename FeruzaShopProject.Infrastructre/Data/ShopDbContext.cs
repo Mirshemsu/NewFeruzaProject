@@ -13,6 +13,7 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Stock> Stocks { get; set; }
         public DbSet<StockMovement> StockMovements { get; set; }
+        public DbSet<ProductExchange> ProductExchanges { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Painter> Painters { get; set; }
@@ -69,11 +70,54 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .WithMany(c => c.Products)
                     .HasForeignKey(p => p.CategoryId)
                     .OnDelete(DeleteBehavior.Restrict);
+                entity.HasMany(p => p.OriginalExchanges)  // As original product
+                   .WithOne(e => e.OriginalProduct)
+                   .HasForeignKey(e => e.OriginalProductId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasMany(p => p.NewExchanges)  // As new product
+                    .WithOne(e => e.NewProduct)
+                    .HasForeignKey(e => e.NewProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 // Configure Unit enum conversion
                 entity.Property(p => p.Unit)
                     .HasConversion<string>()
                     .HasMaxLength(20);
+            });
+
+            modelBuilder.Entity<ProductExchange>(entity =>
+            {
+                entity.HasKey(pe => pe.Id);
+
+                // Configure decimal precision
+                entity.Property(pe => pe.OriginalQuantity).HasPrecision(18, 3);
+                entity.Property(pe => pe.OriginalPrice).HasPrecision(18, 2);
+                entity.Property(pe => pe.NewQuantity).HasPrecision(18, 3);
+                entity.Property(pe => pe.NewPrice).HasPrecision(18, 2);
+
+                // Relationships - ALL RESTRICT to avoid cascade paths
+                entity.HasOne(pe => pe.OriginalTransaction)
+                    .WithMany(t => t.Exchanges)
+                    .HasForeignKey(pe => pe.OriginalTransactionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(pe => pe.OriginalProduct)
+                    .WithMany()
+                    .HasForeignKey(pe => pe.OriginalProductId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasPrincipalKey(p => p.Id); // Make sure this references Product
+
+                entity.HasOne(pe => pe.NewProduct)
+                    .WithMany()
+                    .HasForeignKey(pe => pe.NewProductId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasPrincipalKey(p => p.Id); // Make sure this references Product
+
+                // Indexes
+                entity.HasIndex(pe => pe.OriginalTransactionId);
+                entity.HasIndex(pe => pe.OriginalProductId);
+                entity.HasIndex(pe => pe.NewProductId);
+                entity.HasIndex(pe => pe.CreatedAt);
             });
 
             // ✅ Stock configuration
@@ -155,7 +199,12 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasOne(t => t.Product)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(t => t.ProductId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Restrict);  
+
+                entity.HasMany(t => t.Exchanges)
+                   .WithOne(e => e.OriginalTransaction)
+                   .HasForeignKey(e => e.OriginalTransactionId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(t => t.Customer)
                     .WithMany(c => c.Transactions)
@@ -173,12 +222,10 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(t => new { t.BranchId, t.TransactionDate });
             });
 
-            // ✅ DailySales configuration - FIXED CASCADE PATHS
             modelBuilder.Entity<DailySales>(entity =>
             {
                 entity.HasKey(ds => ds.Id);
 
-                // Configure decimal precision - FIXED Quantity precision
                 entity.Property(ds => ds.Quantity).HasPrecision(18, 3); // Changed from 18,2 to 18,3
                 entity.Property(ds => ds.UnitPrice).HasPrecision(18, 2);
                 entity.Property(ds => ds.TotalAmount).HasPrecision(18, 2);
@@ -319,7 +366,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                 .WithMany(b => b.Users)
                 .HasForeignKey(bu => bu.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<ProductExchange>().HasQueryFilter(pe => pe.IsActive);
             // ✅ Category configuration
             modelBuilder.Entity<Category>(entity =>
             {

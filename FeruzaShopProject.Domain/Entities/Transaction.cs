@@ -50,6 +50,7 @@ namespace FeruzaShopProject.Domain.Entities
         public List<DailySales> DailySales { get; private set; } = new();
         public List<StockMovement> StockMovements { get; private set; } = new();
         public List<CreditPayment> CreditPayments { get; private set; } = new();
+        public List<ProductExchange> Exchanges { get; set; } = new();
 
         // Validation method
         public void Validate()

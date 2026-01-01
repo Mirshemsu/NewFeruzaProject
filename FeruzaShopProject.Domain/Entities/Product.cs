@@ -46,6 +46,8 @@
             public List<Transaction> Transactions { get; private set; } = new();
             public List<DailySales> DailySales { get; private set; } = new();
             public List<PurchaseOrderItem> PurchaseOrderItems { get; set; } = new();
+            public List<ProductExchange> OriginalExchanges { get; set; } = new();
+            public List<ProductExchange> NewExchanges { get; set; } = new();
         public void ValidateAmount()
         {
             if (Unit == UnitType.Pcs && Amount % 1 != 0)

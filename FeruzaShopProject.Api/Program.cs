@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using ShopMgtSys.Infrastructure.Services;
 using System.Text;
 
@@ -52,7 +53,7 @@ builder.Services.AddAuthentication(options =>
         OnAuthenticationFailed = context =>
         {
             context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>()
-                .LogError($"Authentication failed already: {context.Exception.Message}");
+                .LogError($"Authentication failed: {context.Exception.Message}");
             return Task.CompletedTask;
         }
     };
@@ -68,6 +69,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddSingleton<IAuthorizationHandler, BranchAccessHandler>();
 
+// AutoMapper configurations
 builder.Services.AddAutoMapper(typeof(BranchMapper));
 builder.Services.AddAutoMapper(typeof(CategoryMapper));
 builder.Services.AddAutoMapper(typeof(ProductMapper));
@@ -78,21 +80,73 @@ builder.Services.AddAutoMapper(typeof(CustomerMapper));
 builder.Services.AddAutoMapper(typeof(PainterMapper));
 builder.Services.AddAutoMapper(typeof(SupplierMapper));
 builder.Services.AddAutoMapper(typeof(PurchaseMapper));
+builder.Services.AddAutoMapper(typeof(ProductExchangeMapper));
 
+// Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IProductService,ProductService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
-
-
+builder.Services.AddScoped<IProductExchangeService, ProductExchangeService>();
+builder.Services.AddScoped<IStockService, StockService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Configure Swagger with JWT Bearer Authorization
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Feruza Shop API",
+        Version = "v1",
+        Description = "API for Feruza Shop Management System",
+        Contact = new OpenApiContact
+        {
+            Name = "Your Name",
+            Email = "your.email@example.com"
+        }
+    });
+
+    // Add JWT Authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"JWT Authorization header using the Bearer scheme. 
+                      Enter 'Bearer' [space] and then your token in the text input below.
+                      Example: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+
+    // Optional: Include XML comments if you have them
+    // var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    // var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    // c.IncludeXmlComments(xmlPath);
+});
 
 var app = builder.Build();
 
@@ -110,11 +164,21 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while seeding roles");
     }
 }
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Feruza Shop API v1");
+
+        // Optional: Configure Swagger UI appearance
+        c.RoutePrefix = "swagger"; // Makes swagger UI available at /swagger
+        c.DisplayRequestDuration();
+        c.EnablePersistAuthorization(); // Remember authorization between page reloads
+        c.EnableDeepLinking(); // Enables deep linking for tags and operations
+    });
 }
 
 app.UseHttpsRedirection();

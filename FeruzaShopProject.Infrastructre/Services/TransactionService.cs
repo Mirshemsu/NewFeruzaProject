@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿
+using AutoMapper;
 using FeruzaShopProject.Application.Interface;
 using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Entities;
@@ -10,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FeruzaShopProject.Infrastructre.Services
@@ -33,7 +33,6 @@ namespace FeruzaShopProject.Infrastructre.Services
             _logger = logger;
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         }
-
 
         public async Task<ApiResponse<TransactionResponseDto>> CreateTransactionAsync(CreateTransactionDto dto)
         {
@@ -61,7 +60,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (product == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Invalid or inactive product");
 
-                // Handle Customer (create if not exists) - DON'T SAVE CHANGES HERE
+                // Handle Customer (create if not exists)
                 Guid? customerId = dto.CustomerId;
                 Customer newCustomer = null;
                 if (!customerId.HasValue && !string.IsNullOrWhiteSpace(dto.CustomerName) && !string.IsNullOrWhiteSpace(dto.CustomerPhoneNumber))
@@ -81,11 +80,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                             PhoneNumber = dto.CustomerPhoneNumber.Trim()
                         };
                         await _context.Customers.AddAsync(newCustomer);
-                        // DON'T call SaveChangesAsync() here - wait for the main transaction
                     }
                 }
 
-                // Handle Painter (create if not exists) - DON'T SAVE CHANGES HERE
+                // Handle Painter (create if not exists)
                 Guid? painterId = dto.PainterId;
                 Painter newPainter = null;
                 if (!painterId.HasValue && !string.IsNullOrWhiteSpace(dto.PainterName) && !string.IsNullOrWhiteSpace(dto.PainterPhoneNumber))
@@ -105,7 +103,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                             PhoneNumber = dto.PainterPhoneNumber.Trim()
                         };
                         await _context.Painters.AddAsync(newPainter);
-                        // DON'T call SaveChangesAsync() here - wait for the main transaction
                     }
                 }
 
@@ -124,10 +121,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // If we created new customer/painter, we need to get their IDs after saving
                 if (newCustomer != null || newPainter != null)
                 {
-                    // Save the new customer/painter first to get their IDs
                     await _context.SaveChangesAsync();
 
-                    // Update the transaction with the new IDs
                     if (newCustomer != null)
                         salesTransaction.CustomerId = newCustomer.Id;
                     if (newPainter != null)
@@ -150,7 +145,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                     await CreateDailySalesAsync(salesTransaction);
                 }
 
-                // SINGLE SaveChangesAsync call for everything
+                // Create StockMovement record for non-credit transactions
+                if (dto.PaymentMethod != PaymentMethod.Credit)
+                {
+                    await CreateStockMovementAsync(salesTransaction);
+                }
+
                 await _context.SaveChangesAsync();
                 await dbTransaction.CommitAsync();
 
@@ -184,6 +184,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error creating transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<TransactionResponseDto>> GetTransactionByIdAsync(Guid id)
         {
             try
@@ -214,6 +215,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error retrieving transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync()
         {
             try
@@ -243,6 +245,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<TransactionResponseDto>> UpdateTransactionAsync(UpdateTransactionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -264,7 +267,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.CommissionPaid.HasValue) existingTransaction.CommissionPaid = dto.CommissionPaid.Value;
 
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
-               
 
                 existingTransaction.Validate();
 
@@ -290,6 +292,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error updating transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<bool>> DeleteTransactionAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -321,6 +324,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<bool>.Fail($"Error deleting transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -360,6 +364,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 {
                     await UpdateStockAsync(creditTransaction.ProductId, paidQuantity,
                         creditTransaction.BranchId, creditTransaction.Id);
+
+                    // Create StockMovement for the payment
+                    await CreateStockMovementForPaymentAsync(creditTransaction, paidQuantity);
                 }
 
                 await _context.SaveChangesAsync();
@@ -380,6 +387,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error processing credit payment: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetCreditTransactionHistoryAsync(Guid? customerId)
         {
             try
@@ -412,7 +420,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         ProductName = transaction.Product.Name,
                         Quantity = transaction.Quantity,
                         UnitPrice = transaction.UnitPrice,
-                        TotalAmount = transaction.Quantity* transaction.UnitPrice,
+                        TotalAmount = transaction.Quantity * transaction.UnitPrice,
                         PaidAmount = paidAmount,
                         CustomerId = transaction.CustomerId ?? Guid.Empty,
                         CustomerName = transaction.Customer?.Name ?? "Unknown",
@@ -432,6 +440,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving credit history: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetPendingCreditTransactionsAsync(Guid? customerId = null, Guid? branchId = null)
         {
             try
@@ -489,6 +498,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving pending credit transactions: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null)
         {
             try
@@ -546,6 +556,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<DailySalesReportDto>.Fail($"Error generating report: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null)
         {
             try
@@ -658,6 +669,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<CreditSummaryDto>.Fail($"Error retrieving credit summary: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<bool>> MarkCommissionAsPaidAsync(Guid transactionId)
         {
             try
@@ -718,8 +730,6 @@ namespace FeruzaShopProject.Infrastructre.Services
             {
                 stock.Quantity -= quantity;
                 stock.UpdatedAt = DateTime.UtcNow;
-
-                // No stock movement tracking
             }
             else
             {
@@ -731,9 +741,78 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Quantity = -quantity,
                     UpdatedAt = DateTime.UtcNow
                 };
-
                 await _context.Stocks.AddAsync(newStock);
                 _logger.LogWarning("Created new stock record with negative quantity for ProductId: {ProductId}", productId);
+            }
+        }
+
+        // NEW: Create StockMovement record
+        private async Task CreateStockMovementAsync(Transaction transaction)
+        {
+            try
+            {
+                // Get current stock from Stock table
+                var stock = await _context.Stocks
+                    .FirstOrDefaultAsync(s => s.ProductId == transaction.ProductId && s.BranchId == transaction.BranchId);
+
+                var previousQuantity = stock?.Quantity ?? 0;
+                var newQuantity = previousQuantity - transaction.Quantity;
+
+                var stockMovement = new StockMovement
+                {
+                    ProductId = transaction.ProductId,
+                    BranchId = transaction.BranchId,
+                    TransactionId = transaction.Id,
+                    MovementType = StockMovementType.Sale,
+                    Quantity = -transaction.Quantity, // Negative for sales
+                    PreviousQuantity = previousQuantity,
+                    NewQuantity = newQuantity,
+                    MovementDate = transaction.TransactionDate,
+                    Reason = $"Sale transaction - {transaction.ItemCode}"
+                };
+
+                await _context.StockMovements.AddAsync(stockMovement);
+                _logger.LogDebug("StockMovement created for transaction {TransactionId}", transaction.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating StockMovement for transaction {TransactionId}", transaction.Id);
+                // Don't fail the transaction if StockMovement creation fails
+            }
+        }
+
+        // NEW: Create StockMovement for credit payments
+        private async Task CreateStockMovementForPaymentAsync(Transaction transaction, decimal paidQuantity)
+        {
+            try
+            {
+                // Get current stock from Stock table
+                var stock = await _context.Stocks
+                    .FirstOrDefaultAsync(s => s.ProductId == transaction.ProductId && s.BranchId == transaction.BranchId);
+
+                var previousQuantity = stock?.Quantity ?? 0;
+                var newQuantity = previousQuantity - paidQuantity;
+
+                var stockMovement = new StockMovement
+                {
+                    ProductId = transaction.ProductId,
+                    BranchId = transaction.BranchId,
+                    TransactionId = transaction.Id,
+                    MovementType = StockMovementType.Sale,
+                    Quantity = -paidQuantity, // Negative for sales
+                    PreviousQuantity = previousQuantity,
+                    NewQuantity = newQuantity,
+                    MovementDate = DateTime.UtcNow,
+                    Reason = $"Credit payment - {transaction.ItemCode}"
+                };
+
+                await _context.StockMovements.AddAsync(stockMovement);
+                _logger.LogDebug("StockMovement created for credit payment of transaction {TransactionId}", transaction.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating StockMovement for credit payment of transaction {TransactionId}", transaction.Id);
+                // Don't fail the payment if StockMovement creation fails
             }
         }
 
@@ -760,12 +839,12 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         private async Task<decimal> CalculatePaidAmountAsync(Guid transactionId)
         {
-            // Implement based on your CreditPayment entity
             var payments = await _context.CreditPayments
                 .Where(cp => cp.TransactionId == transactionId)
                 .SumAsync(cp => cp.Amount);
             return payments;
         }
+
         private decimal CalculateTotalAmount(Transaction transaction)
         {
             return transaction.UnitPrice * transaction.Quantity;
@@ -785,6 +864,7 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             return quantity * commissionRate;
         }
+
         private async Task<DateTime?> GetLastPaymentDateAsync(Guid transactionId)
         {
             var lastPayment = await _context.CreditPayments
@@ -793,6 +873,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 .FirstOrDefaultAsync();
             return lastPayment?.PaymentDate;
         }
+
         private async Task<(bool IsAuthorized, Guid UserId, Role Role)> AuthorizeUserAsync()
         {
             try
@@ -824,6 +905,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return (false, Guid.Empty, Role.Sales);
             }
         }
+
         #endregion
     }
 }
