@@ -945,18 +945,6 @@
         }
       }
     },
-    "/api/ProductExchanges/test": {
-      "get": {
-        "tags": [
-          "ProductExchanges"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Products": {
       "post": {
         "tags": [
@@ -2922,16 +2910,11 @@
       "CreatePurchaseOrderDto": {
         "required": [
           "branchId",
-          "items",
-          "supplierId"
+          "items"
         ],
         "type": "object",
         "properties": {
           "branchId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "supplierId": {
             "type": "string",
             "format": "uuid"
           },
@@ -3829,14 +3812,6 @@
             "type": "string",
             "nullable": true
           },
-          "supplierId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "supplierName": {
-            "type": "string",
-            "nullable": true
-          },
           "createdBy": {
             "type": "string",
             "format": "uuid"
@@ -4597,16 +4572,11 @@
       "UpdatePurchaseOrderDto": {
         "required": [
           "id",
-          "items",
-          "supplierId"
+          "items"
         ],
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "supplierId": {
             "type": "string",
             "format": "uuid"
           },

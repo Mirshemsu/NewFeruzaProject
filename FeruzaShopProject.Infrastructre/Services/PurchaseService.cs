@@ -45,13 +45,6 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive branch");
                 }
 
-                var supplier = await _context.Suppliers.FindAsync(dto.SupplierId);
-                if (supplier == null || !supplier.IsActive)
-                {
-                    _logger.LogWarning("Invalid or inactive supplier: {SupplierId}", dto.SupplierId);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive supplier");
-                }
-
                 var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
                 if (!Guid.TryParse(userIdClaim, out var createdBy))
                 {
@@ -63,9 +56,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 {
                     Id = Guid.NewGuid(),
                     BranchId = dto.BranchId,
-                    SupplierId = dto.SupplierId,
                     CreatedBy = createdBy,
-                    Status = PurchaseOrderStatus.PendingAdminAcceptance, // Sales creates, waits for admin
+                    Status = PurchaseOrderStatus.PendingAdminAcceptance,
                     Items = new List<PurchaseOrderItem>()
                 };
 
@@ -96,7 +88,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 await transaction.CommitAsync();
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Sales created purchase order {PurchaseOrderId} for branch {BranchId}", purchaseOrder.Id, dto.BranchId);
+                _logger.LogInformation("Sales created purchase order {PurchaseOrderId} for branch {BranchId}",
+                    purchaseOrder.Id, dto.BranchId);
                 return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order created successfully. Waiting for admin acceptance.");
             }
             catch (Exception ex)
@@ -119,11 +112,8 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Invalid user ID in JWT");
                 }
 
-                
-
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items)
                     .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
 
@@ -143,7 +133,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.Status = PurchaseOrderStatus.PendingReceiving;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
-
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
                 _logger.LogInformation("Admin accepted purchase order {PurchaseOrderId}", purchaseOrder.Id);
@@ -156,6 +147,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error accepting purchase order by admin");
             }
         }
+
         public async Task<ApiResponse<PurchaseOrderDto>> ReceivePurchaseOrderAsync(ReceivePurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -171,7 +163,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .FirstOrDefaultAsync(po => po.Id == dto.Id && po.IsActive);
 
                 if (purchaseOrder == null)
@@ -242,10 +233,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 await transaction.CommitAsync();
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                result.BranchName = purchaseOrder.Branch.Name;
-                result.SupplierName = purchaseOrder.Supplier.Name;
-                result.CreatorName = (await _context.Users.FirstOrDefaultAsync(u => u.Id == purchaseOrder.CreatedBy))?.UserName;
-
                 _logger.LogInformation("Received purchase order {PurchaseOrderId}", purchaseOrder.Id);
                 return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order received successfully");
             }
@@ -271,7 +258,6 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
 
                 if (purchaseOrder == null)
@@ -331,7 +317,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
 
                 if (purchaseOrder == null)
@@ -365,10 +350,16 @@ namespace ShopMgtSys.Infrastructure.Services
                     }
 
                     // Update stock
+                    // Update stock and create stock movement
                     var stock = await _context.Stocks
                         .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.BranchId == purchaseOrder.BranchId);
+
+                    decimal currentStockQuantity = 0;
+
                     if (stock == null)
                     {
+                        // No existing stock, this is the first entry
+                        currentStockQuantity = 0;
                         stock = new Stock
                         {
                             Id = Guid.NewGuid(),
@@ -382,9 +373,19 @@ namespace ShopMgtSys.Infrastructure.Services
                     }
                     else
                     {
+                        currentStockQuantity = stock.Quantity;
                         stock.Quantity += item.QuantityReceived.Value;
                         stock.UpdatedAt = DateTime.UtcNow;
                     }
+
+                    // Create stock movement using helper method
+                    await CreateStockMovementForPurchaseAsync(
+                        item.ProductId,
+                        purchaseOrder.BranchId,
+                        purchaseOrder.Id,
+                        item.QuantityReceived.Value,
+                        currentStockQuantity,
+                        userId);
 
                     item.QuantityApproved = item.QuantityReceived;
                 }
@@ -408,10 +409,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 await transaction.CommitAsync();
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                result.BranchName = purchaseOrder.Branch.Name;
-                result.SupplierName = purchaseOrder.Supplier.Name;
-                result.CreatorName = (await _context.Users.FirstOrDefaultAsync(u => u.Id == purchaseOrder.CreatedBy))?.UserName;
-
                 _logger.LogInformation("Admin finally approved purchase order {PurchaseOrderId}", purchaseOrder.Id);
                 return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order fully approved. Items added to inventory.");
             }
@@ -437,7 +434,6 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
 
                 if (purchaseOrder == null)
@@ -476,7 +472,6 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // Existing methods (keep them as they are with minor updates)
         public async Task<ApiResponse<PurchaseOrderDto>> UpdatePurchaseOrderAsync(UpdatePurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -492,14 +487,6 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found, inactive, or not in PendingAdminAcceptance status");
                 }
 
-                var supplier = await _context.Suppliers.FindAsync(dto.SupplierId);
-                if (supplier == null || !supplier.IsActive)
-                {
-                    _logger.LogWarning("Invalid or inactive supplier: {SupplierId}", dto.SupplierId);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive supplier");
-                }
-
-                purchaseOrder.SupplierId = dto.SupplierId;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 _context.PurchaseOrderItems.RemoveRange(purchaseOrder.Items);
@@ -594,7 +581,6 @@ namespace ShopMgtSys.Infrastructure.Services
             {
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Creator)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .FirstOrDefaultAsync(po => po.Id == id);
@@ -621,7 +607,6 @@ namespace ShopMgtSys.Infrastructure.Services
             {
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Creator)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .ToListAsync();
@@ -673,7 +658,45 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<bool>.Fail("Error cancelling purchase order");
             }
         }
+        private async Task CreateStockMovementForPurchaseAsync(
+            Guid productId,
+            Guid branchId,
+            Guid purchaseOrderId,
+            decimal quantity,
+            decimal previousQuantity,
+            Guid performedByUserId)
+                {
+                    try
+                    {
+                        var newQuantity = previousQuantity + quantity;
 
+                        var stockMovement = new StockMovement
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            BranchId = branchId,
+                            TransactionId = purchaseOrderId, // Using purchase order ID as transaction ID
+                            MovementType = StockMovementType.Purchase,
+                            Quantity = quantity,
+                            PreviousQuantity = previousQuantity,
+                            NewQuantity = newQuantity,
+                            Reason = $"Purchase Order #{purchaseOrderId} - Stock Added",
+                            MovementDate = DateTime.UtcNow,
+                            IsActive = true
+                        };
+
+                        _context.StockMovements.Add(stockMovement);
+
+                        _logger.LogInformation(
+                            "Created stock movement for Product {ProductId} in Branch {BranchId}: {Quantity} units added (Previous: {Previous}, New: {New})",
+                            productId, branchId, quantity, previousQuantity, newQuantity);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error creating stock movement for purchase");
+                        throw;
+                    }
+                }
         private bool IsValidStatusTransition(PurchaseOrderStatus currentStatus, PurchaseOrderStatus newStatus)
         {
             var validTransitions = new Dictionary<PurchaseOrderStatus, List<PurchaseOrderStatus>>

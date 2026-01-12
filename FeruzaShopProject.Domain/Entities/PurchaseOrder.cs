@@ -13,16 +13,12 @@ namespace FeruzaShopProject.Domain.Entities
         public Guid BranchId { get; set; }
 
         [Required]
-        public Guid SupplierId { get; set; }
-
-        [Required]
         public Guid CreatedBy { get; set; }
 
         [Required, EnumDataType(typeof(PurchaseOrderStatus))]
         public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.PendingAdminAcceptance;
 
         public Branch Branch { get; set; }
-        public Supplier Supplier { get; set; }
         public User Creator { get; set; }
         public List<PurchaseOrderItem> Items { get; set; } = new();
     }

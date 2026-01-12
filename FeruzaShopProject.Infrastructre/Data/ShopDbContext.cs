@@ -343,12 +343,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                .Property(po => po.BranchId)
                .IsRequired();
 
-            modelBuilder.Entity<PurchaseOrder>()
-                .HasOne(po => po.Supplier)
-                .WithMany(s => s.PurchaseOrders)
-                .HasForeignKey(po => po.SupplierId)
-                .OnDelete(DeleteBehavior.Restrict);
-
+           
             modelBuilder.Entity<PurchaseOrder>()
                 .HasOne(po => po.Creator)
                 .WithMany(u => u.CreatedPurchaseOrders)

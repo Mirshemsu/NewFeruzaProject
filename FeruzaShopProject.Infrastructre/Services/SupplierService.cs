@@ -141,7 +141,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 var hasActivePurchaseOrders = await _context.PurchaseOrders
-                    .AnyAsync(po => po.SupplierId == id && po.IsActive &&
+                    .AnyAsync(po => po.IsActive &&
                                     po.Status != PurchaseOrderStatus.PartiallyReceived && po.Status != PurchaseOrderStatus.Cancelled);
                 if (hasActivePurchaseOrders)
                 {

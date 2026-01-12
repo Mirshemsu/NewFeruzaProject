@@ -15,7 +15,6 @@ namespace FeruzaShopProject.Application.Mapper
         {
             CreateMap<PurchaseOrder, PurchaseOrderDto>()
                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch.Name))
-               .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier.Name))
                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src => src.Creator.Name))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 

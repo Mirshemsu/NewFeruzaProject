@@ -12,8 +12,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid BranchId { get; init; }
 
-        [Required]
-        public Guid SupplierId { get; init; }
 
         [Required, MinLength(1)]
         public List<CreatePurchaseOrderItemDto> Items { get; init; }
@@ -36,8 +34,7 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid Id { get; init; }
 
-        [Required]
-        public Guid SupplierId { get; init; }
+        
 
         [Required, MinLength(1)]
         public List<CreatePurchaseOrderItemDto> Items { get; init; }
@@ -83,8 +80,6 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid Id { get; set; }
         public Guid BranchId { get; set; }
         public string BranchName { get; set; }
-        public Guid SupplierId { get; set; }
-        public string SupplierName { get; set; }
         public Guid CreatedBy { get; set; }
         public string CreatorName { get; set; }
         public string Status { get; set; }

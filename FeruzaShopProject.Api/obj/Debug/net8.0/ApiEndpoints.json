@@ -564,16 +564,6 @@
   },
   {
     "ContainingType": "FeruzaShopProject.API.Controllers.ProductExchangesController",
-    "Method": "Test",
-    "RelativePath": "api/ProductExchanges/test",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "FeruzaShopProject.API.Controllers.ProductExchangesController",
     "Method": "GetExchangesByTransaction",
     "RelativePath": "api/ProductExchanges/transaction/{transactionId}",
     "HttpMethod": "GET",
