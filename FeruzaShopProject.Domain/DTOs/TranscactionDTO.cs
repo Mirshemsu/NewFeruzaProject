@@ -195,7 +195,84 @@ namespace FeruzaShopProject.Domain.DTOs
         public List<CreditCustomerSummaryDto> CustomerSummaries { get; set; } = new();
         public List<CreditTransactionHistoryDto> RecentTransactions { get; set; } = new();
     }
+    public class TransactionSummaryDto
+    {
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public Guid? BranchId { get; set; }
+        public string? BranchName { get; set; }
+        public string? PaymentMethod { get; set; }
 
+        // Counts
+        public int TotalTransactions { get; set; }
+        public int CashTransactions { get; set; }
+        public int BankTransactions { get; set; }
+        public int CreditTransactions { get; set; }
+
+        // Amounts
+        public decimal TotalSalesAmount { get; set; }
+        public decimal TotalCashAmount { get; set; }
+        public decimal TotalBankAmount { get; set; }
+        public decimal TotalCreditAmount { get; set; }
+        public decimal TotalPaidCreditAmount { get; set; }
+        public decimal TotalPendingCreditAmount { get; set; }
+
+        // Commission
+        public decimal TotalCommissionAmount { get; set; }
+        public decimal TotalPaidCommission { get; set; }
+        public decimal TotalPendingCommission { get; set; }
+
+        // Quantities
+        public decimal TotalQuantitySold { get; set; }
+
+        // Averages
+        public decimal AverageTransactionAmount { get; set; }
+        public decimal AverageDailySales { get; set; }
+
+        // Date range info
+        public int DaysInPeriod { get; set; }
+
+        // Top products/customers
+        public List<TransactionProductSummaryDto> TopProducts { get; set; } = new();
+        public List<TransactionCustomerSummaryDto> TopCustomers { get; set; } = new();
+        public List<TransactionPainterSummaryDto> TopPainters { get; set; } = new();
+
+        // Recent transactions
+        public List<TransactionResponseDto> RecentTransactions { get; set; } = new();
+    }
+    public class TransactionProductSummaryDto
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public string ItemCode { get; set; }
+        public int TransactionCount { get; set; }
+        public decimal TotalQuantity { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal PercentageOfTotal { get; set; }
+    }
+
+    public class TransactionCustomerSummaryDto
+    {
+        public Guid CustomerId { get; set; }
+        public string CustomerName { get; set; }
+        public string CustomerPhoneNumber { get; set; }
+        public int TransactionCount { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal CreditAmount { get; set; }
+        public decimal PaidCreditAmount { get; set; }
+        public decimal PendingCreditAmount { get; set; }
+    }
+
+    public class TransactionPainterSummaryDto
+    {
+        public Guid PainterId { get; set; }
+        public string PainterName { get; set; }
+        public string PainterPhoneNumber { get; set; }
+        public int TransactionCount { get; set; }
+        public decimal TotalCommissionAmount { get; set; }
+        public decimal PaidCommissionAmount { get; set; }
+        public decimal PendingCommissionAmount { get; set; }
+    }
     public class CreditCustomerSummaryDto
     {
         public Guid CustomerId { get; set; }

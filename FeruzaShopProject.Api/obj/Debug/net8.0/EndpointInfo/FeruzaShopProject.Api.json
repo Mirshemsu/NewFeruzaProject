@@ -2125,6 +2125,32 @@
         "tags": [
           "Transactions"
         ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2266,6 +2292,216 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Transactions/by-date": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "paymentMethod",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Transactions/by-date-range": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "paymentMethod",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponseDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Transactions/summary": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "paymentMethod",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionSummaryDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionSummaryDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionSummaryDtoApiResponse"
                 }
               }
             }
@@ -2898,11 +3134,18 @@
           },
           "newProductId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "newQuantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
+          },
+          "returnQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3710,7 +3953,13 @@
           },
           "newQuantity": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
+          },
+          "returnQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           },
           "originalTotal": {
             "type": "number",
@@ -3718,11 +3967,13 @@
           },
           "newTotal": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "moneyDifference": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "isRefund": {
             "type": "boolean"
@@ -3730,9 +3981,13 @@
           "isAdditionalPayment": {
             "type": "boolean"
           },
+          "isReturnOnly": {
+            "type": "boolean"
+          },
           "amount": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -4238,6 +4493,112 @@
         },
         "additionalProperties": false
       },
+      "TransactionCustomerSummaryDto": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paidCreditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "pendingCreditAmount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionPainterSummaryDto": {
+        "type": "object",
+        "properties": {
+          "painterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "painterName": {
+            "type": "string",
+            "nullable": true
+          },
+          "painterPhoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCommissionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paidCommissionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "pendingCommissionAmount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionProductSummaryDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "transactionCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "percentageOfTotal": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "TransactionResponseDto": {
         "type": "object",
         "properties": {
@@ -4384,6 +4745,155 @@
               "$ref": "#/components/schemas/TransactionResponseDto"
             },
             "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionSummaryDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalTransactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cashTransactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bankTransactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "creditTransactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSalesAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCashAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalBankAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCreditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPaidCreditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPendingCreditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCommissionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPaidCommission": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPendingCommission": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalQuantitySold": {
+            "type": "number",
+            "format": "double"
+          },
+          "averageTransactionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "averageDailySales": {
+            "type": "number",
+            "format": "double"
+          },
+          "daysInPeriod": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "topProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionProductSummaryDto"
+            },
+            "nullable": true
+          },
+          "topCustomers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionCustomerSummaryDto"
+            },
+            "nullable": true
+          },
+          "topPainters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionPainterSummaryDto"
+            },
+            "nullable": true
+          },
+          "recentTransactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponseDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransactionSummaryDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransactionSummaryDto"
           },
           "errorMessage": {
             "type": "string",

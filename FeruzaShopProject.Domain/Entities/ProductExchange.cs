@@ -1,49 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FeruzaShopProject.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FeruzaShopProject.Domain.Entities
+
+
+public class ProductExchange : BaseEntity
 {
-    public class ProductExchange : BaseEntity
-    {
-        [Required]
-        public Guid OriginalTransactionId { get; set; }
+    [Required]
+    public Guid OriginalTransactionId { get; set; }
 
-        // Original product info (from transaction)
-        [Required]
-        public Guid OriginalProductId { get; set; }
-        [Required]
-        public decimal OriginalQuantity { get; set; }
-        [Required]
-        public decimal OriginalPrice { get; set; }
+    // Original product info
+    [Required]
+    public Guid OriginalProductId { get; set; }
+    [Required]
+    public decimal OriginalQuantity { get; set; }
+    [Required]
+    public decimal OriginalPrice { get; set; }
 
-        // New product info
-        [Required]
-        public Guid NewProductId { get; set; }
-        [Required]
-        public decimal NewQuantity { get; set; }
-        [Required]
-        public decimal NewPrice { get; set; }
+    // Return quantity (can be partial)
+    [Required]
+    public decimal ReturnQuantity { get; set; }
 
-        // Navigation properties
-        public Transaction OriginalTransaction { get; set; }
-        public Product OriginalProduct { get; set; }
-        public Product NewProduct { get; set; }
+    // New product info (nullable for return-only)
+    public Guid? NewProductId { get; set; }
+    public decimal? NewQuantity { get; set; }
+    public decimal? NewPrice { get; set; }
 
-        // Calculated properties
-        public decimal TotalOriginal => OriginalQuantity * OriginalPrice;
-        public decimal TotalNew => NewQuantity * NewPrice;
-        public decimal MoneyDifference => TotalNew - TotalOriginal;
-        public bool IsRefund => MoneyDifference < 0;
-        public bool IsAdditionalPayment => MoneyDifference > 0;
-        public bool IsEvenExchange => MoneyDifference == 0;
-        public decimal Amount => Math.Abs(MoneyDifference);
+    // Navigation
+    public Transaction OriginalTransaction { get; set; }
+    public Product OriginalProduct { get; set; }
+    public Product NewProduct { get; set; }
 
-        // Quick checks
-        public bool IsReturnOnly => NewQuantity == 0;
-        public bool IsExchange => NewQuantity > 0;
-    }
+    // Calculated properties
+    public decimal TotalOriginal => ReturnQuantity * OriginalPrice;
+    public decimal? TotalNew => NewQuantity.HasValue ? NewQuantity.Value * (NewPrice ?? 0) : null;
+    public decimal? MoneyDifference => TotalNew - TotalOriginal;
+    public bool IsRefund => MoneyDifference < 0;
+    public bool IsAdditionalPayment => MoneyDifference > 0;
+    public bool IsEvenExchange => MoneyDifference == 0;
+    public bool IsReturnOnly => !NewProductId.HasValue || NewQuantity == 0;
+    public decimal? Amount => MoneyDifference.HasValue ? Math.Abs(MoneyDifference.Value) : TotalOriginal;
 }

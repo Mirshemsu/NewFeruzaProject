@@ -216,17 +216,41 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync()
+        public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync(
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    Guid? branchId = null)
         {
             try
             {
-                var transactions = await _context.Transactions
+                var query = _context.Transactions
                     .Include(t => t.Branch)
                     .Include(t => t.Product)
                         .ThenInclude(p => p.Category)
                     .Include(t => t.Customer)
                     .Include(t => t.Painter)
+                    .Where(t => t.IsActive)
+                    .AsQueryable();
+
+                // Apply date filters if provided
+                if (startDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                }
+
+                if (branchId.HasValue)
+                {
+                    query = query.Where(t => t.BranchId == branchId.Value);
+                }
+
+                var transactions = await query
                     .OrderByDescending(t => t.TransactionDate)
+                    .ThenByDescending(t => t.CreatedAt)
                     .ToListAsync();
 
                 var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
@@ -245,7 +269,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> UpdateTransactionAsync(UpdateTransactionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -698,6 +721,362 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
+        public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateRangeAsync(
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    Guid? branchId = null,
+    Guid? customerId = null,
+    Guid? productId = null,
+    string? paymentMethod = null)
+        {
+            try
+            {
+                var query = _context.Transactions
+                    .Include(t => t.Branch)
+                    .Include(t => t.Product)
+                        .ThenInclude(p => p.Category)
+                    .Include(t => t.Customer)
+                    .Include(t => t.Painter)
+                    .Where(t => t.IsActive) // Assuming there's an IsActive field
+                    .AsQueryable();
+
+                // Apply date filters
+                if (startDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                }
+
+                // Apply other filters
+                if (branchId.HasValue)
+                {
+                    query = query.Where(t => t.BranchId == branchId.Value);
+                }
+
+                if (customerId.HasValue)
+                {
+                    query = query.Where(t => t.CustomerId == customerId.Value);
+                }
+
+                if (productId.HasValue)
+                {
+                    query = query.Where(t => t.ProductId == productId.Value);
+                }
+
+                if (!string.IsNullOrEmpty(paymentMethod) &&
+                    Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
+                {
+                    query = query.Where(t => t.PaymentMethod == method);
+                }
+
+                var transactions = await query
+                    .OrderByDescending(t => t.TransactionDate)
+                    .ThenByDescending(t => t.CreatedAt)
+                    .ToListAsync();
+
+                var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
+
+                // Calculate paid amounts for credit transactions
+                foreach (var transaction in result.Where(t => t.IsCredit))
+                {
+                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                }
+
+                return ApiResponse<List<TransactionResponseDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transactions by date range: Start={StartDate}, End={EndDate}",
+                    startDate, endDate);
+                return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateAsync(
+            DateTime date,
+            Guid? branchId = null,
+            Guid? customerId = null,
+            Guid? productId = null,
+            string? paymentMethod = null)
+        {
+            try
+            {
+                var query = _context.Transactions
+                    .Include(t => t.Branch)
+                    .Include(t => t.Product)
+                        .ThenInclude(p => p.Category)
+                    .Include(t => t.Customer)
+                    .Include(t => t.Painter)
+                    .Where(t => t.IsActive && t.TransactionDate.Date == date.Date)
+                    .AsQueryable();
+
+                // Apply other filters
+                if (branchId.HasValue)
+                {
+                    query = query.Where(t => t.BranchId == branchId.Value);
+                }
+
+                if (customerId.HasValue)
+                {
+                    query = query.Where(t => t.CustomerId == customerId.Value);
+                }
+
+                if (productId.HasValue)
+                {
+                    query = query.Where(t => t.ProductId == productId.Value);
+                }
+
+                if (!string.IsNullOrEmpty(paymentMethod) &&
+                    Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
+                {
+                    query = query.Where(t => t.PaymentMethod == method);
+                }
+
+                var transactions = await query
+                    .OrderByDescending(t => t.CreatedAt)
+                    .ToListAsync();
+
+                var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
+
+                // Calculate paid amounts for credit transactions
+                foreach (var transaction in result.Where(t => t.IsCredit))
+                {
+                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                }
+
+                return ApiResponse<List<TransactionResponseDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transactions for date: {Date}", date);
+                return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<TransactionSummaryDto>> GetTransactionSummaryAsync(
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            Guid? branchId = null,
+            string? paymentMethod = null)
+        {
+            try
+            {
+                var query = _context.Transactions
+                    .Include(t => t.Branch)
+                    .Include(t => t.Product)
+                    .Include(t => t.Customer)
+                    .Include(t => t.Painter)
+                    .Where(t => t.IsActive)
+                    .AsQueryable();
+
+                // Apply filters
+                if (startDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                }
+
+                if (branchId.HasValue)
+                {
+                    query = query.Where(t => t.BranchId == branchId.Value);
+                }
+
+                if (!string.IsNullOrEmpty(paymentMethod) &&
+                    Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
+                {
+                    query = query.Where(t => t.PaymentMethod == method);
+                }
+
+                var transactions = await query.ToListAsync();
+
+                var summary = new TransactionSummaryDto
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    BranchId = branchId,
+                    PaymentMethod = paymentMethod
+                };
+
+                if (branchId.HasValue)
+                {
+                    var branch = await _context.Branches
+                        .FirstOrDefaultAsync(b => b.Id == branchId.Value);
+                    summary.BranchName = branch?.Name;
+                }
+
+                // Calculate counts
+                summary.TotalTransactions = transactions.Count;
+                summary.CashTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Cash);
+                summary.BankTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Bank);
+                summary.CreditTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Credit);
+
+                // Calculate amounts
+                summary.TotalSalesAmount = transactions.Sum(t => CalculateTotalAmount(t));
+                summary.TotalCashAmount = transactions
+                    .Where(t => t.PaymentMethod == PaymentMethod.Cash)
+                    .Sum(t => CalculateTotalAmount(t));
+                summary.TotalBankAmount = transactions
+                    .Where(t => t.PaymentMethod == PaymentMethod.Bank)
+                    .Sum(t => CalculateTotalAmount(t));
+                summary.TotalCreditAmount = transactions
+                    .Where(t => t.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(t => CalculateTotalAmount(t));
+
+                // Calculate credit details
+                foreach (var transaction in transactions.Where(t => t.PaymentMethod == PaymentMethod.Credit))
+                {
+                    var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                    var totalAmount = CalculateTotalAmount(transaction);
+
+                    summary.TotalPaidCreditAmount += paidAmount;
+                    summary.TotalPendingCreditAmount += (totalAmount - paidAmount);
+                }
+
+                // Calculate commission
+                summary.TotalCommissionAmount = transactions.Sum(t => CalculateCommissionAmount(t));
+                summary.TotalPaidCommission = transactions
+                    .Where(t => t.CommissionPaid)
+                    .Sum(t => CalculateCommissionAmount(t));
+                summary.TotalPendingCommission = summary.TotalCommissionAmount - summary.TotalPaidCommission;
+
+                // Calculate quantities
+                summary.TotalQuantitySold = transactions.Sum(t => t.Quantity);
+
+                // Calculate averages
+                summary.AverageTransactionAmount = summary.TotalTransactions > 0
+                    ? summary.TotalSalesAmount / summary.TotalTransactions
+                    : 0;
+
+                // Calculate days in period
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    summary.DaysInPeriod = (int)(endDate.Value.Date - startDate.Value.Date).TotalDays + 1;
+                    summary.AverageDailySales = summary.DaysInPeriod > 0
+                        ? summary.TotalSalesAmount / summary.DaysInPeriod
+                        : summary.TotalSalesAmount;
+                }
+                else if (startDate.HasValue)
+                {
+                    var days = (int)(DateTime.UtcNow.Date - startDate.Value.Date).TotalDays + 1;
+                    summary.DaysInPeriod = days;
+                    summary.AverageDailySales = days > 0 ? summary.TotalSalesAmount / days : summary.TotalSalesAmount;
+                }
+                else
+                {
+                    summary.DaysInPeriod = 1;
+                    summary.AverageDailySales = summary.TotalSalesAmount;
+                }
+
+                // Calculate top products
+                var productGroups = transactions
+                    .GroupBy(t => new { t.ProductId, t.Product.Name, t.ItemCode })
+                    .Select(g => new TransactionProductSummaryDto
+                    {
+                        ProductId = g.Key.ProductId,
+                        ProductName = g.Key.Name,
+                        ItemCode = g.Key.ItemCode,
+                        TransactionCount = g.Count(),
+                        TotalQuantity = g.Sum(t => t.Quantity),
+                        TotalAmount = g.Sum(t => CalculateTotalAmount(t)),
+                        PercentageOfTotal = summary.TotalSalesAmount > 0
+                            ? (g.Sum(t => CalculateTotalAmount(t)) / summary.TotalSalesAmount) * 100
+                            : 0
+                    })
+                    .OrderByDescending(p => p.TotalAmount)
+                    .Take(10)
+                    .ToList();
+
+                summary.TopProducts = productGroups;
+
+                // Calculate top customers
+                var customerGroups = transactions
+                    .Where(t => t.CustomerId.HasValue && t.Customer != null)
+                    .GroupBy(t => new { t.CustomerId, t.Customer.Name, t.Customer.PhoneNumber })
+                    .Select(g => new TransactionCustomerSummaryDto
+                    {
+                        CustomerId = g.Key.CustomerId.Value,
+                        CustomerName = g.Key.Name,
+                        CustomerPhoneNumber = g.Key.PhoneNumber,
+                        TransactionCount = g.Count(),
+                        TotalAmount = g.Sum(t => CalculateTotalAmount(t))
+                    })
+                    .OrderByDescending(c => c.TotalAmount)
+                    .Take(10)
+                    .ToList();
+
+                // Calculate credit details for customers
+                foreach (var customer in customerGroups)
+                {
+                    var customerCreditTransactions = transactions
+                        .Where(t => t.CustomerId == customer.CustomerId && t.PaymentMethod == PaymentMethod.Credit);
+
+                    foreach (var transaction in customerCreditTransactions)
+                    {
+                        var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                        var totalAmount = CalculateTotalAmount(transaction);
+
+                        customer.CreditAmount += totalAmount;
+                        customer.PaidCreditAmount += paidAmount;
+                        customer.PendingCreditAmount += (totalAmount - paidAmount);
+                    }
+                }
+
+                summary.TopCustomers = customerGroups;
+
+                // Calculate top painters
+                var painterGroups = transactions
+                    .Where(t => t.PainterId.HasValue && t.Painter != null)
+                    .GroupBy(t => new { t.PainterId, t.Painter.Name, t.Painter.PhoneNumber })
+                    .Select(g => new TransactionPainterSummaryDto
+                    {
+                        PainterId = g.Key.PainterId.Value,
+                        PainterName = g.Key.Name,
+                        PainterPhoneNumber = g.Key.PhoneNumber,
+                        TransactionCount = g.Count(),
+                        TotalCommissionAmount = g.Sum(t => CalculateCommissionAmount(t)),
+                        PaidCommissionAmount = g.Where(t => t.CommissionPaid).Sum(t => CalculateCommissionAmount(t)),
+                        PendingCommissionAmount = g.Where(t => !t.CommissionPaid).Sum(t => CalculateCommissionAmount(t))
+                    })
+                    .OrderByDescending(p => p.TotalCommissionAmount)
+                    .Take(10)
+                    .ToList();
+
+                summary.TopPainters = painterGroups;
+
+                // Get recent transactions
+                var recentTransactions = transactions
+                    .OrderByDescending(t => t.TransactionDate)
+                    .ThenByDescending(t => t.CreatedAt)
+                    .Take(10)
+                    .ToList();
+
+                var recentDtos = _mapper.Map<List<TransactionResponseDto>>(recentTransactions);
+
+                // Calculate paid amounts for credit transactions
+                foreach (var transaction in recentDtos.Where(t => t.IsCredit))
+                {
+                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                }
+
+                summary.RecentTransactions = recentDtos;
+
+                return ApiResponse<TransactionSummaryDto>.Success(summary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transaction summary: Start={StartDate}, End={EndDate}",
+                    startDate, endDate);
+                return ApiResponse<TransactionSummaryDto>.Fail($"Error retrieving transaction summary: {ex.Message}");
+            }
+        }
         #region Helper Methods
 
         private async Task LoadTransactionNavigationProperties(Transaction transaction)

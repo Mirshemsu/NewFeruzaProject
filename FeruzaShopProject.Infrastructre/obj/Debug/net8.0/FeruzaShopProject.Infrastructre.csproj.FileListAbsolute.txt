@@ -77,3 +77,23 @@ C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.pdb
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.genruntimeconfig.cache
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\ref\FeruzaShopProject.Infrastructre.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Infrastructre.deps.json
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Infrastructre.runtimeconfig.json
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Infrastructre.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Infrastructre.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Application.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Application.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\bin\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.csproj.AssemblyReference.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.AssemblyInfoInputs.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.AssemblyInfo.cs
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.csproj.CoreCompileInputs.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.sourcelink.json
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaSh.EFF323BA.Up2Date
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\refint\FeruzaShopProject.Infrastructre.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\FeruzaShopProject.Infrastructre.genruntimeconfig.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Infrastructre\obj\Debug\net8.0\ref\FeruzaShopProject.Infrastructre.dll

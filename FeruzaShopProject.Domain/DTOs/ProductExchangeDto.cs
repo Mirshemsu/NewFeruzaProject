@@ -6,8 +6,9 @@ namespace FeruzaShopProject.Domain.DTOs
     public class CreateProductExchangeDto
     {
         public Guid OriginalTransactionId { get; set; }
-        public Guid NewProductId { get; set; }
-        public decimal NewQuantity { get; set; }
+        public Guid? NewProductId { get; set; } // Nullable for return-only
+        public decimal? NewQuantity { get; set; } // Nullable for return-only
+        public decimal? ReturnQuantity { get; set; } // Optional: partial return
     }
 
     public class ProductExchangeResponseDto
@@ -15,15 +16,17 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid Id { get; set; }
         public Guid OriginalTransactionId { get; set; }
         public ProductDto OriginalProduct { get; set; }
-        public ProductDto NewProduct { get; set; }
+        public ProductDto NewProduct { get; set; } // Null for return-only
         public decimal OriginalQuantity { get; set; }
-        public decimal NewQuantity { get; set; }
+        public decimal? NewQuantity { get; set; } // Null for return-only
+        public decimal? ReturnQuantity { get; set; } // How much was actually returned
         public decimal OriginalTotal { get; set; }
-        public decimal NewTotal { get; set; }
-        public decimal MoneyDifference { get; set; }
+        public decimal? NewTotal { get; set; } // Null for return-only
+        public decimal? MoneyDifference { get; set; } // Null for return-only
         public bool IsRefund { get; set; }
         public bool IsAdditionalPayment { get; set; }
-        public decimal Amount { get; set; }
+        public bool IsReturnOnly { get; set; } // True when no new product
+        public decimal? Amount { get; set; }
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }

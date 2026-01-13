@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj": {}
+    "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj": {
+    "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj",
+        "projectUniqueName": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj",
         "projectName": "FeruzaShopProject.Api",
-        "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj",
-        "packagesPath": "C:\\Users\\Miraj\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\obj\\",
+        "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj",
+        "packagesPath": "C:\\Users\\Hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Miraj\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -32,11 +32,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
-                "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
+              "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
+                "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
               },
-              "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj": {
-                "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj"
+              "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj": {
+                "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj"
               }
             }
           }
@@ -99,20 +99,20 @@
         }
       }
     },
-    "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
+    "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj",
+        "projectUniqueName": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj",
         "projectName": "FeruzaShopProject.Application",
-        "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj",
-        "packagesPath": "C:\\Users\\Miraj\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\obj\\",
+        "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj",
+        "packagesPath": "C:\\Users\\Hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Miraj\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -127,8 +127,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
-                "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
+              "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
+                "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
               }
             }
           }
@@ -174,20 +174,20 @@
         }
       }
     },
-    "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
+    "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
         "projectName": "FeruzaShopProject.Domain",
-        "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
-        "packagesPath": "C:\\Users\\Miraj\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\obj\\",
+        "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj",
+        "packagesPath": "C:\\Users\\Hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Miraj\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -245,20 +245,20 @@
         }
       }
     },
-    "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj": {
+    "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
+        "projectUniqueName": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
         "projectName": "FeruzaShopProject.Infrastructre",
-        "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
-        "packagesPath": "C:\\Users\\Miraj\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\obj\\",
+        "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj",
+        "packagesPath": "C:\\Users\\Hp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Miraj\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Hp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -273,11 +273,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
-                "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj"
+              "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj": {
+                "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj"
               },
-              "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
-                "projectPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
+              "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj": {
+                "projectPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj"
               }
             }
           }

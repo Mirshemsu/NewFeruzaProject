@@ -49,3 +49,16 @@ C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\refint\FeruzaShopProject.Domain.dll
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.pdb
 C:\Users\Miraj\OneDrive\Desktop\Feruz Project\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\ref\FeruzaShopProject.Domain.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.deps.json
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\bin\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.AssemblyReference.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfoInputs.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.AssemblyInfo.cs
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.sourcelink.json
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\refint\FeruzaShopProject.Domain.dll
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\FeruzaShopProject.Domain.pdb
+C:\Users\Hp\Desktop\NewFeruza\NewFeruza\NewFeruzaProject\FeruzaShopProject.Domain\obj\Debug\net8.0\ref\FeruzaShopProject.Domain.dll

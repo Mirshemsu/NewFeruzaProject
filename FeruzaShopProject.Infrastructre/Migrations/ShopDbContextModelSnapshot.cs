@@ -59,7 +59,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.ToTable("BankAccounts");
+                    b.ToTable("BankAccounts", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Branch", b =>
@@ -95,7 +95,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Branches");
+                    b.ToTable("Branches", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Category", b =>
@@ -123,7 +123,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.CreditPayment", b =>
@@ -162,7 +162,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("CreditPayments");
+                    b.ToTable("CreditPayments", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Customer", b =>
@@ -195,7 +195,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.DailySales", b =>
@@ -275,7 +275,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("SaleDate", "PaymentMethod");
 
-                    b.ToTable("DailySales");
+                    b.ToTable("DailySales", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Painter", b =>
@@ -308,7 +308,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
 
-                    b.ToTable("Painters");
+                    b.ToTable("Painters", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Product", b =>
@@ -372,7 +372,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.ProductExchange", b =>
@@ -435,7 +435,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("ProductId1");
 
-                    b.ToTable("ProductExchanges");
+                    b.ToTable("ProductExchanges", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseHistory", b =>
@@ -473,7 +473,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseHistory");
+                    b.ToTable("PurchaseHistory", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
@@ -514,7 +514,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("PurchaseOrders");
+                    b.ToTable("PurchaseOrders", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrderItem", b =>
@@ -557,7 +557,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderItems");
+                    b.ToTable("PurchaseOrderItems", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Stock", b =>
@@ -592,7 +592,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("ProductId", "BranchId")
                         .IsUnique();
 
-                    b.ToTable("Stocks");
+                    b.ToTable("Stocks", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.StockMovement", b =>
@@ -651,7 +651,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("StockMovements");
+                    b.ToTable("StockMovements", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Supplier", b =>
@@ -686,7 +686,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Suppliers");
+                    b.ToTable("Suppliers", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Transaction", b =>
@@ -758,7 +758,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasIndex("BranchId", "TransactionDate");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.User", b =>

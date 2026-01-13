@@ -72,21 +72,100 @@ namespace FeruzaShopProject.API.Controllers
         }
 
         /// <summary>
-        /// Get all transactions
+        /// Get all transactions with optional date and branch filters
         /// </summary>
         [HttpGet]
         [Authorize(Roles = "Manager,Sales")]
-        public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetAllTransactions()
+        public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetAllTransactions(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] Guid? branchId = null)
         {
             try
             {
-                var result = await _transactionService.GetAllTransactionsAsync();
+                var result = await _transactionService.GetAllTransactionsAsync(startDate, endDate, branchId);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all transactions");
                 return StatusCode(500, ApiResponse<List<TransactionResponseDto>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get transactions by specific date with optional filters
+        /// </summary>
+        [HttpGet("by-date")]
+        [Authorize(Roles = "Manager,Sales")]
+        public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetTransactionsByDate(
+            [FromQuery] DateTime date,
+            [FromQuery] Guid? branchId = null,
+            [FromQuery] Guid? customerId = null,
+            [FromQuery] Guid? productId = null,
+            [FromQuery] string? paymentMethod = null)
+        {
+            try
+            {
+                var result = await _transactionService.GetTransactionsByDateAsync(date, branchId, customerId, productId, paymentMethod);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transactions for date: {Date}", date);
+                return StatusCode(500, ApiResponse<List<TransactionResponseDto>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get transactions by date range with optional filters
+        /// </summary>
+        [HttpGet("by-date-range")]
+        [Authorize(Roles = "Manager,Sales")]
+        public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetTransactionsByDateRange(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] Guid? branchId = null,
+            [FromQuery] Guid? customerId = null,
+            [FromQuery] Guid? productId = null,
+            [FromQuery] string? paymentMethod = null)
+        {
+            try
+            {
+                var result = await _transactionService.GetTransactionsByDateRangeAsync(
+                    startDate, endDate, branchId, customerId, productId, paymentMethod);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transactions by date range: Start={StartDate}, End={EndDate}",
+                    startDate, endDate);
+                return StatusCode(500, ApiResponse<List<TransactionResponseDto>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
+        /// Get transaction summary with analytics
+        /// </summary>
+        [HttpGet("summary")]
+        [Authorize(Roles = "Manager")]
+        public async Task<ActionResult<ApiResponse<TransactionSummaryDto>>> GetTransactionSummary(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] Guid? branchId = null,
+            [FromQuery] string? paymentMethod = null)
+        {
+            try
+            {
+                var result = await _transactionService.GetTransactionSummaryAsync(
+                    startDate, endDate, branchId, paymentMethod);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting transaction summary: Start={StartDate}, End={EndDate}",
+                    startDate, endDate);
+                return StatusCode(500, ApiResponse<TransactionSummaryDto>.Fail("Internal server error"));
             }
         }
 
