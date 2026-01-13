@@ -3568,6 +3568,31 @@
       "DailySalesItemDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "saleDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "productName": {
             "type": "string",
             "nullable": true
@@ -3595,13 +3620,44 @@
           "paymentMethod": {
             "$ref": "#/components/schemas/PaymentMethod"
           },
+          "commissionRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "commissionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "commissionPaid": {
+            "type": "boolean"
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "painterId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "painterName": {
             "type": "string",
             "nullable": true
           },
           "transactionDate": {
             "type": "string",
             "format": "date-time"
+          },
+          "isPartialPayment": {
+            "type": "boolean"
+          },
+          "isCreditPayment": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -4682,15 +4738,19 @@
             "type": "string",
             "nullable": true
           },
+          "isPartialPayment": {
+            "type": "boolean"
+          },
+          "isCreditPayment": {
+            "type": "boolean"
+          },
           "totalAmount": {
             "type": "number",
-            "format": "double",
-            "readOnly": true
+            "format": "double"
           },
           "commissionAmount": {
             "type": "number",
-            "format": "double",
-            "readOnly": true
+            "format": "double"
           },
           "isCredit": {
             "type": "boolean",

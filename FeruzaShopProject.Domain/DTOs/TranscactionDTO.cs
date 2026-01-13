@@ -77,6 +77,7 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
     }
+
     public class TransactionResponseDto
     {
         public Guid Id { get; set; }
@@ -87,8 +88,8 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public DateTime TransactionDate { get; set; }
         public string ItemCode { get; set; }
-        public decimal UnitPrice { get; set; } // This comes from Transaction
-        public decimal Quantity { get; set; }
+        public decimal UnitPrice { get; set; } // This comes from Transaction or DailySales
+        public decimal Quantity { get; set; } // This comes from Transaction or DailySales
         public PaymentMethod PaymentMethod { get; set; }
         public decimal CommissionRate { get; set; }
         public bool CommissionPaid { get; set; }
@@ -103,14 +104,19 @@ namespace FeruzaShopProject.Domain.DTOs
         public string PainterName { get; set; }
         public string PainterPhoneNumber { get; set; }
 
+        // New fields for partial payments
+        public bool IsPartialPayment { get; set; }
+        public bool IsCreditPayment { get; set; }
+
         // Calculated properties
-        public decimal TotalAmount => UnitPrice * Quantity;
-        public decimal CommissionAmount => Quantity * CommissionRate;
+        public decimal TotalAmount { get; set; } // Now set from DailySales for credit payments
+        public decimal CommissionAmount { get; set; } // Now set from DailySales for credit payments
         public bool IsCredit => PaymentMethod == PaymentMethod.Credit;
         public decimal PaidAmount { get; set; }
-        public decimal RemainingAmount => IsCredit ? TotalAmount - PaidAmount : 0;
+        public decimal RemainingAmount => IsCredit ? (TotalAmount - PaidAmount) : 0;
         public bool IsFullyPaid => IsCredit && RemainingAmount <= 0;
     }
+
     public class CreditTransactionHistoryDto
     {
         public Guid TransactionId { get; set; }
@@ -134,6 +140,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid BranchId { get; set; }
         public string BranchName { get; set; }
     }
+
     public class DailySalesReportDto
     {
         public DateTime ReportDate { get; set; }
@@ -158,6 +165,12 @@ namespace FeruzaShopProject.Domain.DTOs
 
     public class DailySalesItemDto
     {
+        public Guid Id { get; set; }
+        public Guid TransactionId { get; set; }
+        public DateTime SaleDate { get; set; }
+        public Guid? BranchId { get; set; }
+        public string BranchName { get; set; }
+        public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public string ItemCode { get; set; }
         public string CategoryName { get; set; }
@@ -165,8 +178,18 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal UnitPrice { get; set; }
         public decimal TotalAmount { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
+        public decimal CommissionRate { get; set; }
+        public decimal CommissionAmount { get; set; }
+        public bool CommissionPaid { get; set; }
+        public Guid? CustomerId { get; set; }
         public string CustomerName { get; set; }
+        public Guid? PainterId { get; set; }
+        public string PainterName { get; set; }
         public DateTime TransactionDate { get; set; }
+
+        // New fields for credit payments
+        public bool IsPartialPayment { get; set; }
+        public bool IsCreditPayment { get; set; }
     }
 
     public class PaymentSummaryDto
@@ -176,6 +199,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal TotalAmount { get; set; }
         public decimal Percentage { get; set; }
     }
+
     public class CreditSummaryDto
     {
         public Guid? CustomerId { get; set; }
@@ -195,6 +219,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public List<CreditCustomerSummaryDto> CustomerSummaries { get; set; } = new();
         public List<CreditTransactionHistoryDto> RecentTransactions { get; set; } = new();
     }
+
     public class TransactionSummaryDto
     {
         public DateTime? StartDate { get; set; }
@@ -240,6 +265,7 @@ namespace FeruzaShopProject.Domain.DTOs
         // Recent transactions
         public List<TransactionResponseDto> RecentTransactions { get; set; } = new();
     }
+
     public class TransactionProductSummaryDto
     {
         public Guid ProductId { get; set; }
@@ -273,6 +299,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal PaidCommissionAmount { get; set; }
         public decimal PendingCommissionAmount { get; set; }
     }
+
     public class CreditCustomerSummaryDto
     {
         public Guid CustomerId { get; set; }
@@ -283,5 +310,25 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal TotalPaidAmount { get; set; }
         public decimal RemainingAmount => TotalCreditAmount - TotalPaidAmount;
         public DateTime LastCreditDate { get; set; }
+    }
+
+    public class CreditTransactionWithPaymentsDto
+    {
+        public TransactionResponseDto Transaction { get; set; }
+        public List<CreditPaymentDto> Payments { get; set; } = new();
+        public List<DailySalesItemDto> DailySalesPayments { get; set; } = new();
+        public decimal TotalPaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public bool IsFullyPaid { get; set; }
+    }
+
+    public class CreditPaymentDto
+    {
+        public Guid Id { get; set; }
+        public Guid TransactionId { get; set; }
+        public decimal Amount { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
+        public DateTime PaymentDate { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

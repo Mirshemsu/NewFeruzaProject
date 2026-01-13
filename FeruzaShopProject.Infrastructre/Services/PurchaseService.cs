@@ -414,7 +414,7 @@ namespace ShopMgtSys.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error final approving purchase order by admin: {PurchaseOrderId}", purchaseOrderId);
+                _logger.LogError(ex.InnerException.Message, "Error final approving purchase order by admin: {PurchaseOrderId}", purchaseOrderId);
                 await transaction.RollbackAsync();
                 return ApiResponse<PurchaseOrderDto>.Fail("Error final approving purchase order by admin");
             }
@@ -665,38 +665,41 @@ namespace ShopMgtSys.Infrastructure.Services
             decimal quantity,
             decimal previousQuantity,
             Guid performedByUserId)
+        {
+            try
+            {
+                var newQuantity = previousQuantity + quantity;
+
+                var stockMovement = new StockMovement
                 {
-                    try
-                    {
-                        var newQuantity = previousQuantity + quantity;
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    BranchId = branchId,
+                    // Option 1: Set to null if allowed
+                    //TransactionId = null,
+                    // Option 2: Add a new field for purchase order reference
+                    //PurchaseOrderId = purchaseOrderId,
+                    MovementType = StockMovementType.Purchase,
+                    Quantity = quantity,
+                    PreviousQuantity = previousQuantity,
+                    NewQuantity = newQuantity,
+                    Reason = $"Purchase Order #{purchaseOrderId} - Stock Added",
+                    MovementDate = DateTime.UtcNow,
+                    IsActive = true
+                };
 
-                        var stockMovement = new StockMovement
-                        {
-                            Id = Guid.NewGuid(),
-                            ProductId = productId,
-                            BranchId = branchId,
-                            TransactionId = purchaseOrderId, // Using purchase order ID as transaction ID
-                            MovementType = StockMovementType.Purchase,
-                            Quantity = quantity,
-                            PreviousQuantity = previousQuantity,
-                            NewQuantity = newQuantity,
-                            Reason = $"Purchase Order #{purchaseOrderId} - Stock Added",
-                            MovementDate = DateTime.UtcNow,
-                            IsActive = true
-                        };
+                _context.StockMovements.Add(stockMovement);
 
-                        _context.StockMovements.Add(stockMovement);
-
-                        _logger.LogInformation(
-                            "Created stock movement for Product {ProductId} in Branch {BranchId}: {Quantity} units added (Previous: {Previous}, New: {New})",
-                            productId, branchId, quantity, previousQuantity, newQuantity);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error creating stock movement for purchase");
-                        throw;
-                    }
-                }
+                _logger.LogInformation(
+                    "Created stock movement for Product {ProductId} in Branch {BranchId}: {Quantity} units added (Previous: {Previous}, New: {New})",
+                    productId, branchId, quantity, previousQuantity, newQuantity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating stock movement for purchase");
+                throw;
+            }
+        }
         private bool IsValidStatusTransition(PurchaseOrderStatus currentStatus, PurchaseOrderStatus newStatus)
         {
             var validTransitions = new Dictionary<PurchaseOrderStatus, List<PurchaseOrderStatus>>

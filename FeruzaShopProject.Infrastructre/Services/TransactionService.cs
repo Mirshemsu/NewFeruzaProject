@@ -142,7 +142,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Credit transactions will create daily sales when payment is made
                 if (dto.PaymentMethod != PaymentMethod.Credit)
                 {
-                    await CreateDailySalesAsync(salesTransaction);
+                    await CreateDailySalesAsync(salesTransaction, false);
                 }
 
                 // Create StockMovement record for non-credit transactions
@@ -223,50 +223,75 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             try
             {
-                var query = _context.Transactions
-                    .Include(t => t.Branch)
-                    .Include(t => t.Product)
-                        .ThenInclude(p => p.Category)
-                    .Include(t => t.Customer)
-                    .Include(t => t.Painter)
-                    .Where(t => t.IsActive)
+                // Get all DailySales entries for the date range (these represent ACTUAL payments/sales)
+                var dailySalesQuery = _context.DailySales
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Branch)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Product)
+                            .ThenInclude(p => p.Category)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Customer)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Painter)
+                    .Where(ds => ds.IsActive)
                     .AsQueryable();
 
                 // Apply date filters if provided
                 if (startDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date >= startDate.Value.Date);
                 }
 
                 if (endDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date <= endDate.Value.Date);
                 }
 
                 if (branchId.HasValue)
                 {
-                    query = query.Where(t => t.BranchId == branchId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
                 }
 
-                // IMPORTANT: Filter out unpaid credit transactions
-                // Only show credit transactions that have at least some payment
-                query = query.Where(t =>
-                    t.PaymentMethod != PaymentMethod.Credit || // Show all non-credit transactions
-                    (t.PaymentMethod == PaymentMethod.Credit &&
-                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Show credit only if paid
-                );
-
-                var transactions = await query
-                    .OrderByDescending(t => t.TransactionDate)
-                    .ThenByDescending(t => t.CreatedAt)
+                var dailySales = await dailySalesQuery
+                    .OrderByDescending(ds => ds.SaleDate)
+                    .ThenByDescending(ds => ds.CreatedAt)
                     .ToListAsync();
 
-                var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
+                // Transform DailySales into TransactionResponseDto format
+                var result = new List<TransactionResponseDto>();
 
-                // Calculate paid amounts for credit transactions
-                foreach (var transaction in result.Where(t => t.IsCredit))
+                foreach (var dailySale in dailySales)
                 {
-                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                    if (dailySale.Transaction != null)
+                    {
+                        var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
+
+                        // Override with DailySales data (actual sold/payment data)
+                        transactionDto.Quantity = dailySale.Quantity;
+                        transactionDto.UnitPrice = dailySale.UnitPrice;
+                        transactionDto.TotalAmount = dailySale.TotalAmount;
+                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
+                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
+                        transactionDto.TransactionDate = dailySale.SaleDate;
+
+                        // For credit payments, mark as partial if applicable
+                        if (dailySale.IsCreditPayment)
+                        {
+                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
+                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                        }
+                        else
+                        {
+                            transactionDto.IsPartialPayment = false;
+                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
+                            {
+                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                            }
+                        }
+
+                        result.Add(transactionDto);
+                    }
                 }
 
                 return ApiResponse<List<TransactionResponseDto>>.Success(result);
@@ -342,6 +367,16 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<bool>.Fail("Cannot delete credit transaction with payments");
                 }
 
+                // Also delete associated DailySales entries
+                var dailySales = await _context.DailySales
+                    .Where(ds => ds.TransactionId == id)
+                    .ToListAsync();
+
+                if (dailySales.Any())
+                {
+                    _context.DailySales.RemoveRange(dailySales);
+                }
+
                 _context.Transactions.Remove(existingTransaction);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -369,9 +404,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (creditTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Credit transaction not found");
 
-                var paidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
+                var previousPaidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
                 var totalAmount = CalculateTotalAmount(creditTransaction);
-                var remainingAmount = totalAmount - paidAmount;
+                var remainingAmount = totalAmount - previousPaidAmount;
 
                 if (dto.Amount > remainingAmount)
                     return ApiResponse<TransactionResponseDto>.Fail($"Payment amount exceeds remaining balance. Remaining: {remainingAmount}");
@@ -383,32 +418,41 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Create credit payment record
                 var creditPayment = new CreditPayment
                 {
+                    Id = Guid.NewGuid(),
                     TransactionId = dto.TransactionId,
                     Amount = dto.Amount,
                     PaymentMethod = dto.PaymentMethod,
                     PaymentDate = dto.PaymentDate,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
 
                 await _context.CreditPayments.AddAsync(creditPayment);
 
-                // IMPORTANT: Create DailySales entry for the paid portion
-                // This makes the transaction appear in daily reports and transaction lists
+                // IMPORTANT: Create DailySales entry for ONLY the newly paid amount
+                // This makes only the paid portion appear in daily reports
                 var dailySales = new DailySales
                 {
+                    Id = Guid.NewGuid(),
                     BranchId = creditTransaction.BranchId,
                     ProductId = creditTransaction.ProductId,
                     TransactionId = creditTransaction.Id,
-                    SaleDate = DateTime.UtcNow.Date, // Date of payment
-                    Quantity = paidQuantity,
+                    SaleDate = DateTime.UtcNow.Date, // Date of payment (today)
+                    Quantity = paidQuantity, // Only the paid quantity
                     UnitPrice = creditTransaction.UnitPrice,
-                    TotalAmount = dto.Amount,
+                    TotalAmount = dto.Amount, // Only the paid amount
                     PaymentMethod = dto.PaymentMethod, // Payment method used for this payment
                     CommissionRate = creditTransaction.CommissionRate,
-                    CommissionAmount = paidQuantity * creditTransaction.CommissionRate,
+                    CommissionAmount = paidQuantity * creditTransaction.CommissionRate, // Commission for paid portion
                     CommissionPaid = creditTransaction.CommissionPaid,
                     CustomerId = creditTransaction.CustomerId,
                     PainterId = creditTransaction.PainterId,
-                    IsPartialPayment = true // Mark as partial payment for credit
+                    IsPartialPayment = (dto.Amount < totalAmount), // Mark as partial if not fully paid
+                    IsCreditPayment = true, // Mark as credit payment
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
                 await _context.DailySales.AddAsync(dailySales);
 
@@ -571,9 +615,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (!string.IsNullOrEmpty(paymentMethod) && Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                     query = query.Where(ds => ds.PaymentMethod == method);
 
-                // IMPORTANT: For credit transactions, we only want to show ones that have payments
-                // This is already handled because credit transactions only create DailySales when paid
-
                 var dailySales = await query.ToListAsync();
 
                 var report = new DailySalesReportDto
@@ -583,7 +624,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     BranchName = branchId.HasValue ? dailySales.FirstOrDefault()?.Branch?.Name : "All Branches",
                     PaymentMethod = paymentMethod,
                     TotalTransactions = dailySales.Count,
-                    TotalSalesAmount = dailySales.Sum(ds => ds.TotalAmount),
+                    TotalSalesAmount = dailySales.Sum(ds => ds.TotalAmount), // Sum of actual payments/sales
                     TotalCashAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount),
                     TotalBankAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount),
                     TotalCreditAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount),
@@ -593,7 +634,30 @@ namespace FeruzaShopProject.Infrastructre.Services
                 };
 
                 // Use AutoMapper for sales items
-                report.SalesItems = _mapper.Map<List<DailySalesItemDto>>(dailySales);
+                report.SalesItems = dailySales.Select(ds => new DailySalesItemDto
+                {
+                    Id = ds.Id,
+                    TransactionId = ds.TransactionId,
+                    SaleDate = ds.SaleDate,
+                    BranchId = ds.BranchId,
+                    BranchName = ds.Branch?.Name,
+                    ProductId = ds.ProductId,
+                    ProductName = ds.Product?.Name,
+                    ItemCode = ds.Transaction?.ItemCode ?? ds.Product?.ItemCode ?? "N/A",
+                    Quantity = ds.Quantity,
+                    UnitPrice = ds.UnitPrice,
+                    TotalAmount = ds.TotalAmount,
+                    PaymentMethod = ds.PaymentMethod,
+                    CommissionRate = ds.CommissionRate,
+                    CommissionAmount = ds.CommissionAmount,
+                    CommissionPaid = ds.CommissionPaid,
+                    CustomerId = ds.CustomerId,
+                    CustomerName = ds.Customer?.Name,
+                    PainterId = ds.PainterId,
+                    PainterName = ds.Painter?.Name,
+                    IsPartialPayment = ds.IsPartialPayment,
+                    IsCreditPayment = ds.IsCreditPayment
+                }).ToList();
 
                 // Add payment summaries
                 var paymentGroups = dailySales.GroupBy(ds => ds.PaymentMethod);
@@ -742,6 +806,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                 transaction.CommissionPaid = true;
                 transaction.UpdatedAt = DateTime.UtcNow;
 
+                // Also update DailySales entries for this transaction
+                var dailySalesEntries = await _context.DailySales
+                    .Where(ds => ds.TransactionId == transactionId)
+                    .ToListAsync();
+
+                foreach (var dailySale in dailySalesEntries)
+                {
+                    dailySale.CommissionPaid = true;
+                    dailySale.UpdatedAt = DateTime.UtcNow;
+                }
+
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Commission marked as paid for transaction: {TransactionId}", transactionId);
@@ -764,67 +839,92 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             try
             {
-                var query = _context.Transactions
-                    .Include(t => t.Branch)
-                    .Include(t => t.Product)
-                        .ThenInclude(p => p.Category)
-                    .Include(t => t.Customer)
-                    .Include(t => t.Painter)
-                    .Where(t => t.IsActive)
+                // Get all DailySales entries for the date range
+                var dailySalesQuery = _context.DailySales
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Branch)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Product)
+                            .ThenInclude(p => p.Category)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Customer)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Painter)
+                    .Where(ds => ds.IsActive)
                     .AsQueryable();
 
                 // Apply date filters
                 if (startDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date >= startDate.Value.Date);
                 }
 
                 if (endDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date <= endDate.Value.Date);
                 }
 
                 // Apply other filters
                 if (branchId.HasValue)
                 {
-                    query = query.Where(t => t.BranchId == branchId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
                 }
 
                 if (customerId.HasValue)
                 {
-                    query = query.Where(t => t.CustomerId == customerId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.Transaction.CustomerId == customerId.Value);
                 }
 
                 if (productId.HasValue)
                 {
-                    query = query.Where(t => t.ProductId == productId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.ProductId == productId.Value);
                 }
 
                 if (!string.IsNullOrEmpty(paymentMethod) &&
                     Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                 {
-                    query = query.Where(t => t.PaymentMethod == method);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
-                // IMPORTANT: Filter out unpaid credit transactions
-                // Only show credit transactions that have at least some payment
-                query = query.Where(t =>
-                    t.PaymentMethod != PaymentMethod.Credit || // Show all non-credit transactions
-                    (t.PaymentMethod == PaymentMethod.Credit &&
-                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Show credit only if paid
-                );
-
-                var transactions = await query
-                    .OrderByDescending(t => t.TransactionDate)
-                    .ThenByDescending(t => t.CreatedAt)
+                var dailySales = await dailySalesQuery
+                    .OrderByDescending(ds => ds.SaleDate)
+                    .ThenByDescending(ds => ds.CreatedAt)
                     .ToListAsync();
 
-                var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
+                // Transform DailySales into TransactionResponseDto format
+                var result = new List<TransactionResponseDto>();
 
-                // Calculate paid amounts for credit transactions
-                foreach (var transaction in result.Where(t => t.IsCredit))
+                foreach (var dailySale in dailySales)
                 {
-                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                    if (dailySale.Transaction != null)
+                    {
+                        var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
+
+                        // Override with DailySales data (actual sold/payment data)
+                        transactionDto.Quantity = dailySale.Quantity;
+                        transactionDto.UnitPrice = dailySale.UnitPrice;
+                        transactionDto.TotalAmount = dailySale.TotalAmount;
+                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
+                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
+                        transactionDto.TransactionDate = dailySale.SaleDate;
+
+                        // For credit payments, mark as partial if applicable
+                        if (dailySale.IsCreditPayment)
+                        {
+                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
+                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                        }
+                        else
+                        {
+                            transactionDto.IsPartialPayment = false;
+                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
+                            {
+                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                            }
+                        }
+
+                        result.Add(transactionDto);
+                    }
                 }
 
                 return ApiResponse<List<TransactionResponseDto>>.Success(result);
@@ -846,57 +946,80 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             try
             {
-                // For credit transactions, we need to check if they have payments on this date
-                // First get all transactions for the date
-                var query = _context.Transactions
-                    .Include(t => t.Branch)
-                    .Include(t => t.Product)
-                        .ThenInclude(p => p.Category)
-                    .Include(t => t.Customer)
-                    .Include(t => t.Painter)
-                    .Where(t => t.IsActive)
+                // Get DailySales for the specific date
+                var dailySalesQuery = _context.DailySales
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Branch)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Product)
+                            .ThenInclude(p => p.Category)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Customer)
+                    .Include(ds => ds.Transaction)
+                        .ThenInclude(t => t.Painter)
+                    .Where(ds => ds.IsActive && ds.SaleDate.Date == date.Date)
                     .AsQueryable();
 
-                // For non-credit: check transaction date
-                // For credit: check if any payment was made on this date
-                query = query.Where(t =>
-                    (t.PaymentMethod != PaymentMethod.Credit && t.TransactionDate.Date == date.Date) || // Non-credit on transaction date
-                    (t.PaymentMethod == PaymentMethod.Credit &&
-                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.PaymentDate.Date == date.Date)) // Credit with payment on this date
-                );
-
-                // Apply other filters
+                // Apply filters
                 if (branchId.HasValue)
                 {
-                    query = query.Where(t => t.BranchId == branchId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
                 }
 
                 if (customerId.HasValue)
                 {
-                    query = query.Where(t => t.CustomerId == customerId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.Transaction.CustomerId == customerId.Value);
                 }
 
                 if (productId.HasValue)
                 {
-                    query = query.Where(t => t.ProductId == productId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.ProductId == productId.Value);
                 }
 
                 if (!string.IsNullOrEmpty(paymentMethod) &&
                     Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                 {
-                    query = query.Where(t => t.PaymentMethod == method);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
-                var transactions = await query
-                    .OrderByDescending(t => t.CreatedAt)
+                var dailySales = await dailySalesQuery
+                    .OrderByDescending(ds => ds.CreatedAt)
                     .ToListAsync();
 
-                var result = _mapper.Map<List<TransactionResponseDto>>(transactions);
+                // Transform DailySales into TransactionResponseDto format
+                var result = new List<TransactionResponseDto>();
 
-                // Calculate paid amounts for credit transactions
-                foreach (var transaction in result.Where(t => t.IsCredit))
+                foreach (var dailySale in dailySales)
                 {
-                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                    if (dailySale.Transaction != null)
+                    {
+                        var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
+
+                        // Override with DailySales data (actual sold/payment data)
+                        transactionDto.Quantity = dailySale.Quantity;
+                        transactionDto.UnitPrice = dailySale.UnitPrice;
+                        transactionDto.TotalAmount = dailySale.TotalAmount;
+                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
+                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
+                        transactionDto.TransactionDate = dailySale.SaleDate;
+
+                        // For credit payments, mark as partial if applicable
+                        if (dailySale.IsCreditPayment)
+                        {
+                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
+                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                        }
+                        else
+                        {
+                            transactionDto.IsPartialPayment = false;
+                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
+                            {
+                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                            }
+                        }
+
+                        result.Add(transactionDto);
+                    }
                 }
 
                 return ApiResponse<List<TransactionResponseDto>>.Success(result);
@@ -916,45 +1039,39 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             try
             {
-                var query = _context.Transactions
-                    .Include(t => t.Branch)
-                    .Include(t => t.Product)
-                    .Include(t => t.Customer)
-                    .Include(t => t.Painter)
-                    .Where(t => t.IsActive)
+                // Get DailySales entries for the date range
+                var dailySalesQuery = _context.DailySales
+                    .Include(ds => ds.Transaction)
+                    .Include(ds => ds.Branch)
+                    .Include(ds => ds.Product)
+                    .Include(ds => ds.Customer)
+                    .Include(ds => ds.Painter)
+                    .Where(ds => ds.IsActive)
                     .AsQueryable();
 
                 // Apply filters
                 if (startDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date >= startDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date >= startDate.Value.Date);
                 }
 
                 if (endDate.HasValue)
                 {
-                    query = query.Where(t => t.TransactionDate.Date <= endDate.Value.Date);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date <= endDate.Value.Date);
                 }
 
                 if (branchId.HasValue)
                 {
-                    query = query.Where(t => t.BranchId == branchId.Value);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
                 }
 
                 if (!string.IsNullOrEmpty(paymentMethod) &&
                     Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                 {
-                    query = query.Where(t => t.PaymentMethod == method);
+                    dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
-                // IMPORTANT: Filter out unpaid credit transactions for summary
-                // Only include credit transactions that have at least some payment
-                query = query.Where(t =>
-                    t.PaymentMethod != PaymentMethod.Credit || // Include all non-credit transactions
-                    (t.PaymentMethod == PaymentMethod.Credit &&
-                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Include credit only if paid
-                );
-
-                var transactions = await query.ToListAsync();
+                var dailySales = await dailySalesQuery.ToListAsync();
 
                 var summary = new TransactionSummaryDto
                 {
@@ -971,43 +1088,52 @@ namespace FeruzaShopProject.Infrastructre.Services
                     summary.BranchName = branch?.Name;
                 }
 
-                // Calculate counts - Note: Only paid credit transactions are included
-                summary.TotalTransactions = transactions.Count;
-                summary.CashTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Cash);
-                summary.BankTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Bank);
-                summary.CreditTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Credit);
+                // Calculate counts and amounts from DailySales
+                summary.TotalTransactions = dailySales.Count;
+                summary.CashTransactions = dailySales.Count(ds => ds.PaymentMethod == PaymentMethod.Cash);
+                summary.BankTransactions = dailySales.Count(ds => ds.PaymentMethod == PaymentMethod.Bank);
+                summary.CreditTransactions = dailySales.Count(ds => ds.PaymentMethod == PaymentMethod.Credit);
 
-                // Calculate amounts - Only paid credit amounts
-                summary.TotalSalesAmount = transactions.Sum(t => CalculateTotalAmount(t));
-                summary.TotalCashAmount = transactions
-                    .Where(t => t.PaymentMethod == PaymentMethod.Cash)
-                    .Sum(t => CalculateTotalAmount(t));
-                summary.TotalBankAmount = transactions
-                    .Where(t => t.PaymentMethod == PaymentMethod.Bank)
-                    .Sum(t => CalculateTotalAmount(t));
-                summary.TotalCreditAmount = transactions
-                    .Where(t => t.PaymentMethod == PaymentMethod.Credit)
-                    .Sum(t => CalculateTotalAmount(t));
+                // Calculate amounts from DailySales (actual payments/sales)
+                summary.TotalSalesAmount = dailySales.Sum(ds => ds.TotalAmount);
+                summary.TotalCashAmount = dailySales
+                    .Where(ds => ds.PaymentMethod == PaymentMethod.Cash)
+                    .Sum(ds => ds.TotalAmount);
+                summary.TotalBankAmount = dailySales
+                    .Where(ds => ds.PaymentMethod == PaymentMethod.Bank)
+                    .Sum(ds => ds.TotalAmount);
+                summary.TotalCreditAmount = dailySales
+                    .Where(ds => ds.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(ds => ds.TotalAmount);
 
-                // For credit details, we only have paid transactions now
-                foreach (var transaction in transactions.Where(t => t.PaymentMethod == PaymentMethod.Credit))
+                // For credit transactions, calculate paid vs pending
+                var creditTransactions = dailySales
+                    .Where(ds => ds.PaymentMethod == PaymentMethod.Credit)
+                    .Select(ds => ds.Transaction)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var transaction in creditTransactions)
                 {
-                    var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
-                    var totalAmount = CalculateTotalAmount(transaction);
+                    if (transaction != null)
+                    {
+                        var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                        var totalAmount = CalculateTotalAmount(transaction);
 
-                    summary.TotalPaidCreditAmount += paidAmount;
-                    summary.TotalPendingCreditAmount += (totalAmount - paidAmount);
+                        summary.TotalPaidCreditAmount += paidAmount;
+                        summary.TotalPendingCreditAmount += (totalAmount - paidAmount);
+                    }
                 }
 
                 // Calculate commission
-                summary.TotalCommissionAmount = transactions.Sum(t => CalculateCommissionAmount(t));
-                summary.TotalPaidCommission = transactions
-                    .Where(t => t.CommissionPaid)
-                    .Sum(t => CalculateCommissionAmount(t));
+                summary.TotalCommissionAmount = dailySales.Sum(ds => ds.CommissionAmount);
+                summary.TotalPaidCommission = dailySales
+                    .Where(ds => ds.CommissionPaid)
+                    .Sum(ds => ds.CommissionAmount);
                 summary.TotalPendingCommission = summary.TotalCommissionAmount - summary.TotalPaidCommission;
 
                 // Calculate quantities
-                summary.TotalQuantitySold = transactions.Sum(t => t.Quantity);
+                summary.TotalQuantitySold = dailySales.Sum(ds => ds.Quantity);
 
                 // Calculate averages
                 summary.AverageTransactionAmount = summary.TotalTransactions > 0
@@ -1034,19 +1160,20 @@ namespace FeruzaShopProject.Infrastructre.Services
                     summary.AverageDailySales = summary.TotalSalesAmount;
                 }
 
-                // Calculate top products
-                var productGroups = transactions
-                    .GroupBy(t => new { t.ProductId, t.Product.Name, t.ItemCode })
+                // Calculate top products from DailySales
+                var productGroups = dailySales
+                    .GroupBy(ds => new { ds.ProductId, ProductName = ds.Product?.Name, ItemCode = ds.Transaction?.ItemCode ?? ds.Product?.ItemCode })
+                    .Where(g => g.Key.ProductId != Guid.Empty)
                     .Select(g => new TransactionProductSummaryDto
                     {
                         ProductId = g.Key.ProductId,
-                        ProductName = g.Key.Name,
-                        ItemCode = g.Key.ItemCode,
+                        ProductName = g.Key.ProductName ?? "Unknown",
+                        ItemCode = g.Key.ItemCode ?? "N/A",
                         TransactionCount = g.Count(),
-                        TotalQuantity = g.Sum(t => t.Quantity),
-                        TotalAmount = g.Sum(t => CalculateTotalAmount(t)),
+                        TotalQuantity = g.Sum(ds => ds.Quantity),
+                        TotalAmount = g.Sum(ds => ds.TotalAmount),
                         PercentageOfTotal = summary.TotalSalesAmount > 0
-                            ? (g.Sum(t => CalculateTotalAmount(t)) / summary.TotalSalesAmount) * 100
+                            ? (g.Sum(ds => ds.TotalAmount) / summary.TotalSalesAmount) * 100
                             : 0
                     })
                     .OrderByDescending(p => p.TotalAmount)
@@ -1055,17 +1182,17 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 summary.TopProducts = productGroups;
 
-                // Calculate top customers
-                var customerGroups = transactions
-                    .Where(t => t.CustomerId.HasValue && t.Customer != null)
-                    .GroupBy(t => new { t.CustomerId, t.Customer.Name, t.Customer.PhoneNumber })
+                // Calculate top customers from DailySales
+                var customerGroups = dailySales
+                    .Where(ds => ds.CustomerId.HasValue && ds.Customer != null)
+                    .GroupBy(ds => new { ds.CustomerId, ds.Customer.Name, ds.Customer.PhoneNumber })
                     .Select(g => new TransactionCustomerSummaryDto
                     {
                         CustomerId = g.Key.CustomerId.Value,
                         CustomerName = g.Key.Name,
                         CustomerPhoneNumber = g.Key.PhoneNumber,
                         TransactionCount = g.Count(),
-                        TotalAmount = g.Sum(t => CalculateTotalAmount(t))
+                        TotalAmount = g.Sum(ds => ds.TotalAmount)
                     })
                     .OrderByDescending(c => c.TotalAmount)
                     .Take(10)
@@ -1074,35 +1201,40 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Calculate credit details for customers
                 foreach (var customer in customerGroups)
                 {
-                    var customerCreditTransactions = transactions
-                        .Where(t => t.CustomerId == customer.CustomerId && t.PaymentMethod == PaymentMethod.Credit);
+                    var customerCreditTransactions = dailySales
+                        .Where(ds => ds.CustomerId == customer.CustomerId && ds.PaymentMethod == PaymentMethod.Credit)
+                        .Select(ds => ds.Transaction)
+                        .Distinct();
 
                     foreach (var transaction in customerCreditTransactions)
                     {
-                        var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
-                        var totalAmount = CalculateTotalAmount(transaction);
+                        if (transaction != null)
+                        {
+                            var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                            var totalAmount = CalculateTotalAmount(transaction);
 
-                        customer.CreditAmount += totalAmount;
-                        customer.PaidCreditAmount += paidAmount;
-                        customer.PendingCreditAmount += (totalAmount - paidAmount);
+                            customer.CreditAmount += totalAmount;
+                            customer.PaidCreditAmount += paidAmount;
+                            customer.PendingCreditAmount += (totalAmount - paidAmount);
+                        }
                     }
                 }
 
                 summary.TopCustomers = customerGroups;
 
-                // Calculate top painters
-                var painterGroups = transactions
-                    .Where(t => t.PainterId.HasValue && t.Painter != null)
-                    .GroupBy(t => new { t.PainterId, t.Painter.Name, t.Painter.PhoneNumber })
+                // Calculate top painters from DailySales
+                var painterGroups = dailySales
+                    .Where(ds => ds.PainterId.HasValue && ds.Painter != null)
+                    .GroupBy(ds => new { ds.PainterId, ds.Painter.Name, ds.Painter.PhoneNumber })
                     .Select(g => new TransactionPainterSummaryDto
                     {
                         PainterId = g.Key.PainterId.Value,
                         PainterName = g.Key.Name,
                         PainterPhoneNumber = g.Key.PhoneNumber,
                         TransactionCount = g.Count(),
-                        TotalCommissionAmount = g.Sum(t => CalculateCommissionAmount(t)),
-                        PaidCommissionAmount = g.Where(t => t.CommissionPaid).Sum(t => CalculateCommissionAmount(t)),
-                        PendingCommissionAmount = g.Where(t => !t.CommissionPaid).Sum(t => CalculateCommissionAmount(t))
+                        TotalCommissionAmount = g.Sum(ds => ds.CommissionAmount),
+                        PaidCommissionAmount = g.Where(ds => ds.CommissionPaid).Sum(ds => ds.CommissionAmount),
+                        PendingCommissionAmount = g.Where(ds => !ds.CommissionPaid).Sum(ds => ds.CommissionAmount)
                     })
                     .OrderByDescending(p => p.TotalCommissionAmount)
                     .Take(10)
@@ -1110,19 +1242,36 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 summary.TopPainters = painterGroups;
 
-                // Get recent transactions
-                var recentTransactions = transactions
-                    .OrderByDescending(t => t.TransactionDate)
-                    .ThenByDescending(t => t.CreatedAt)
+                // Get recent transactions from DailySales
+                var recentDailySales = dailySales
+                    .OrderByDescending(ds => ds.SaleDate)
+                    .ThenByDescending(ds => ds.CreatedAt)
                     .Take(10)
                     .ToList();
 
-                var recentDtos = _mapper.Map<List<TransactionResponseDto>>(recentTransactions);
-
-                // Calculate paid amounts for credit transactions
-                foreach (var transaction in recentDtos.Where(t => t.IsCredit))
+                var recentDtos = new List<TransactionResponseDto>();
+                foreach (var dailySale in recentDailySales)
                 {
-                    transaction.PaidAmount = await CalculatePaidAmountAsync(transaction.Id);
+                    if (dailySale.Transaction != null)
+                    {
+                        var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
+
+                        // Override with DailySales data
+                        transactionDto.Quantity = dailySale.Quantity;
+                        transactionDto.UnitPrice = dailySale.UnitPrice;
+                        transactionDto.TotalAmount = dailySale.TotalAmount;
+                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
+                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
+                        transactionDto.TransactionDate = dailySale.SaleDate;
+
+                        if (dailySale.IsCreditPayment)
+                        {
+                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
+                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                        }
+
+                        recentDtos.Add(transactionDto);
+                    }
                 }
 
                 summary.RecentTransactions = recentDtos;
@@ -1134,6 +1283,84 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error getting transaction summary: Start={StartDate}, End={EndDate}",
                     startDate, endDate);
                 return ApiResponse<TransactionSummaryDto>.Fail($"Error retrieving transaction summary: {ex.Message}");
+            }
+        }
+
+        // NEW METHOD: Get Credit Transaction with Payment Details
+        public async Task<ApiResponse<CreditTransactionWithPaymentsDto>> GetCreditTransactionWithPaymentsAsync(Guid transactionId)
+        {
+            try
+            {
+                var transaction = await _context.Transactions
+                    .Include(t => t.Branch)
+                    .Include(t => t.Product)
+                        .ThenInclude(p => p.Category)
+                    .Include(t => t.Customer)
+                    .Include(t => t.Painter)
+                    .FirstOrDefaultAsync(t => t.Id == transactionId && t.PaymentMethod == PaymentMethod.Credit);
+
+                if (transaction == null)
+                    return ApiResponse<CreditTransactionWithPaymentsDto>.Fail("Credit transaction not found");
+
+                // Get all payments for this transaction
+                var payments = await _context.CreditPayments
+                    .Where(cp => cp.TransactionId == transactionId)
+                    .OrderBy(cp => cp.PaymentDate)
+                    .ToListAsync();
+
+                // Get all DailySales entries for this transaction (payment records)
+                var dailySalesPayments = await _context.DailySales
+                    .Where(ds => ds.TransactionId == transactionId && ds.IsCreditPayment)
+                    .OrderBy(ds => ds.SaleDate)
+                    .ToListAsync();
+
+                var result = new CreditTransactionWithPaymentsDto
+                {
+                    Transaction = _mapper.Map<TransactionResponseDto>(transaction),
+                    Payments = payments.Select(p => new CreditPaymentDto
+                    {
+                        Id = p.Id,
+                        TransactionId = p.TransactionId,
+                        Amount = p.Amount,
+                        PaymentMethod = p.PaymentMethod,
+                        PaymentDate = p.PaymentDate,
+                        CreatedAt = p.CreatedAt
+                    }).ToList(),
+                    DailySalesPayments = dailySalesPayments.Select(ds => new DailySalesItemDto
+                    {
+                        Id = ds.Id,
+                        TransactionId = ds.TransactionId,
+                        SaleDate = ds.SaleDate,
+                        BranchId = ds.BranchId,
+                        BranchName = ds.Branch?.Name,
+                        ProductId = ds.ProductId,
+                        ProductName = ds.Product?.Name,
+                        ItemCode = transaction.ItemCode,
+                        Quantity = ds.Quantity,
+                        UnitPrice = ds.UnitPrice,
+                        TotalAmount = ds.TotalAmount,
+                        PaymentMethod = ds.PaymentMethod,
+                        CommissionRate = ds.CommissionRate,
+                        CommissionAmount = ds.CommissionAmount,
+                        CommissionPaid = ds.CommissionPaid,
+                        CustomerId = ds.CustomerId,
+                        CustomerName = ds.Customer?.Name,
+                        PainterId = ds.PainterId,
+                        PainterName = ds.Painter?.Name,
+                        IsPartialPayment = ds.IsPartialPayment,
+                        IsCreditPayment = ds.IsCreditPayment
+                    }).ToList(),
+                    TotalPaidAmount = payments.Sum(p => p.Amount),
+                    RemainingAmount = CalculateTotalAmount(transaction) - payments.Sum(p => p.Amount),
+                    IsFullyPaid = payments.Sum(p => p.Amount) >= CalculateTotalAmount(transaction)
+                };
+
+                return ApiResponse<CreditTransactionWithPaymentsDto>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting credit transaction with payments: {TransactionId}", transactionId);
+                return ApiResponse<CreditTransactionWithPaymentsDto>.Fail($"Error retrieving credit transaction: {ex.Message}");
             }
         }
 
@@ -1175,10 +1402,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Create new stock record with negative quantity
                 var newStock = new Stock
                 {
+                    Id = Guid.NewGuid(),
                     ProductId = productId,
                     BranchId = branchId,
                     Quantity = -quantity,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
                 await _context.Stocks.AddAsync(newStock);
                 _logger.LogWarning("Created new stock record with negative quantity for ProductId: {ProductId}", productId);
@@ -1199,6 +1429,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var stockMovement = new StockMovement
                 {
+                    Id = Guid.NewGuid(),
                     ProductId = transaction.ProductId,
                     BranchId = transaction.BranchId,
                     TransactionId = transaction.Id,
@@ -1207,7 +1438,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                     PreviousQuantity = previousQuantity,
                     NewQuantity = newQuantity,
                     MovementDate = transaction.TransactionDate,
-                    Reason = $"Sale transaction - {transaction.ItemCode}"
+                    Reason = $"Sale transaction - {transaction.ItemCode}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
 
                 await _context.StockMovements.AddAsync(stockMovement);
@@ -1234,6 +1468,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var stockMovement = new StockMovement
                 {
+                    Id = Guid.NewGuid(),
                     ProductId = transaction.ProductId,
                     BranchId = transaction.BranchId,
                     TransactionId = transaction.Id,
@@ -1242,7 +1477,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                     PreviousQuantity = previousQuantity,
                     NewQuantity = newQuantity,
                     MovementDate = DateTime.UtcNow,
-                    Reason = $"Credit payment - {transaction.ItemCode}"
+                    Reason = $"Credit payment - {transaction.ItemCode}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
 
                 await _context.StockMovements.AddAsync(stockMovement);
@@ -1255,14 +1493,15 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        private async Task CreateDailySalesAsync(Transaction transaction)
+        private async Task CreateDailySalesAsync(Transaction transaction, bool isCreditPayment = false)
         {
-            // IMPORTANT: Only create DailySales for non-credit transactions
-            // Credit transactions will create DailySales when payment is made (in PayCreditAsync)
-            if (transaction.PaymentMethod != PaymentMethod.Credit)
+            // For non-credit transactions, create DailySales normally
+            // For credit transactions, only create DailySales when payment is made
+            if (transaction.PaymentMethod != PaymentMethod.Credit || isCreditPayment)
             {
                 var dailySales = new DailySales
                 {
+                    Id = Guid.NewGuid(),
                     BranchId = transaction.BranchId,
                     ProductId = transaction.ProductId,
                     TransactionId = transaction.Id,
@@ -1276,7 +1515,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     CommissionPaid = transaction.CommissionPaid,
                     CustomerId = transaction.CustomerId,
                     PainterId = transaction.PainterId,
-                    IsPartialPayment = false // Not a partial payment
+                    IsPartialPayment = false, // Not a partial payment for non-credit
+                    IsCreditPayment = isCreditPayment,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true
                 };
                 await _context.DailySales.AddAsync(dailySales);
             }

@@ -45,7 +45,9 @@ namespace FeruzaShopProject.Domain.Entities
         // Customer/Painter references
         public Guid? CustomerId { get; set; }
         public Guid? PainterId { get; set; }
-        public bool IsPartialPayment { get; set; } = false;
+        public bool IsPartialPayment { get; set; } = false; // For tracking partial credit payments
+        public bool IsCreditPayment { get; set; } = false; // To identify if this is from credit payment
+        public Guid? OriginalTransactionId { get; set; } // Reference to original credit transaction
         // Navigation properties
         public Branch Branch { get; set; }
         public Product Product { get; set; }
