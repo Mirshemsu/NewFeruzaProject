@@ -20,7 +20,7 @@
             public string ItemCode { get; set; }
 
             [StringLength(500)]
-            public string ItemDescription { get; set; }
+            public string? ItemDescription { get; set; }
 
             [Required, Range(0, double.MaxValue, ErrorMessage = "Amount must be non-negative.")]
             public decimal Amount { get; set; }

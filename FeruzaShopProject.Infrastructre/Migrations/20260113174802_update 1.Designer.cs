@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FeruzaShopProject.Infrastructre.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    [Migration("20251111112138_add purchase1")]
-    partial class addpurchase1
+    [Migration("20260113174802_update 1")]
+    partial class update1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -230,6 +230,9 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsPartialPayment")
+                        .HasColumnType("bit");
+
                     b.Property<Guid?>("PainterId")
                         .HasColumnType("uniqueidentifier");
 
@@ -347,7 +350,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("ItemDescription")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -437,7 +439,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("SupplierId")
+                    b.Property<Guid?>("SupplierId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -920,6 +922,72 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProductExchange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("NewPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("NewProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("NewQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("OriginalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("OriginalProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("OriginalQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<Guid>("OriginalTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ProductId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("ReturnQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("NewProductId");
+
+                    b.HasIndex("OriginalProductId");
+
+                    b.HasIndex("OriginalTransactionId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductId1");
+
+                    b.ToTable("ProductExchanges");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.BranchUser", b =>
                 {
                     b.HasBaseType("FeruzaShopProject.Domain.Entities.User");
@@ -1045,17 +1113,13 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("FeruzaShopProject.Domain.Entities.Supplier", "Supplier")
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Supplier", null)
                         .WithMany("PurchaseOrders")
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("SupplierId");
 
                     b.Navigation("Branch");
 
                     b.Navigation("Creator");
-
-                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrderItem", b =>
@@ -1207,6 +1271,40 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProductExchange", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "NewProduct")
+                        .WithMany()
+                        .HasForeignKey("NewProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", "OriginalProduct")
+                        .WithMany()
+                        .HasForeignKey("OriginalProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Transaction", "OriginalTransaction")
+                        .WithMany("Exchanges")
+                        .HasForeignKey("OriginalTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", null)
+                        .WithMany("OriginalExchanges")
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Product", null)
+                        .WithMany("NewExchanges")
+                        .HasForeignKey("ProductId1");
+
+                    b.Navigation("NewProduct");
+
+                    b.Navigation("OriginalProduct");
+
+                    b.Navigation("OriginalTransaction");
+                });
+
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.BranchUser", b =>
                 {
                     b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
@@ -1256,6 +1354,10 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 {
                     b.Navigation("DailySales");
 
+                    b.Navigation("NewExchanges");
+
+                    b.Navigation("OriginalExchanges");
+
                     b.Navigation("PurchaseOrderItems");
 
                     b.Navigation("StockMovements");
@@ -1280,6 +1382,8 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Navigation("CreditPayments");
 
                     b.Navigation("DailySales");
+
+                    b.Navigation("Exchanges");
 
                     b.Navigation("StockMovements");
                 });

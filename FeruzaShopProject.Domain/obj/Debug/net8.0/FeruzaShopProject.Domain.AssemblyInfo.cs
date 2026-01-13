@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FeruzaShopProject.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2c76a616b7d113b44a148a5e9c4accacc8ffc54")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7808f016aa1a6ea6fb0e3771a61b4ff4aa8e7f00")]
 [assembly: System.Reflection.AssemblyProductAttribute("FeruzaShopProject.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FeruzaShopProject.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,5 +1,4 @@
-﻿
-using AutoMapper;
+﻿using AutoMapper;
 using FeruzaShopProject.Application.Interface;
 using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Entities;
@@ -139,7 +138,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     await UpdateStockAsync(dto.ProductId, dto.Quantity, dto.BranchId, salesTransaction.Id);
                 }
 
-                // Create daily sales for non-credit transactions
+                // Create daily sales ONLY for non-credit transactions
+                // Credit transactions will create daily sales when payment is made
                 if (dto.PaymentMethod != PaymentMethod.Credit)
                 {
                     await CreateDailySalesAsync(salesTransaction);
@@ -217,9 +217,9 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync(
-    DateTime? startDate = null,
-    DateTime? endDate = null,
-    Guid? branchId = null)
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            Guid? branchId = null)
         {
             try
             {
@@ -248,6 +248,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(t => t.BranchId == branchId.Value);
                 }
 
+                // IMPORTANT: Filter out unpaid credit transactions
+                // Only show credit transactions that have at least some payment
+                query = query.Where(t =>
+                    t.PaymentMethod != PaymentMethod.Credit || // Show all non-credit transactions
+                    (t.PaymentMethod == PaymentMethod.Credit &&
+                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Show credit only if paid
+                );
+
                 var transactions = await query
                     .OrderByDescending(t => t.TransactionDate)
                     .ThenByDescending(t => t.CreatedAt)
@@ -269,6 +277,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<TransactionResponseDto>>.Fail($"Error retrieving transactions: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<TransactionResponseDto>> UpdateTransactionAsync(UpdateTransactionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -350,7 +359,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var creditTransaction = await _context.Transactions
@@ -367,8 +376,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.Amount > remainingAmount)
                     return ApiResponse<TransactionResponseDto>.Fail($"Payment amount exceeds remaining balance. Remaining: {remainingAmount}");
 
-                // NEW: Calculate what portion of the payment is being made
-                var paymentPercentage = dto.Amount / remainingAmount;
+                // Calculate what portion of the payment is being made
+                var paymentPercentage = dto.Amount / totalAmount;
                 var paidQuantity = creditTransaction.Quantity * paymentPercentage;
 
                 // Create credit payment record
@@ -382,7 +391,28 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 await _context.CreditPayments.AddAsync(creditPayment);
 
-                // NEW: Update stock proportionally to the payment
+                // IMPORTANT: Create DailySales entry for the paid portion
+                // This makes the transaction appear in daily reports and transaction lists
+                var dailySales = new DailySales
+                {
+                    BranchId = creditTransaction.BranchId,
+                    ProductId = creditTransaction.ProductId,
+                    TransactionId = creditTransaction.Id,
+                    SaleDate = DateTime.UtcNow.Date, // Date of payment
+                    Quantity = paidQuantity,
+                    UnitPrice = creditTransaction.UnitPrice,
+                    TotalAmount = dto.Amount,
+                    PaymentMethod = dto.PaymentMethod, // Payment method used for this payment
+                    CommissionRate = creditTransaction.CommissionRate,
+                    CommissionAmount = paidQuantity * creditTransaction.CommissionRate,
+                    CommissionPaid = creditTransaction.CommissionPaid,
+                    CustomerId = creditTransaction.CustomerId,
+                    PainterId = creditTransaction.PainterId,
+                    IsPartialPayment = true // Mark as partial payment for credit
+                };
+                await _context.DailySales.AddAsync(dailySales);
+
+                // Update stock proportionally to the payment
                 if (dto.PaymentMethod != PaymentMethod.Credit) // Only reduce stock for cash/bank payments
                 {
                     await UpdateStockAsync(creditTransaction.ProductId, paidQuantity,
@@ -393,7 +423,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await dbTransaction.CommitAsync();
 
                 // Reload and return updated transaction
                 await LoadTransactionNavigationProperties(creditTransaction);
@@ -405,7 +435,7 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await dbTransaction.RollbackAsync();
                 _logger.LogError(ex, "Error processing credit payment for transaction: {TransactionId}", dto.TransactionId);
                 return ApiResponse<TransactionResponseDto>.Fail($"Error processing credit payment: {ex.Message}");
             }
@@ -488,7 +518,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 foreach (var transaction in transactions)
                 {
                     var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
-                    var totalAmount = CalculateTotalAmount(transaction); // Use helper method
+                    var totalAmount = CalculateTotalAmount(transaction);
 
                     if (paidAmount < totalAmount) // Only include pending transactions
                     {
@@ -500,7 +530,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                             ProductName = transaction.Product.Name,
                             Quantity = transaction.Quantity,
                             UnitPrice = transaction.UnitPrice,
-                            TotalAmount = totalAmount, // Use calculated total
+                            TotalAmount = totalAmount,
                             PaidAmount = paidAmount,
                             CustomerId = transaction.CustomerId ?? Guid.Empty,
                             CustomerName = transaction.Customer?.Name ?? "Unknown",
@@ -533,12 +563,16 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Include(ds => ds.Transaction)
                     .Include(ds => ds.Customer)
                     .Include(ds => ds.Painter)
-                    .Where(ds => ds.SaleDate == date.Date);
+                    .Where(ds => ds.SaleDate == date.Date)
+                    .AsQueryable();
 
                 if (branchId.HasValue)
                     query = query.Where(ds => ds.BranchId == branchId.Value);
                 if (!string.IsNullOrEmpty(paymentMethod) && Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                     query = query.Where(ds => ds.PaymentMethod == method);
+
+                // IMPORTANT: For credit transactions, we only want to show ones that have payments
+                // This is already handled because credit transactions only create DailySales when paid
 
                 var dailySales = await query.ToListAsync();
 
@@ -601,7 +635,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     CustomerName = customerId.HasValue ? creditTransactions.FirstOrDefault()?.Customer?.Name : null,
                     CustomerPhoneNumber = customerId.HasValue ? creditTransactions.FirstOrDefault()?.Customer?.PhoneNumber : null,
                     TotalCreditTransactions = creditTransactions.Count,
-                    TotalCreditAmount = creditTransactions.Sum(t => CalculateTotalAmount(t)) // Use helper
+                    TotalCreditAmount = creditTransactions.Sum(t => CalculateTotalAmount(t))
                 };
 
                 // Calculate paid amounts
@@ -610,7 +644,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     summary.TotalPaidAmount += await CalculatePaidAmountAsync(transaction.Id);
                 }
 
-                // Fix: Count pending transactions without using await in lambda
+                // Count pending transactions
                 summary.PendingCreditTransactions = 0;
                 foreach (var transaction in creditTransactions)
                 {
@@ -645,7 +679,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                             CustomerName = group.Key.Name,
                             CustomerPhoneNumber = group.Key.PhoneNumber,
                             CreditCount = group.Count(),
-                            TotalCreditAmount = group.Sum(t => CalculateTotalAmount(t)), // Use helper
+                            TotalCreditAmount = group.Sum(t => CalculateTotalAmount(t)),
                             TotalPaidAmount = customerPaidAmount,
                             LastCreditDate = group.Max(t => t.TransactionDate)
                         });
@@ -662,9 +696,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                 foreach (var transaction in recentTransactions)
                 {
                     var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
-                    var totalAmount = CalculateTotalAmount(transaction); // Use helper
+                    var totalAmount = CalculateTotalAmount(transaction);
 
-                    // Use AutoMapper if available, otherwise manual mapping
                     var history = new CreditTransactionHistoryDto
                     {
                         TransactionId = transaction.Id,
@@ -722,12 +755,12 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateRangeAsync(
-    DateTime? startDate = null,
-    DateTime? endDate = null,
-    Guid? branchId = null,
-    Guid? customerId = null,
-    Guid? productId = null,
-    string? paymentMethod = null)
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            Guid? branchId = null,
+            Guid? customerId = null,
+            Guid? productId = null,
+            string? paymentMethod = null)
         {
             try
             {
@@ -737,7 +770,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         .ThenInclude(p => p.Category)
                     .Include(t => t.Customer)
                     .Include(t => t.Painter)
-                    .Where(t => t.IsActive) // Assuming there's an IsActive field
+                    .Where(t => t.IsActive)
                     .AsQueryable();
 
                 // Apply date filters
@@ -773,6 +806,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(t => t.PaymentMethod == method);
                 }
 
+                // IMPORTANT: Filter out unpaid credit transactions
+                // Only show credit transactions that have at least some payment
+                query = query.Where(t =>
+                    t.PaymentMethod != PaymentMethod.Credit || // Show all non-credit transactions
+                    (t.PaymentMethod == PaymentMethod.Credit &&
+                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Show credit only if paid
+                );
+
                 var transactions = await query
                     .OrderByDescending(t => t.TransactionDate)
                     .ThenByDescending(t => t.CreatedAt)
@@ -805,14 +846,24 @@ namespace FeruzaShopProject.Infrastructre.Services
         {
             try
             {
+                // For credit transactions, we need to check if they have payments on this date
+                // First get all transactions for the date
                 var query = _context.Transactions
                     .Include(t => t.Branch)
                     .Include(t => t.Product)
                         .ThenInclude(p => p.Category)
                     .Include(t => t.Customer)
                     .Include(t => t.Painter)
-                    .Where(t => t.IsActive && t.TransactionDate.Date == date.Date)
+                    .Where(t => t.IsActive)
                     .AsQueryable();
+
+                // For non-credit: check transaction date
+                // For credit: check if any payment was made on this date
+                query = query.Where(t =>
+                    (t.PaymentMethod != PaymentMethod.Credit && t.TransactionDate.Date == date.Date) || // Non-credit on transaction date
+                    (t.PaymentMethod == PaymentMethod.Credit &&
+                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.PaymentDate.Date == date.Date)) // Credit with payment on this date
+                );
 
                 // Apply other filters
                 if (branchId.HasValue)
@@ -895,6 +946,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(t => t.PaymentMethod == method);
                 }
 
+                // IMPORTANT: Filter out unpaid credit transactions for summary
+                // Only include credit transactions that have at least some payment
+                query = query.Where(t =>
+                    t.PaymentMethod != PaymentMethod.Credit || // Include all non-credit transactions
+                    (t.PaymentMethod == PaymentMethod.Credit &&
+                     _context.CreditPayments.Any(cp => cp.TransactionId == t.Id && cp.Amount > 0)) // Include credit only if paid
+                );
+
                 var transactions = await query.ToListAsync();
 
                 var summary = new TransactionSummaryDto
@@ -912,13 +971,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                     summary.BranchName = branch?.Name;
                 }
 
-                // Calculate counts
+                // Calculate counts - Note: Only paid credit transactions are included
                 summary.TotalTransactions = transactions.Count;
                 summary.CashTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Cash);
                 summary.BankTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Bank);
                 summary.CreditTransactions = transactions.Count(t => t.PaymentMethod == PaymentMethod.Credit);
 
-                // Calculate amounts
+                // Calculate amounts - Only paid credit amounts
                 summary.TotalSalesAmount = transactions.Sum(t => CalculateTotalAmount(t));
                 summary.TotalCashAmount = transactions
                     .Where(t => t.PaymentMethod == PaymentMethod.Cash)
@@ -930,7 +989,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(t => t.PaymentMethod == PaymentMethod.Credit)
                     .Sum(t => CalculateTotalAmount(t));
 
-                // Calculate credit details
+                // For credit details, we only have paid transactions now
                 foreach (var transaction in transactions.Where(t => t.PaymentMethod == PaymentMethod.Credit))
                 {
                     var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
@@ -1077,6 +1136,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionSummaryDto>.Fail($"Error retrieving transaction summary: {ex.Message}");
             }
         }
+
         #region Helper Methods
 
         private async Task LoadTransactionNavigationProperties(Transaction transaction)
@@ -1125,7 +1185,7 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        // NEW: Create StockMovement record
+        // Create StockMovement record
         private async Task CreateStockMovementAsync(Transaction transaction)
         {
             try
@@ -1160,7 +1220,7 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        // NEW: Create StockMovement for credit payments
+        // Create StockMovement for credit payments
         private async Task CreateStockMovementForPaymentAsync(Transaction transaction, decimal paidQuantity)
         {
             try
@@ -1197,23 +1257,29 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         private async Task CreateDailySalesAsync(Transaction transaction)
         {
-            var dailySales = new DailySales
+            // IMPORTANT: Only create DailySales for non-credit transactions
+            // Credit transactions will create DailySales when payment is made (in PayCreditAsync)
+            if (transaction.PaymentMethod != PaymentMethod.Credit)
             {
-                BranchId = transaction.BranchId,
-                ProductId = transaction.ProductId,
-                TransactionId = transaction.Id,
-                SaleDate = transaction.TransactionDate.Date,
-                Quantity = transaction.Quantity,
-                UnitPrice = transaction.UnitPrice,
-                TotalAmount = CalculateTotalAmount(transaction), // Use helper method
-                PaymentMethod = transaction.PaymentMethod,
-                CommissionRate = transaction.CommissionRate,
-                CommissionAmount = CalculateCommissionAmount(transaction), // Use helper method
-                CommissionPaid = transaction.CommissionPaid,
-                CustomerId = transaction.CustomerId,
-                PainterId = transaction.PainterId
-            };
-            await _context.DailySales.AddAsync(dailySales);
+                var dailySales = new DailySales
+                {
+                    BranchId = transaction.BranchId,
+                    ProductId = transaction.ProductId,
+                    TransactionId = transaction.Id,
+                    SaleDate = transaction.TransactionDate.Date,
+                    Quantity = transaction.Quantity,
+                    UnitPrice = transaction.UnitPrice,
+                    TotalAmount = CalculateTotalAmount(transaction),
+                    PaymentMethod = transaction.PaymentMethod,
+                    CommissionRate = transaction.CommissionRate,
+                    CommissionAmount = CalculateCommissionAmount(transaction),
+                    CommissionPaid = transaction.CommissionPaid,
+                    CustomerId = transaction.CustomerId,
+                    PainterId = transaction.PainterId,
+                    IsPartialPayment = false // Not a partial payment
+                };
+                await _context.DailySales.AddAsync(dailySales);
+            }
         }
 
         private async Task<decimal> CalculatePaidAmountAsync(Guid transactionId)
