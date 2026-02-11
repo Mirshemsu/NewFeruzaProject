@@ -4,6 +4,7 @@ using FeruzaShopProject.Infrastructre.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FeruzaShopProject.Infrastructre.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    partial class ShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260206113903_update purchase")]
+    partial class updatepurchase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -577,9 +580,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("PurchaseOrderId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
@@ -588,7 +588,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("TransactionId")
+                    b.Property<Guid>("TransactionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1188,7 +1188,8 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasOne("FeruzaShopProject.Domain.Entities.Transaction", "Transaction")
                         .WithMany("StockMovements")
                         .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Branch");
 

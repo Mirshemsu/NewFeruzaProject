@@ -858,15 +858,67 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "Cancel",
-    "RelativePath": "api/Purchases/{id}",
-    "HttpMethod": "DELETE",
+    "Method": "AcceptQuantities",
+    "RelativePath": "api/Purchases/accept-quantities",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.AcceptPurchaseQuantitiesDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
+    "Method": "GetByBranch",
+    "RelativePath": "api/Purchases/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
         "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
+    "Method": "Cancel",
+    "RelativePath": "api/Purchases/cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.CancelPurchaseOrderDto",
         "IsRequired": true
       }
     ],
@@ -884,15 +936,41 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "AcceptByAdmin",
-    "RelativePath": "api/Purchases/{id}/accept-admin",
+    "Method": "GetByCreator",
+    "RelativePath": "api/Purchases/creator/{createdBy}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "createdBy",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
+    "Method": "FinalApproval",
+    "RelativePath": "api/Purchases/final-approval",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Guid",
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.FinalApprovePurchaseOrderDto",
         "IsRequired": true
       }
     ],
@@ -910,15 +988,15 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "CheckoutByFinance",
-    "RelativePath": "api/Purchases/{id}/checkout-finance",
+    "Method": "FinanceVerification",
+    "RelativePath": "api/Purchases/finance-verification",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Guid",
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.FinanceVerificationDto",
         "IsRequired": true
       }
     ],
@@ -936,15 +1014,15 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "FinalApproveByAdmin",
-    "RelativePath": "api/Purchases/{id}/final-approve-admin",
+    "Method": "RegisterReceived",
+    "RelativePath": "api/Purchases/register-received",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Guid",
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.RegisterReceivedQuantitiesDto",
         "IsRequired": true
       }
     ],
@@ -963,19 +1041,14 @@
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
     "Method": "Reject",
-    "RelativePath": "api/Purchases/{id}/reject",
+    "RelativePath": "api/Purchases/reject",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
-      {
-        "Name": "reason",
-        "Type": "System.String",
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.RejectPurchaseOrderDto",
         "IsRequired": true
       }
     ],
@@ -993,17 +1066,38 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "UpdateStatus",
-    "RelativePath": "api/Purchases/{id}/status",
-    "HttpMethod": "PUT",
+    "Method": "GetStats",
+    "RelativePath": "api/Purchases/stats",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderStatsDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
+    "Method": "GetByStatus",
+    "RelativePath": "api/Purchases/status/{status}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
       {
         "Name": "status",
         "Type": "System.String",
@@ -1012,33 +1106,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "Receive",
-    "RelativePath": "api/Purchases/receive",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.ReceivePurchaseOrderDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

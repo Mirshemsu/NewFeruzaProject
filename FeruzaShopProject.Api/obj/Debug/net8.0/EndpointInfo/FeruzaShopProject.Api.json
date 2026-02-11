@@ -1334,47 +1334,7 @@
         }
       }
     },
-    "/api/Purchases/{id}/accept-admin": {
-      "post": {
-        "tags": [
-          "Purchases"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Purchases/receive": {
+    "/api/Purchases/accept-quantities": {
       "post": {
         "tags": [
           "Purchases"
@@ -1383,17 +1343,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReceivePurchaseOrderDto"
+                "$ref": "#/components/schemas/AcceptPurchaseQuantitiesDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReceivePurchaseOrderDto"
+                "$ref": "#/components/schemas/AcceptPurchaseQuantitiesDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/ReceivePurchaseOrderDto"
+                "$ref": "#/components/schemas/AcceptPurchaseQuantitiesDto"
               }
             }
           }
@@ -1422,117 +1382,26 @@
         }
       }
     },
-    "/api/Purchases/{id}/checkout-finance": {
+    "/api/Purchases/register-received": {
       "post": {
         "tags": [
           "Purchases"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Purchases/{id}/final-approve-admin": {
-      "post": {
-        "tags": [
-          "Purchases"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Purchases/{id}/reject": {
-      "post": {
-        "tags": [
-          "Purchases"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/RegisterReceivedQuantitiesDto"
               }
             },
             "text/json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/RegisterReceivedQuantitiesDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/RegisterReceivedQuantitiesDto"
               }
             }
           }
@@ -1554,6 +1423,198 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/finance-verification": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinanceVerificationDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinanceVerificationDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinanceVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/final-approval": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalApprovePurchaseOrderDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalApprovePurchaseOrderDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalApprovePurchaseOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/reject": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPurchaseOrderDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPurchaseOrderDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectPurchaseOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/cancel": {
+      "post": {
+        "tags": [
+          "Purchases"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelPurchaseOrderDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelPurchaseOrderDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelPurchaseOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
                 }
               }
             }
@@ -1599,19 +1660,20 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/api/Purchases/status/{status}": {
+      "get": {
         "tags": [
           "Purchases"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "status",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/PurchaseOrderStatus"
             }
           }
         ],
@@ -1621,17 +1683,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
                 }
               }
             }
@@ -1639,14 +1701,14 @@
         }
       }
     },
-    "/api/Purchases/{id}/status": {
-      "put": {
+    "/api/Purchases/branch/{branchId}": {
+      "get": {
         "tags": [
           "Purchases"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "branchId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1655,42 +1717,102 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PurchaseOrderStatus"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PurchaseOrderStatus"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/PurchaseOrderStatus"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/creator/{createdBy}": {
+      "get": {
+        "tags": [
+          "Purchases"
+        ],
+        "parameters": [
+          {
+            "name": "createdBy",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Purchases/stats": {
+      "get": {
+        "tags": [
+          "Purchases"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderStatsDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderStatsDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderStatsDtoApiResponse"
                 }
               }
             }
@@ -2826,6 +2948,47 @@
   },
   "components": {
     "schemas": {
+      "AcceptPurchaseQuantitiesDto": {
+        "required": [
+          "items",
+          "purchaseOrderId"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcceptQuantityItemDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AcceptQuantityItemDto": {
+        "required": [
+          "itemId",
+          "quantityAccepted"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantityAccepted": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "AddProductToBranchDto": {
         "required": [
           "branchId",
@@ -2976,6 +3139,19 @@
           "generatedOn": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelPurchaseOrderDto": {
+        "required": [
+          "purchaseOrderId"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "additionalProperties": false
@@ -3174,8 +3350,7 @@
       "CreatePurchaseOrderItemDto": {
         "required": [
           "productId",
-          "quantityOrdered",
-          "unitPrice"
+          "quantityRequested"
         ],
         "type": "object",
         "properties": {
@@ -3183,16 +3358,11 @@
             "type": "string",
             "format": "uuid"
           },
-          "quantityOrdered": {
+          "quantityRequested": {
             "maximum": 2147483647,
             "minimum": 1,
             "type": "integer",
             "format": "int32"
-          },
-          "unitPrice": {
-            "minimum": 0.01,
-            "type": "number",
-            "format": "double"
           }
         },
         "additionalProperties": false
@@ -3850,6 +4020,68 @@
         },
         "additionalProperties": false
       },
+      "FinalApprovePurchaseOrderDto": {
+        "required": [
+          "purchaseOrderId"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FinanceVerificationDto": {
+        "required": [
+          "items",
+          "purchaseOrderId"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "supplierId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinanceVerificationItemDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "FinanceVerificationItemDto": {
+        "required": [
+          "itemId"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "financeVerified": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "unitPrice": {
+            "minimum": 0.01,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ForgetRequest": {
         "required": [
           "userId"
@@ -4131,6 +4363,15 @@
             "type": "string",
             "nullable": true
           },
+          "supplierId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "supplierName": {
+            "type": "string",
+            "nullable": true
+          },
           "status": {
             "type": "string",
             "nullable": true
@@ -4145,6 +4386,11 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "items": {
@@ -4224,23 +4470,112 @@
             "type": "string",
             "nullable": true
           },
-          "quantityOrdered": {
+          "quantityRequested": {
             "type": "integer",
             "format": "int32"
           },
-          "quantityReceived": {
+          "quantityAccepted": {
             "type": "integer",
             "format": "int32",
             "nullable": true
           },
-          "quantityApproved": {
+          "quantityRegistered": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "financeVerified": {
+            "type": "boolean",
             "nullable": true
           },
           "unitPrice": {
             "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PurchaseOrderStatsDto": {
+        "type": "object",
+        "properties": {
+          "totalPurchaseOrders": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pendingAdminAcceptance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "acceptedByAdmin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pendingRegistration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completelyRegistered": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pendingFinanceProcessing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "processedByFinance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fullyApproved": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejected": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cancelled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPurchaseValue": {
+            "type": "number",
             "format": "double"
+          },
+          "averagePurchaseValue": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PurchaseOrderStatsDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PurchaseOrderStatsDto"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -4254,19 +4589,41 @@
           4,
           5,
           6,
-          7
+          7,
+          8,
+          9
         ],
         "type": "integer",
         "format": "int32"
       },
-      "ReceivePurchaseOrderDto": {
+      "RegisterQuantityItemDto": {
         "required": [
-          "id",
-          "items"
+          "itemId",
+          "quantityRegistered"
         ],
         "type": "object",
         "properties": {
-          "id": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantityRegistered": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RegisterReceivedQuantitiesDto": {
+        "required": [
+          "items",
+          "purchaseOrderId"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
             "type": "string",
             "format": "uuid"
           },
@@ -4274,28 +4631,8 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ReceivePurchaseOrderItemDto"
+              "$ref": "#/components/schemas/RegisterQuantityItemDto"
             }
-          }
-        },
-        "additionalProperties": false
-      },
-      "ReceivePurchaseOrderItemDto": {
-        "required": [
-          "id",
-          "quantityReceived"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "quantityReceived": {
-            "maximum": 2147483647,
-            "minimum": 0,
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -4337,6 +4674,24 @@
           },
           "role": {
             "$ref": "#/components/schemas/Role"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RejectPurchaseOrderDto": {
+        "required": [
+          "purchaseOrderId",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "purchaseOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false

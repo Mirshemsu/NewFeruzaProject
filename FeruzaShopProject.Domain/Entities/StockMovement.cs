@@ -14,9 +14,8 @@ namespace FeruzaShopProject.Domain.Entities
 
         [Required]
         public Guid BranchId { get; set; }
-
-        [Required]
-        public Guid TransactionId { get; set; }
+        public Guid? TransactionId { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
 
         [Required]
         public StockMovementType MovementType { get; set; }

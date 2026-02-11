@@ -142,7 +142,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var hasActivePurchaseOrders = await _context.PurchaseOrders
                     .AnyAsync(po => po.IsActive &&
-                                    po.Status != PurchaseOrderStatus.PartiallyReceived && po.Status != PurchaseOrderStatus.Cancelled);
+                                    po.Status != PurchaseOrderStatus.PartiallyRegistered && po.Status != PurchaseOrderStatus.Cancelled);
                 if (hasActivePurchaseOrders)
                 {
                     _logger.LogWarning("Cannot deactivate supplier {SupplierId} with active purchase orders", id);

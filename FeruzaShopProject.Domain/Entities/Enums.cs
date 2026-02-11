@@ -38,19 +38,14 @@ namespace FeruzaShopProject.Domain.Entities
 
     public enum PurchaseOrderStatus
     {
-        // Sales creates → Admin accepts
-        PendingAdminAcceptance,  // Step 1: Sales created, waiting admin approval
-        PendingReceiving,        // Step 2: Admin accepted, ready to receive
-
-        // Receiving flow
-        PartiallyReceived,       // Step 3: Some items received
-        CompletelyReceived,      // Step 3: All items received
-
-        // Finance & Final approval
-        PendingFinanceCheckout,  // Step 4: Goods received, waiting payment
-        FullyApproved,           // Step 5: Payment done, final approval
-
-        // Terminal states
+        PendingAdminAcceptance,    // Created by Sales
+        AcceptedByAdmin,           // Admin accepted quantities
+        PendingRegistration,       // Sales needs to register received items
+        PartiallyRegistered,       // Sales registered some items
+        CompletelyRegistered,      // Sales registered all items
+        PendingFinanceProcessing,  // Ready for Finance to add details
+        ProcessedByFinance,        // Finance added supplier, prices, verified
+        FullyApproved,             // Admin gave final approval
         Rejected,
         Cancelled
     }
