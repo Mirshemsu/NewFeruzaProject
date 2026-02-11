@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FeruzaShopProject.Infrastructre")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb4f6f8274f8954f48946c0ad29432c662eda2b4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b2cc02088cd3dbcc0bfaac7d35f9919a31a32e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("FeruzaShopProject.Infrastructre")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FeruzaShopProject.Infrastructre")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

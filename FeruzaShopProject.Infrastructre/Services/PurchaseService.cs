@@ -364,40 +364,84 @@ namespace ShopMgtSys.Infrastructure.Services
                         return ApiResponse<PurchaseOrderDto>.Fail($"Item quantity not registered: {itemDto.ItemId}");
                     }
 
-                    // Set finance verification
-                    if (itemDto.FinanceVerified.HasValue)
+                    // Validate buying price
+                    if (itemDto.BuyingPrice.HasValue)
                     {
-                        item.FinanceVerified = itemDto.FinanceVerified.Value;
-                        if (itemDto.FinanceVerified.Value)
+                        if (itemDto.BuyingPrice.Value <= 0)
                         {
-                            anyItemsVerified = true;
+                            _logger.LogWarning("Buying price must be greater than zero: {Price}", itemDto.BuyingPrice.Value);
+                            return ApiResponse<PurchaseOrderDto>.Fail($"Buying price must be greater than zero for item: {itemDto.ItemId}");
                         }
-                        else
-                        {
-                            allItemsVerified = false;
-                        }
+                        item.BuyingPrice = itemDto.BuyingPrice.Value;
                     }
 
-                    // Set unit price if provided
-                    if (itemDto.UnitPrice.HasValue)
+                    // Validate selling price (UnitPrice)
+                    if (itemDto.SellingPrice.HasValue)
                     {
-                        if (itemDto.UnitPrice.Value <= 0)
+                        if (itemDto.SellingPrice.Value <= 0)
                         {
-                            _logger.LogWarning("Unit price must be greater than zero: {Price}", itemDto.UnitPrice.Value);
-                            return ApiResponse<PurchaseOrderDto>.Fail($"Unit price must be greater than zero for item: {itemDto.ItemId}");
+                            _logger.LogWarning("Selling price must be greater than zero: {Price}", itemDto.SellingPrice.Value);
+                            return ApiResponse<PurchaseOrderDto>.Fail($"Selling price must be greater than zero for item: {itemDto.ItemId}");
                         }
-                        item.UnitPrice = itemDto.UnitPrice.Value;
+
+                        // Validate selling price is higher than buying price
+                        if (itemDto.BuyingPrice.HasValue && itemDto.SellingPrice.Value <= itemDto.BuyingPrice.Value)
+                        {
+                            _logger.LogWarning("Selling price must be higher than buying price: {Selling} <= {Buying}",
+                                itemDto.SellingPrice.Value, itemDto.BuyingPrice.Value);
+                            return ApiResponse<PurchaseOrderDto>.Fail($"Selling price must be higher than buying price for item: {itemDto.ItemId}");
+                        }
+
+                        // Selling price is stored as UnitPrice in Product entity
+                        item.UnitPrice = itemDto.SellingPrice.Value;
+                    }
+
+                    // Auto-calculate selling price if not provided but buying price is
+                    if (itemDto.BuyingPrice.HasValue && !itemDto.SellingPrice.HasValue)
+                    {
+                        // Apply default markup percentage (you can make this configurable)
+                        var defaultMarkupPercentage = await GetDefaultMarkupPercentageAsync();
+                        item.UnitPrice = itemDto.BuyingPrice.Value * (1 + defaultMarkupPercentage / 100);
+                        _logger.LogInformation("Auto-calculated selling price for item {ItemId}: Buying ${Buying} -> Selling ${Selling} ({Markup}% markup)",
+                            itemDto.ItemId, itemDto.BuyingPrice.Value, item.UnitPrice.Value, defaultMarkupPercentage);
+                    }
+
+                    // Finance verification is automatically true when finance provides prices
+                    if (itemDto.BuyingPrice.HasValue)
+                    {
+                        item.FinanceVerified = true;
+                        anyItemsVerified = true;
+
+                        _logger.LogInformation("Finance verified item {ItemId}: Buying=${Buying}, Selling=${Selling}",
+                            itemDto.ItemId, item.BuyingPrice, item.UnitPrice);
+                    }
+                    else
+                    {
+                        // If no buying price provided, item is not verified
+                        item.FinanceVerified = false;
+                        allItemsVerified = false;
+                        item.BuyingPrice = null;
+                        item.UnitPrice = null;
+
+                        _logger.LogInformation("Finance did not verify item {ItemId}: No prices provided", itemDto.ItemId);
                     }
                 }
 
                 // Update status based on verification
-                if (allItemsVerified && purchaseOrder.Items.All(i => i.UnitPrice.HasValue))
+                if (allItemsVerified && purchaseOrder.Items.All(i => i.FinanceVerified == true))
                 {
                     purchaseOrder.Status = PurchaseOrderStatus.ProcessedByFinance;
+                    _logger.LogInformation("All items verified for purchase order {PurchaseOrderId}. Status: ProcessedByFinance", dto.PurchaseOrderId);
                 }
                 else if (anyItemsVerified)
                 {
                     purchaseOrder.Status = PurchaseOrderStatus.PendingFinanceProcessing;
+                    _logger.LogInformation("Some items verified for purchase order {PurchaseOrderId}. Status: PendingFinanceProcessing", dto.PurchaseOrderId);
+                }
+                else
+                {
+                    purchaseOrder.Status = PurchaseOrderStatus.CompletelyRegistered;
+                    _logger.LogInformation("No items verified for purchase order {PurchaseOrderId}. Status: CompletelyRegistered", dto.PurchaseOrderId);
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
@@ -409,7 +453,7 @@ namespace ShopMgtSys.Infrastructure.Services
                     PurchaseOrderId = purchaseOrder.Id,
                     Action = "FinanceVerification",
                     PerformedByUserId = userId,
-                    Details = "Finance added supplier info, prices, and verified quantities",
+                    Details = $"Finance verification completed. Verified items: {purchaseOrder.Items.Count(i => i.FinanceVerified == true)}/{purchaseOrder.Items.Count}",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true
                 });
@@ -419,7 +463,12 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
                 _logger.LogInformation("Finance completed verification for purchase order {PurchaseOrderId}", purchaseOrder.Id);
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Finance verification completed.");
+
+                var message = anyItemsVerified
+                    ? $"Finance verification completed. {purchaseOrder.Items.Count(i => i.FinanceVerified == true)} items verified."
+                    : "Finance verification completed. No items verified.";
+
+                return ApiResponse<PurchaseOrderDto>.Success(result, message);
             }
             catch (Exception ex)
             {
@@ -429,91 +478,13 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== STEP 5: ADMIN FINAL APPROVAL ==========
-        public async Task<ApiResponse<PurchaseOrderDto>> FinalApprovalByAdminAsync(FinalApprovePurchaseOrderDto dto)
+        private async Task<decimal> GetDefaultMarkupPercentageAsync()
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                {
-                    _logger.LogWarning("Invalid user ID in JWT: {UserIdClaim}", userIdClaim);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Invalid user ID in JWT");
-                }
-
-                var purchaseOrder = await _context.PurchaseOrders
-                    .Include(po => po.Items)
-                    .Include(po => po.Branch)
-                    .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
-
-                if (purchaseOrder == null)
-                {
-                    _logger.LogWarning("Purchase order not found or inactive: {PurchaseOrderId}", dto.PurchaseOrderId);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
-                }
-
-                if (purchaseOrder.Status != PurchaseOrderStatus.ProcessedByFinance)
-                {
-                    _logger.LogWarning("Purchase order not in ProcessedByFinance status: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in ProcessedByFinance status for final approval");
-                }
-
-                // Update product prices, stock, and create stock movements
-                foreach (var item in purchaseOrder.Items.Where(i =>
-                    i.QuantityRegistered.HasValue &&
-                    i.QuantityRegistered.Value > 0 &&
-                    i.FinanceVerified == true &&
-                    i.UnitPrice.HasValue))
-                {
-                    // Update product price
-                    var product = await _context.Products.FindAsync(item.ProductId);
-                    if (product != null)
-                    {
-                        product.UnitPrice = item.UnitPrice.Value;
-                        product.UpdatedAt = DateTime.UtcNow;
-                        _context.Products.Update(product);
-                    }
-
-                    // Update stock and create stock movement
-                    await UpdateStockAndCreateMovementAsync(
-                        item.ProductId,
-                        purchaseOrder.BranchId,
-                        purchaseOrder.Id,
-                        item.QuantityRegistered.Value,
-                        item.UnitPrice.Value,
-                        userId);
-                }
-
-                purchaseOrder.Status = PurchaseOrderStatus.FullyApproved;
-                purchaseOrder.UpdatedAt = DateTime.UtcNow;
-
-                // Add to purchase history
-                _context.PurchaseHistory.Add(new PurchaseHistory
-                {
-                    Id = Guid.NewGuid(),
-                    PurchaseOrderId = purchaseOrder.Id,
-                    Action = "FinalApprovedByAdmin",
-                    PerformedByUserId = userId,
-                    Details = "Admin gave final approval, updated stock and prices",
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true
-                });
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}", purchaseOrder.Id);
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order fully approved. Stock and prices updated.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in final approval by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
-                await transaction.RollbackAsync();
-                return ApiResponse<PurchaseOrderDto>.Fail("Error in final approval by admin");
-            }
+            // You can store this in a configuration table or app settings
+            // For now, returning a fixed value
+            return 30m; // 30% default markup
         }
+        // ========== STEP 5: ADMIN FINAL APPROVAL ==========
 
         // ========== ADDITIONAL OPERATIONS ==========
         public async Task<ApiResponse<PurchaseOrderDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto)
@@ -852,70 +823,75 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderStatsDto>.Fail("Error retrieving purchase order statistics");
             }
         }
-        // ========== HELPER METHODS ==========
         private async Task UpdateStockAndCreateMovementAsync(
-            Guid productId,
-            Guid branchId,
-            Guid purchaseOrderId,
-            int quantity,
-            decimal unitPrice,
-            Guid userId)
-        {
-            try
-            {
-                var stock = await _context.Stocks
-                    .FirstOrDefaultAsync(s => s.ProductId == productId && s.BranchId == branchId);
-
-                decimal previousQuantity = 0;
-
-                if (stock == null)
-                {
-                    stock = new Stock
+                Guid productId,
+                Guid branchId,
+                Guid purchaseOrderId,
+                int quantity,
+                decimal buyingPrice,
+                decimal sellingPrice,
+                Guid userId)
                     {
-                        Id = Guid.NewGuid(),
-                        ProductId = productId,
-                        BranchId = branchId,
-                        Quantity = quantity,
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    _context.Stocks.Add(stock);
-                }
-                else
-                {
-                    previousQuantity = stock.Quantity;
-                    stock.Quantity += quantity;
-                    stock.UpdatedAt = DateTime.UtcNow;
-                }
+                        try
+                        {
+                            var stock = await _context.Stocks
+                                .FirstOrDefaultAsync(s => s.ProductId == productId && s.BranchId == branchId);
 
-                // Create stock movement
-                var stockMovement = new StockMovement
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = productId,
-                    BranchId = branchId,
-                    PurchaseOrderId = purchaseOrderId,
-                    MovementType = StockMovementType.Purchase,
-                    Quantity = quantity,
-                    PreviousQuantity = previousQuantity,
-                    NewQuantity = previousQuantity + quantity,
-                    Reason = $"Purchase Order #{purchaseOrderId} - Final Approval",
-                    MovementDate = DateTime.UtcNow,
-                    IsActive = true
-                };
+                            decimal previousQuantity = 0;
 
-                _context.StockMovements.Add(stockMovement);
+                            if (stock == null)
+                            {
+                                stock = new Stock
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ProductId = productId,
+                                    BranchId = branchId,
+                                    Quantity = quantity,
+                                    CreatedAt = DateTime.UtcNow,
+                                    IsActive = true
+                                };
+                                _context.Stocks.Add(stock);
+                            }
+                            else
+                            {
+                                previousQuantity = stock.Quantity;
+                                stock.Quantity += quantity;
+                                stock.UpdatedAt = DateTime.UtcNow;
+                            }
 
-                _logger.LogInformation(
-                    "Updated stock and created movement for Product {ProductId} in Branch {BranchId}: {Quantity} units added at price {UnitPrice}",
-                    productId, branchId, quantity, unitPrice);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating stock and creating movement");
-                throw;
-            }
-        }
+                            // Create stock movement for purchase
+                            var stockMovement = new StockMovement
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = productId,
+                                BranchId = branchId,
+                                TransactionId = null, // No transaction for purchases
+                                PurchaseOrderId = purchaseOrderId,
+                                MovementType = StockMovementType.Purchase,
+                                Quantity = quantity,
+                                PreviousQuantity = previousQuantity,
+                                NewQuantity = previousQuantity + quantity,
+                                Reason = $"Purchase Order #{purchaseOrderId} - Cost: ${buyingPrice}, Sell: ${sellingPrice}, Margin: {((sellingPrice - buyingPrice) / buyingPrice * 100):F1}%",
+                                MovementDate = DateTime.UtcNow,
+                                IsActive = true
+                            };
+
+                            _context.StockMovements.Add(stockMovement);
+
+                            // Calculate profit margin
+                            var profitMargin = ((sellingPrice - buyingPrice) / buyingPrice * 100);
+
+                            _logger.LogInformation(
+                                "Updated stock for Product {ProductId} in Branch {BranchId}: " +
+                                "Added {Quantity} units (Buy: ${BuyingPrice}, Sell: ${SellingPrice}, Margin: {ProfitMargin:F1}%)",
+                                productId, branchId, quantity, buyingPrice, sellingPrice, profitMargin);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error updating stock and creating movement for Product {ProductId}", productId);
+                            throw;
+                        }
+                    }
 
         private bool IsValidStatusTransition(PurchaseOrderStatus currentStatus, PurchaseOrderStatus newStatus)
         {
@@ -1026,24 +1002,123 @@ namespace ShopMgtSys.Infrastructure.Services
                 dto.Items.Add(new FinanceVerificationItemDto
                 {
                     ItemId = item.Id,
-                    FinanceVerified = true,
-                    UnitPrice = item.UnitPrice ?? 0
+                    SellingPrice = item.UnitPrice ?? 0
                 });
             }
 
             return await FinanceVerificationAsync(dto);
         }
 
-        public async Task<ApiResponse<PurchaseOrderDto>> FinalApproveByAdminAsync(Guid purchaseOrderId)
+        public async Task<ApiResponse<PurchaseOrderDto>> FinalApprovalByAdminAsync(FinalApprovePurchaseOrderDto dto)
         {
-            var dto = new FinalApprovePurchaseOrderDto
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                PurchaseOrderId = purchaseOrderId
-            };
+                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                {
+                    _logger.LogWarning("Invalid user ID in JWT: {UserIdClaim}", userIdClaim);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Invalid user ID in JWT");
+                }
 
-            return await FinalApprovalByAdminAsync(dto);
+                var purchaseOrder = await _context.PurchaseOrders
+                    .Include(po => po.Items)
+                    .Include(po => po.Branch)
+                    .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
+
+                if (purchaseOrder == null)
+                {
+                    _logger.LogWarning("Purchase order not found or inactive: {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
+                }
+
+                if (purchaseOrder.Status != PurchaseOrderStatus.ProcessedByFinance)
+                {
+                    _logger.LogWarning("Purchase order not in ProcessedByFinance status: {Status}", purchaseOrder.Status);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in ProcessedByFinance status for final approval");
+                }
+
+                // Check if all items are finance verified
+                if (!purchaseOrder.Items.All(i => i.FinanceVerified == true))
+                {
+                    _logger.LogWarning("Not all items are finance verified for purchase order {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("All items must be finance verified before final approval");
+                }
+
+                // Update product prices and stock for verified items only
+                foreach (var item in purchaseOrder.Items.Where(i =>
+                    i.QuantityRegistered.HasValue &&
+                    i.QuantityRegistered.Value > 0 &&
+                    i.FinanceVerified == true &&
+                    i.BuyingPrice.HasValue &&
+                    i.UnitPrice.HasValue))
+                {
+                    // Update product buying price and unit price (selling price)
+                    var product = await _context.Products.FindAsync(item.ProductId);
+                    if (product != null)
+                    {
+                        // Update product prices
+                        product.BuyingPrice = item.BuyingPrice.Value;
+                        product.UnitPrice = item.UnitPrice.Value; // This is the selling price
+                        product.UpdatedAt = DateTime.UtcNow;
+
+                        // You might want to track who updated the price
+                        // product.UpdatedBy = userId;
+
+                        _context.Products.Update(product);
+
+                        _logger.LogInformation("Updated product {ProductId} prices: Buying=${BuyingPrice}, Selling=${UnitPrice}",
+                            item.ProductId, item.BuyingPrice.Value, item.UnitPrice.Value);
+                    }
+
+                    // Update stock and create stock movement
+                    await UpdateStockAndCreateMovementAsync(
+                        item.ProductId,
+                        purchaseOrder.BranchId,
+                        purchaseOrder.Id,
+                        item.QuantityRegistered.Value,
+                        item.BuyingPrice.Value,
+                        item.UnitPrice.Value,
+                        userId);
+                }
+
+                purchaseOrder.Status = PurchaseOrderStatus.FullyApproved;
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
+
+                // Calculate total purchase value
+                var totalPurchaseValue = purchaseOrder.Items
+                    .Where(i => i.FinanceVerified == true && i.BuyingPrice.HasValue && i.QuantityRegistered.HasValue)
+                    .Sum(i => i.BuyingPrice.Value * i.QuantityRegistered.Value);
+
+                // Add to purchase history
+                _context.PurchaseHistory.Add(new PurchaseHistory
+                {
+                    Id = Guid.NewGuid(),
+                    PurchaseOrderId = purchaseOrder.Id,
+                    Action = "FinalApprovedByAdmin",
+                    PerformedByUserId = userId,
+                    Details = $"Admin gave final approval. Updated stock and prices. Total value: ${totalPurchaseValue}",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
+                _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}. Items updated: {ItemCount}",
+                    purchaseOrder.Id, purchaseOrder.Items.Count(i => i.FinanceVerified == true));
+
+                return ApiResponse<PurchaseOrderDto>.Success(result,
+                    $"Purchase order fully approved. {purchaseOrder.Items.Count(i => i.FinanceVerified == true)} items added to inventory with updated prices.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in final approval by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
+                await transaction.RollbackAsync();
+                return ApiResponse<PurchaseOrderDto>.Fail("Error in final approval by admin");
+            }
         }
-
         public async Task<ApiResponse<PurchaseOrderDto>> ReceivePurchaseOrderAsync(ReceivePurchaseOrderDto dto)
         {
             var registerDto = new RegisterReceivedQuantitiesDto

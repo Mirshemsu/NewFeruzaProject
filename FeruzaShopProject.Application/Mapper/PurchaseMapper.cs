@@ -97,8 +97,7 @@ namespace FeruzaShopProject.Application.Mapper
 
             CreateMap<FinanceVerificationItemDto, PurchaseOrderItem>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId))
-                .ForMember(dest => dest.FinanceVerified, opt => opt.MapFrom(src => src.FinanceVerified))
-                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice))
+                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.SellingPrice))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 // Ignore all other properties
                 .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())

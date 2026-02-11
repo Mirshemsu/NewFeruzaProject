@@ -1,5 +1,4 @@
-﻿// PurchaseOrderItem.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FeruzaShopProject.Domain.Entities
 {
@@ -24,14 +23,24 @@ namespace FeruzaShopProject.Domain.Entities
         public int? QuantityRegistered { get; set; }
 
         // Finance cross-check confirmation (true/false)
-        public bool? FinanceVerified { get; set; }
+        public bool? FinanceVerified { get; set; }=false;
 
-        // Price added by Finance
+        // Buying Price (from supplier) - Added by Finance
+        [Range(0.01, double.MaxValue)]
+        public decimal? BuyingPrice { get; set; }
+
+        // Selling Price - Can be calculated or manually set
         [Range(0.01, double.MaxValue)]
         public decimal? UnitPrice { get; set; }
 
-        public decimal? TotalPrice => UnitPrice.HasValue && QuantityRegistered.HasValue
-            ? UnitPrice.Value * QuantityRegistered.Value
+        // Calculate profit margin percentage
+        public decimal? ProfitMarginPercentage =>
+            BuyingPrice.HasValue && UnitPrice.HasValue && BuyingPrice.Value > 0
+                ? ((UnitPrice.Value - BuyingPrice.Value) / BuyingPrice.Value) * 100
+                : null;
+
+        public decimal? TotalCost => BuyingPrice.HasValue && QuantityRegistered.HasValue
+            ? BuyingPrice.Value * QuantityRegistered.Value
             : null;
 
         public PurchaseOrder PurchaseOrder { get; set; }

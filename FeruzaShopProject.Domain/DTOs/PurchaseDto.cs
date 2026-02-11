@@ -78,10 +78,11 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid ItemId { get; init; }
 
-        public bool? FinanceVerified { get; init; }
+        [Range(0.01, double.MaxValue)]
+        public decimal? BuyingPrice { get; init; }
 
         [Range(0.01, double.MaxValue)]
-        public decimal? UnitPrice { get; init; }
+        public decimal? SellingPrice { get; init; }
     }
 
     // Step 5: Admin gives final approval
