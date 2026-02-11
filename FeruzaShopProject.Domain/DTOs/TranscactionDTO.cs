@@ -152,6 +152,10 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public int TotalTransactions { get; set; }
         public decimal TotalSalesAmount { get; set; }
+        public decimal TotalCostAmount { get; set; }
+        public decimal TotalNetProfit { get; set; }
+        public decimal ProfitMarginPercentage { get; set; }
+
         public decimal TotalCashAmount { get; set; }
         public decimal TotalBankAmount { get; set; }
         public decimal TotalCreditAmount { get; set; }
@@ -168,15 +172,23 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid Id { get; set; }
         public Guid TransactionId { get; set; }
         public DateTime SaleDate { get; set; }
-        public Guid? BranchId { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public Guid BranchId { get; set; }
         public string BranchName { get; set; }
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
-        public string ItemCode { get; set; }
         public string CategoryName { get; set; }
+        public string ItemCode { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalAmount { get; set; }
+
+        // Profit-related fields
+        public decimal BuyingPrice { get; set; }
+        public decimal CostAmount { get; set; }
+        public decimal Profit { get; set; }
+        public decimal ProfitMargin { get; set; }
+
         public PaymentMethod PaymentMethod { get; set; }
         public decimal CommissionRate { get; set; }
         public decimal CommissionAmount { get; set; }
@@ -185,13 +197,9 @@ namespace FeruzaShopProject.Domain.DTOs
         public string CustomerName { get; set; }
         public Guid? PainterId { get; set; }
         public string PainterName { get; set; }
-        public DateTime TransactionDate { get; set; }
-
-        // New fields for credit payments
         public bool IsPartialPayment { get; set; }
         public bool IsCreditPayment { get; set; }
     }
-
     public class PaymentSummaryDto
     {
         public PaymentMethod PaymentMethod { get; set; }

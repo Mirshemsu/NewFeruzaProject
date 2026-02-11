@@ -3750,10 +3750,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "transactionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
           "branchId": {
             "type": "string",
-            "format": "uuid",
-            "nullable": true
+            "format": "uuid"
           },
           "branchName": {
             "type": "string",
@@ -3767,11 +3770,11 @@
             "type": "string",
             "nullable": true
           },
-          "itemCode": {
+          "categoryName": {
             "type": "string",
             "nullable": true
           },
-          "categoryName": {
+          "itemCode": {
             "type": "string",
             "nullable": true
           },
@@ -3784,6 +3787,22 @@
             "format": "double"
           },
           "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "buyingPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "costAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "profit": {
+            "type": "number",
+            "format": "double"
+          },
+          "profitMargin": {
             "type": "number",
             "format": "double"
           },
@@ -3818,10 +3837,6 @@
           "painterName": {
             "type": "string",
             "nullable": true
-          },
-          "transactionDate": {
-            "type": "string",
-            "format": "date-time"
           },
           "isPartialPayment": {
             "type": "boolean"
@@ -3866,6 +3881,18 @@
             "format": "int32"
           },
           "totalSalesAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCostAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalNetProfit": {
+            "type": "number",
+            "format": "double"
+          },
+          "profitMarginPercentage": {
             "type": "number",
             "format": "double"
           },

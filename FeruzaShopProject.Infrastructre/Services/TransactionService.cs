@@ -615,59 +615,116 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (!string.IsNullOrEmpty(paymentMethod) && Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                     query = query.Where(ds => ds.PaymentMethod == method);
 
-                var dailySales = await query.ToListAsync();
+                var dailySales = await query
+                    .Select(ds => new
+                    {
+                        Sale = ds,
+                        BuyingPrice = ds.Product != null ? ds.Product.BuyingPrice : 0,
+                        BranchName = ds.Branch != null ? ds.Branch.Name : null,
+                        ProductName = ds.Product != null ? ds.Product.Name : null,
+                        CategoryName = ds.Product != null && ds.Product.Category != null
+                            ? ds.Product.Category.Name : null,
+                        ItemCode = ds.Transaction != null ? ds.Transaction.ItemCode :
+                                  ds.Product != null ? ds.Product.ItemCode : null,
+                        CustomerName = ds.Customer != null ? ds.Customer.Name : null,
+                        PainterName = ds.Painter != null ? ds.Painter.Name : null,
+                        TransactionDate = ds.Transaction != null ? ds.Transaction.TransactionDate : ds.SaleDate
+                    })
+                    .ToListAsync();
+
+                // Calculate totals in a single pass
+                var totals = dailySales.Aggregate(
+                    new
+                    {
+                        TotalSales = 0m,
+                        TotalCost = 0m,
+                        TotalCommission = 0m,
+                        CashAmount = 0m,
+                        BankAmount = 0m,
+                        CreditAmount = 0m,
+                        PaidCommission = 0m,
+                        PendingCommission = 0m
+                    },
+                    (acc, x) => new
+                    {
+                        TotalSales = acc.TotalSales + x.Sale.TotalAmount,
+                        TotalCost = acc.TotalCost + (x.BuyingPrice * x.Sale.Quantity),
+                        TotalCommission = acc.TotalCommission + x.Sale.CommissionAmount,
+                        CashAmount = acc.CashAmount + (x.Sale.PaymentMethod == PaymentMethod.Cash ? x.Sale.TotalAmount : 0),
+                        BankAmount = acc.BankAmount + (x.Sale.PaymentMethod == PaymentMethod.Bank ? x.Sale.TotalAmount : 0),
+                        CreditAmount = acc.CreditAmount + (x.Sale.PaymentMethod == PaymentMethod.Credit ? x.Sale.TotalAmount : 0),
+                        PaidCommission = acc.PaidCommission + (x.Sale.CommissionPaid ? x.Sale.CommissionAmount : 0),
+                        PendingCommission = acc.PendingCommission + (!x.Sale.CommissionPaid ? x.Sale.CommissionAmount : 0)
+                    });
+
+                var totalNetProfit = totals.TotalSales - totals.TotalCost - totals.TotalCommission;
 
                 var report = new DailySalesReportDto
                 {
                     ReportDate = date.Date,
                     BranchId = branchId,
-                    BranchName = branchId.HasValue ? dailySales.FirstOrDefault()?.Branch?.Name : "All Branches",
+                    BranchName = branchId.HasValue ? dailySales.FirstOrDefault()?.BranchName : "All Branches",
                     PaymentMethod = paymentMethod,
                     TotalTransactions = dailySales.Count,
-                    TotalSalesAmount = dailySales.Sum(ds => ds.TotalAmount), // Sum of actual payments/sales
-                    TotalCashAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount),
-                    TotalBankAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount),
-                    TotalCreditAmount = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount),
-                    TotalCommissionAmount = dailySales.Sum(ds => ds.CommissionAmount),
-                    TotalPaidCommission = dailySales.Where(ds => ds.CommissionPaid).Sum(ds => ds.CommissionAmount),
-                    TotalPendingCommission = dailySales.Where(ds => !ds.CommissionPaid).Sum(ds => ds.CommissionAmount)
+                    TotalSalesAmount = totals.TotalSales,
+                    TotalCostAmount = totals.TotalCost,
+                    TotalNetProfit = totalNetProfit,
+                    ProfitMarginPercentage = totals.TotalSales > 0 ? (totalNetProfit / totals.TotalSales) * 100 : 0,
+                    TotalCashAmount = totals.CashAmount,
+                    TotalBankAmount = totals.BankAmount,
+                    TotalCreditAmount = totals.CreditAmount,
+                    TotalCommissionAmount = totals.TotalCommission,
+                    TotalPaidCommission = totals.PaidCommission,
+                    TotalPendingCommission = totals.PendingCommission,
+                    SalesItems = dailySales.Select(x => new DailySalesItemDto
+                    {
+                        Id = x.Sale.Id,
+                        TransactionId = x.Sale.TransactionId,
+                        SaleDate = x.Sale.SaleDate,
+                        TransactionDate = x.TransactionDate,
+                        BranchId = x.Sale.BranchId,
+                        BranchName = x.BranchName,
+                        ProductId = x.Sale.ProductId,
+                        ProductName = x.ProductName,
+                        CategoryName = x.CategoryName,
+                        ItemCode = x.ItemCode,
+                        Quantity = x.Sale.Quantity,
+                        UnitPrice = x.Sale.UnitPrice,
+                        TotalAmount = x.Sale.TotalAmount,
+                        BuyingPrice = x.BuyingPrice,
+                        CostAmount = x.BuyingPrice * x.Sale.Quantity,
+                        Profit = x.Sale.TotalAmount - (x.BuyingPrice * x.Sale.Quantity) - x.Sale.CommissionAmount,
+                        ProfitMargin = x.Sale.TotalAmount > 0
+                            ? ((x.Sale.TotalAmount - (x.BuyingPrice * x.Sale.Quantity) - x.Sale.CommissionAmount) / x.Sale.TotalAmount) * 100
+                            : 0,
+                        PaymentMethod = x.Sale.PaymentMethod,
+                        CommissionRate = x.Sale.CommissionRate,
+                        CommissionAmount = x.Sale.CommissionAmount,
+                        CommissionPaid = x.Sale.CommissionPaid,
+                        CustomerId = x.Sale.CustomerId,
+                        CustomerName = x.CustomerName,
+                        PainterId = x.Sale.PainterId,
+                        PainterName = x.PainterName,
+                        IsPartialPayment = x.Sale.IsPartialPayment,
+                        IsCreditPayment = x.Sale.IsCreditPayment
+                    }).ToList(),
+                    PaymentSummaries = dailySales
+                        .GroupBy(x => x.Sale.PaymentMethod)
+                        .Select(g => new PaymentSummaryDto
+                        {
+                            PaymentMethod = g.Key,
+                            TransactionCount = g.Count(),
+                            TotalAmount = g.Sum(x => x.Sale.TotalAmount),
+                            Percentage = totals.TotalSales > 0
+                                ? (g.Sum(x => x.Sale.TotalAmount) / totals.TotalSales) * 100
+                                : 0
+                        }).ToList()
                 };
 
-                // Use AutoMapper for sales items
-                report.SalesItems = dailySales.Select(ds => new DailySalesItemDto
-                {
-                    Id = ds.Id,
-                    TransactionId = ds.TransactionId,
-                    SaleDate = ds.SaleDate,
-                    BranchId = ds.BranchId,
-                    BranchName = ds.Branch?.Name,
-                    ProductId = ds.ProductId,
-                    ProductName = ds.Product?.Name,
-                    ItemCode = ds.Transaction?.ItemCode ?? ds.Product?.ItemCode ?? "N/A",
-                    Quantity = ds.Quantity,
-                    UnitPrice = ds.UnitPrice,
-                    TotalAmount = ds.TotalAmount,
-                    PaymentMethod = ds.PaymentMethod,
-                    CommissionRate = ds.CommissionRate,
-                    CommissionAmount = ds.CommissionAmount,
-                    CommissionPaid = ds.CommissionPaid,
-                    CustomerId = ds.CustomerId,
-                    CustomerName = ds.Customer?.Name,
-                    PainterId = ds.PainterId,
-                    PainterName = ds.Painter?.Name,
-                    IsPartialPayment = ds.IsPartialPayment,
-                    IsCreditPayment = ds.IsCreditPayment
-                }).ToList();
-
-                // Add payment summaries
-                var paymentGroups = dailySales.GroupBy(ds => ds.PaymentMethod);
-                report.PaymentSummaries = paymentGroups.Select(g => new PaymentSummaryDto
-                {
-                    PaymentMethod = g.Key,
-                    TransactionCount = g.Count(),
-                    TotalAmount = g.Sum(ds => ds.TotalAmount),
-                    Percentage = report.TotalSalesAmount > 0 ? (g.Sum(ds => ds.TotalAmount) / report.TotalSalesAmount) * 100 : 0
-                }).ToList();
+                _logger.LogInformation("Generated daily sales report for {Date}. " +
+                    "Sales: {TotalSales:C2}, Cost: {TotalCost:C2}, Profit: {NetProfit:C2}, Margin: {Margin:F1}%",
+                    date.Date, report.TotalSalesAmount, report.TotalCostAmount,
+                    report.TotalNetProfit, report.ProfitMarginPercentage);
 
                 return ApiResponse<DailySalesReportDto>.Success(report);
             }
@@ -677,7 +734,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<DailySalesReportDto>.Fail($"Error generating report: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null)
         {
             try
