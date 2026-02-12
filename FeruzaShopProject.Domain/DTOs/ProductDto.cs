@@ -66,6 +66,31 @@ namespace FeruzaShopProject.Domain.DTOs
         public List<ProductBranchStockDto> BranchStocks { get; set; } = new();
     }
 
+    // Add these to your existing DTOs file
+    public class BulkCreateProductDto
+    {
+        [Required, MinLength(1, ErrorMessage = "At least one product is required")]
+        [MaxLength(100, ErrorMessage = "Maximum 100 products can be created in one bulk operation")]
+        public List<CreateProductDto> Products { get; set; } = new();
+    }
+
+    public class BulkProductResultDto
+    {
+        public int TotalProcessed { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public List<ProductResponseDto> SuccessfulProducts { get; set; } = new();
+        public List<BulkProductErrorDto> FailedProducts { get; set; } = new();
+    }
+
+    public class BulkProductErrorDto
+    {
+        public int RowIndex { get; set; }
+        public string ItemCode { get; set; }
+        public string ProductName { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     public class ProductBranchStockDto
     {
         [Required]

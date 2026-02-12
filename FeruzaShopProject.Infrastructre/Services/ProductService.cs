@@ -26,6 +26,7 @@ namespace FeruzaShopProject.Infrastructure.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        // ========== SINGLE CREATE ==========
         public async Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -38,11 +39,25 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<ProductResponseDto>.Fail("Category not found");
                 }
 
-                // Validate item code uniqueness (across all branches since product is not branch-specific)
+                // Validate item code uniqueness
                 if (await _context.Products.AnyAsync(p => p.ItemCode == dto.ItemCode && p.IsActive))
                 {
                     _logger.LogWarning("Item code already exists: {ItemCode}", dto.ItemCode);
                     return ApiResponse<ProductResponseDto>.Fail("Item code already exists");
+                }
+
+                // Validate branches exist
+                var branchIds = dto.BranchStocks.Select(b => b.BranchId).Distinct().ToList();
+                var existingBranches = await _context.Branches
+                    .Where(b => branchIds.Contains(b.Id) && b.IsActive)
+                    .Select(b => b.Id)
+                    .ToListAsync();
+
+                var invalidBranches = branchIds.Except(existingBranches).ToList();
+                if (invalidBranches.Any())
+                {
+                    _logger.LogWarning("Invalid branches: {BranchIds}", string.Join(", ", invalidBranches));
+                    return ApiResponse<ProductResponseDto>.Fail($"Invalid branches: {string.Join(", ", invalidBranches)}");
                 }
 
                 // Create product
@@ -57,35 +72,26 @@ namespace FeruzaShopProject.Infrastructure.Services
                 await _context.Products.AddAsync(product);
 
                 // Create stock entries for each branch
-                if (dto.BranchStocks != null && dto.BranchStocks.Any())
+                foreach (var branchStock in dto.BranchStocks)
                 {
-                    foreach (var branchStock in dto.BranchStocks)
+                    var stock = new Stock
                     {
-                        // Validate branch exists
-                        if (!await _context.Branches.AnyAsync(b => b.Id == branchStock.BranchId && b.IsActive))
-                        {
-                            _logger.LogWarning("Branch not found: {BranchId}", branchStock.BranchId);
-                            return ApiResponse<ProductResponseDto>.Fail($"Branch not found: {branchStock.BranchId}");
-                        }
-
-                        var stock = new Stock
-                        {
-                            Id = Guid.NewGuid(),
-                            ProductId = product.Id,
-                            BranchId = branchStock.BranchId,
-                            Quantity = branchStock.Quantity,
-                            CreatedAt = DateTime.UtcNow,
-                            IsActive = true
-                        };
-                        await _context.Stocks.AddAsync(stock);
-                    }
+                        Id = Guid.NewGuid(),
+                        ProductId = product.Id,
+                        BranchId = branchStock.BranchId,
+                        Quantity = branchStock.Quantity,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    await _context.Stocks.AddAsync(stock);
                 }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 var result = await GetProductResponse(product.Id);
-                _logger.LogInformation("Created product {ProductId}", product.Id);
+                _logger.LogInformation("Created product {ProductId} with ItemCode: {ItemCode}",
+                    product.Id, product.ItemCode);
                 return ApiResponse<ProductResponseDto>.Success(result, "Product created successfully");
             }
             catch (Exception ex)
@@ -96,6 +102,185 @@ namespace FeruzaShopProject.Infrastructure.Services
             }
         }
 
+        // ========== BULK CREATE ==========
+        public async Task<ApiResponse<BulkProductResultDto>> BulkCreateProductsAsync(BulkCreateProductDto dto)
+        {
+            var result = new BulkProductResultDto
+            {
+                TotalProcessed = dto.Products.Count,
+                SuccessfulProducts = new List<ProductResponseDto>(),
+                FailedProducts = new List<BulkProductErrorDto>()
+            };
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _logger.LogInformation("Starting bulk product creation for {Count} products", dto.Products.Count);
+
+                // Get all categories for validation
+                var categoryIds = dto.Products.Select(p => p.CategoryId).Distinct().ToList();
+                var validCategories = (await _context.Categories
+                         .Where(c => categoryIds.Contains(c.Id) && c.IsActive)
+                         .Select(c => c.Id)
+                         .ToListAsync())
+                         .ToHashSet();
+
+
+                // Get all branch IDs for validation
+                var allBranchIds = dto.Products
+                    .SelectMany(p => p.BranchStocks.Select(b => b.BranchId))
+                    .Distinct()
+                    .ToList();
+                var validBranches = (await _context.Branches
+                        .Where(b => allBranchIds.Contains(b.Id) && b.IsActive)
+                        .Select(b => b.Id)
+                        .ToListAsync())
+                        .ToHashSet();
+
+                // Get existing item codes
+                var allItemCodes = dto.Products.Select(p => p.ItemCode).Distinct().ToList();
+                var existingItemCodes = (await _context.Products
+                        .Where(p => allItemCodes.Contains(p.ItemCode) && p.IsActive)
+                        .Select(p => p.ItemCode)
+                        .ToListAsync())
+                        .ToHashSet();
+                var productsToAdd = new List<Product>();
+                var stocksToAdd = new List<Stock>();
+
+                // Process each product
+                for (int i = 0; i < dto.Products.Count; i++)
+                {
+                    var productDto = dto.Products[i];
+                    var errors = new List<string>();
+
+                    // Validate category
+                    if (!validCategories.Contains(productDto.CategoryId))
+                    {
+                        errors.Add($"Category '{productDto.CategoryId}' not found or inactive");
+                    }
+
+                    // Validate item code uniqueness
+                    if (existingItemCodes.Contains(productDto.ItemCode))
+                    {
+                        errors.Add($"Item code '{productDto.ItemCode}' already exists");
+                    }
+
+                    // Validate branches
+                    var branchIds = productDto.BranchStocks.Select(b => b.BranchId).Distinct().ToList();
+                    var invalidBranches = branchIds.Where(b => !validBranches.Contains(b)).ToList();
+                    if (invalidBranches.Any())
+                    {
+                        errors.Add($"Invalid branches: {string.Join(", ", invalidBranches)}");
+                    }
+
+                    // Validate at least one branch stock
+                    if (!productDto.BranchStocks.Any())
+                    {
+                        errors.Add("At least one branch stock entry is required");
+                    }
+
+                    // Validate quantity non-negative
+                    if (productDto.BranchStocks.Any(b => b.Quantity < 0))
+                    {
+                        errors.Add("Stock quantity cannot be negative");
+                    }
+
+                    if (errors.Any())
+                    {
+                        result.FailedCount++;
+                        result.FailedProducts.Add(new BulkProductErrorDto
+                        {
+                            RowIndex = i + 1,
+                            ItemCode = productDto.ItemCode,
+                            ProductName = productDto.Name,
+                            ErrorMessage = string.Join("; ", errors)
+                        });
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Create product
+                        var product = _mapper.Map<Product>(productDto);
+                        product.Id = Guid.NewGuid();
+                        product.CreatedAt = DateTime.UtcNow;
+                        product.IsActive = true;
+
+                        // Validate amount
+                        product.ValidateAmount();
+
+                        productsToAdd.Add(product);
+                        existingItemCodes.Add(product.ItemCode); // Add to cache to prevent duplicates within same batch
+
+                        // Create stock entries
+                        foreach (var branchStock in productDto.BranchStocks)
+                        {
+                            var stock = new Stock
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = product.Id,
+                                BranchId = branchStock.BranchId,
+                                Quantity = branchStock.Quantity,
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true
+                            };
+                            stocksToAdd.Add(stock);
+                        }
+
+                        result.SuccessCount++;
+                        _logger.LogDebug("Prepared product for bulk insert: {ItemCode}", product.ItemCode);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.FailedCount++;
+                        result.FailedProducts.Add(new BulkProductErrorDto
+                        {
+                            RowIndex = i + 1,
+                            ItemCode = productDto.ItemCode,
+                            ProductName = productDto.Name,
+                            ErrorMessage = $"Validation error: {ex.Message}"
+                        });
+                    }
+                }
+
+                // Bulk insert all valid products and stocks
+                if (productsToAdd.Any())
+                {
+                    await _context.Products.AddRangeAsync(productsToAdd);
+                    await _context.Stocks.AddRangeAsync(stocksToAdd);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("Successfully bulk inserted {Count} products and {StockCount} stock entries",
+                        productsToAdd.Count, stocksToAdd.Count);
+                }
+
+                await transaction.CommitAsync();
+
+                // Get the complete product responses for successful items
+                foreach (var product in productsToAdd)
+                {
+                    var productResponse = await GetProductResponse(product.Id);
+                    if (productResponse != null)
+                    {
+                        result.SuccessfulProducts.Add(productResponse);
+                    }
+                }
+
+                _logger.LogInformation("Bulk product creation completed. Success: {Success}, Failed: {Failed}",
+                    result.SuccessCount, result.FailedCount);
+
+                var message = $"Bulk product creation completed. {result.SuccessCount} products created successfully, {result.FailedCount} failed.";
+                return ApiResponse<BulkProductResultDto>.Success(result, message);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error in bulk product creation");
+                return ApiResponse<BulkProductResultDto>.Fail("Failed to bulk create products");
+            }
+        }
+
+        // ========== EXISTING METHODS ==========
         public async Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(UpdateProductDto dto)
         {
             try
@@ -230,7 +415,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<List<ProductResponseDto>>.Fail("Branch not found");
                 }
 
-                // Get products that have stock in the specified branch
                 var products = await _context.Stocks
                     .Include(s => s.Product)
                     .ThenInclude(p => p.Category)
@@ -289,7 +473,6 @@ namespace FeruzaShopProject.Infrastructure.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Check if product exists and is active
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.Id == dto.ProductId && p.IsActive);
 
@@ -299,7 +482,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<ProductStockDto>.Fail("Product not found");
                 }
 
-                // Check if branch exists and is active
                 var branch = await _context.Branches
                     .FirstOrDefaultAsync(b => b.Id == dto.BranchId && b.IsActive);
 
@@ -309,7 +491,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<ProductStockDto>.Fail("Branch not found");
                 }
 
-                // Check if product already exists in this branch
                 var existingStock = await _context.Stocks
                     .FirstOrDefaultAsync(s => s.ProductId == dto.ProductId &&
                                             s.BranchId == dto.BranchId &&
@@ -322,7 +503,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<ProductStockDto>.Fail("Product already exists in this branch");
                 }
 
-                // Create new stock entry for the branch
                 var stock = new Stock
                 {
                     Id = Guid.NewGuid(),
@@ -337,7 +517,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // Get the complete stock information with product and branch details
                 var createdStock = await _context.Stocks
                     .Include(s => s.Product)
                     .Include(s => s.Branch)
@@ -357,6 +536,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                 return ApiResponse<ProductStockDto>.Fail("Failed to add product to branch");
             }
         }
+
         public async Task<ApiResponse<bool>> DeleteProductAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -372,7 +552,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     return ApiResponse<bool>.Fail("Product not found");
                 }
 
-                // Soft delete the product and its stocks
                 product.IsActive = false;
                 product.UpdatedAt = DateTime.UtcNow;
 

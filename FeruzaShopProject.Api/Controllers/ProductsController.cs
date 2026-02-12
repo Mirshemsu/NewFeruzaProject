@@ -37,6 +37,29 @@ namespace FeruzaShopProject.Api.Controllers
                 ? CreatedAtAction(nameof(Get), new { id = result.Data?.Id }, result)
                 : BadRequest(result);
         }
+        [HttpPost("bulk")]
+        [Authorize(Roles = "Manager")]
+        public async Task<ActionResult<ApiResponse<BulkProductResultDto>>> BulkCreateProducts([FromBody] BulkCreateProductDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("Bulk creating {Count} products", dto.Products.Count);
+
+                // Validate batch size
+                if (dto.Products.Count > 100)
+                {
+                    return BadRequest(ApiResponse<BulkProductResultDto>.Fail("Maximum batch size is 100 products"));
+                }
+
+                var result = await _productService.BulkCreateProductsAsync(dto);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in bulk product creation");
+                return StatusCode(500, ApiResponse<BulkProductResultDto>.Fail("An error occurred during bulk product creation"));
+            }
+        }
 
         [HttpPut]
         [Authorize(Roles = "Admin,Manager")]

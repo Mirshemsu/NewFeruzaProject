@@ -11,6 +11,7 @@ namespace FeruzaShopProject.Application.Interface
     public interface IProductService
     {
         Task<ApiResponse<ProductResponseDto>> CreateProductAsync(CreateProductDto dto);
+        Task<ApiResponse<BulkProductResultDto>> BulkCreateProductsAsync(BulkCreateProductDto dto);
         Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(UpdateProductDto dto);
         Task<ApiResponse<ProductResponseDto>> GetProductByIdAsync(Guid id);
         Task<ApiResponse<List<ProductResponseDto>>> GetAllProductsAsync();

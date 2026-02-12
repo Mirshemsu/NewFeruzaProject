@@ -728,6 +728,32 @@
   },
   {
     "ContainingType": "FeruzaShopProject.Api.Controllers.ProductsController",
+    "Method": "BulkCreateProducts",
+    "RelativePath": "api/Products/bulk",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.BulkCreateProductDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.BulkProductResultDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.ProductsController",
     "Method": "GetByCategory",
     "RelativePath": "api/Products/category/{categoryId}",
     "HttpMethod": "GET",
