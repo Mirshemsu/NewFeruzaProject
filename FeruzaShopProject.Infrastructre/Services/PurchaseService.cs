@@ -219,11 +219,31 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                if (purchaseOrder.Status != PurchaseOrderStatus.AcceptedByAdmin &&
-                    purchaseOrder.Status != PurchaseOrderStatus.PartiallyRegistered)
+                // ALLOWED STATUSES FOR REGISTRATION:
+                // - Before finance: AcceptedByAdmin, PartiallyRegistered, CompletelyRegistered
+                // - After finance: PartiallyFinanceProcessed, FullyFinanceProcessed
+                // - After admin approval: PartiallyApproved
+                var allowedStatuses = new List<PurchaseOrderStatus>
+        {
+            PurchaseOrderStatus.AcceptedByAdmin,
+            PurchaseOrderStatus.PartiallyRegistered,
+            PurchaseOrderStatus.CompletelyRegistered,
+            PurchaseOrderStatus.PartiallyFinanceProcessed,
+            PurchaseOrderStatus.FullyFinanceProcessed,
+            PurchaseOrderStatus.PartiallyApproved
+        };
+
+                if (!allowedStatuses.Contains(purchaseOrder.Status))
                 {
                     _logger.LogWarning("Purchase order not in correct status for registration: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in AcceptedByAdmin or PartiallyRegistered status to register received quantities");
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order must be in one of these statuses to register received quantities: AcceptedByAdmin, PartiallyRegistered, CompletelyRegistered, PartiallyFinanceProcessed, FullyFinanceProcessed, or PartiallyApproved");
+                }
+
+                // Check if order is fully approved - cannot register more
+                if (purchaseOrder.Status == PurchaseOrderStatus.FullyApproved)
+                {
+                    _logger.LogWarning("Cannot register quantities for fully approved purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Cannot register quantities for a fully approved purchase order");
                 }
 
                 foreach (var itemDto in dto.Items)
@@ -241,6 +261,13 @@ namespace ShopMgtSys.Infrastructure.Services
                         return ApiResponse<PurchaseOrderDto>.Fail($"Item not accepted by admin: {itemDto.ItemId}");
                     }
 
+                    // Check if item is already approved
+                    if (item.IsApproved)
+                    {
+                        _logger.LogWarning("Cannot register quantities for approved item: {ItemId}", itemDto.ItemId);
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is already approved and cannot receive more quantities");
+                    }
+
                     // Calculate new total registered quantity
                     int newTotalRegistered = (item.QuantityRegistered ?? 0) + itemDto.QuantityRegistered;
 
@@ -255,7 +282,14 @@ namespace ShopMgtSys.Infrastructure.Services
                     item.QuantityRegistered = newTotalRegistered;
                     item.RegisteredAt = DateTime.UtcNow;
                     item.RegisteredBy = userId;
-                    item.RegistrationEditCount = 0; // Reset on new registration
+
+                    // Only increment edit count if this is an edit (not first registration)
+                    if (item.RegistrationEditCount > 0 || newTotalRegistered > itemDto.QuantityRegistered)
+                    {
+                        item.RegistrationEditCount += 1;
+                        item.LastRegistrationEditAt = DateTime.UtcNow;
+                    }
+
                     item.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -286,7 +320,7 @@ namespace ShopMgtSys.Infrastructure.Services
             var allItemsRegistered = purchaseOrder.Items.All(i =>
                 i.QuantityAccepted.HasValue &&
                 i.QuantityRegistered.HasValue &&
-                i.QuantityRegistered.Value >= i.QuantityAccepted.Value); // Changed from > 0 to >= accepted
+                i.QuantityRegistered.Value >= i.QuantityAccepted.Value);
 
             var someItemsRegistered = purchaseOrder.Items.Any(i =>
                 i.QuantityRegistered.HasValue &&
@@ -294,7 +328,20 @@ namespace ShopMgtSys.Infrastructure.Services
 
             if (allItemsRegistered)
             {
-                purchaseOrder.Status = PurchaseOrderStatus.CompletelyRegistered;
+                // If all items are fully registered, move to appropriate status
+                if (purchaseOrder.Status == PurchaseOrderStatus.PartiallyFinanceProcessed ||
+                    purchaseOrder.Status == PurchaseOrderStatus.FullyFinanceProcessed)
+                {
+                    purchaseOrder.Status = PurchaseOrderStatus.FullyFinanceProcessed;
+                }
+                else if (purchaseOrder.Status == PurchaseOrderStatus.PartiallyApproved)
+                {
+                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved; // Keep as partially approved until admin approves remaining
+                }
+                else
+                {
+                    purchaseOrder.Status = PurchaseOrderStatus.CompletelyRegistered;
+                }
             }
             else if (someItemsRegistered)
             {
@@ -325,12 +372,31 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                if (purchaseOrder.Status != PurchaseOrderStatus.CompletelyRegistered &&
-                    purchaseOrder.Status != PurchaseOrderStatus.PartiallyRegistered &&
-                    purchaseOrder.Status != PurchaseOrderStatus.AcceptedByAdmin)
+                // ALLOWED STATUSES FOR FINANCE VERIFICATION:
+                // - Before registration: AcceptedByAdmin
+                // - During registration: PartiallyRegistered, CompletelyRegistered
+                // - After partial approval: PartiallyApproved
+                // - After previous finance: PartiallyFinanceProcessed
+                var allowedStatuses = new List<PurchaseOrderStatus>
+        {
+            PurchaseOrderStatus.AcceptedByAdmin,
+            PurchaseOrderStatus.PartiallyRegistered,
+            PurchaseOrderStatus.CompletelyRegistered,
+            PurchaseOrderStatus.PartiallyFinanceProcessed,
+            PurchaseOrderStatus.PartiallyApproved
+        };
+
+                if (!allowedStatuses.Contains(purchaseOrder.Status))
                 {
                     _logger.LogWarning("Purchase order not in correct status for finance verification: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in CompletelyRegistered, PartiallyRegistered, or AcceptedByAdmin status");
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order must be in one of these statuses: AcceptedByAdmin, PartiallyRegistered, CompletelyRegistered, PartiallyFinanceProcessed, or PartiallyApproved");
+                }
+
+                // Cannot verify if order is fully approved
+                if (purchaseOrder.Status == PurchaseOrderStatus.FullyApproved)
+                {
+                    _logger.LogWarning("Cannot verify fully approved purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Cannot verify a fully approved purchase order");
                 }
 
                 bool allItemsVerified = true;
@@ -343,6 +409,13 @@ namespace ShopMgtSys.Infrastructure.Services
                     {
                         _logger.LogWarning("Purchase order item not found: {ItemId}", itemDto.ItemId);
                         return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order item not found: {itemDto.ItemId}");
+                    }
+
+                    // Check if item is already approved
+                    if (item.IsApproved)
+                    {
+                        _logger.LogWarning("Cannot verify approved item: {ItemId}", itemDto.ItemId);
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is already approved and cannot be modified");
                     }
 
                     if (!item.QuantityRegistered.HasValue || item.QuantityRegistered.Value == 0)
@@ -446,30 +519,49 @@ namespace ShopMgtSys.Infrastructure.Services
             // Check if ALL items are finance verified
             var allItemsFinanceVerified = purchaseOrder.Items.All(i => i.FinanceVerified == true);
 
+            // Check if any items are already approved
+            var hasApprovedItems = purchaseOrder.Items.Any(i => i.IsApproved);
+
             if (allItemsFinanceVerified && allItemsFullyRegistered)
             {
-                // Only when ALL items are BOTH fully registered AND finance verified
-                purchaseOrder.Status = PurchaseOrderStatus.FullyFinanceProcessed;
+                if (hasApprovedItems)
+                {
+                    // If some items are already approved, stay in PartiallyApproved
+                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
+                }
+                else
+                {
+                    // Only when ALL items are BOTH fully registered AND finance verified
+                    purchaseOrder.Status = PurchaseOrderStatus.FullyFinanceProcessed;
+                }
             }
             else if (allItemsFinanceVerified && !allItemsFullyRegistered)
             {
                 // All items are verified BUT not fully registered yet
-                purchaseOrder.Status = PurchaseOrderStatus.PartiallyFinanceProcessed;
+                purchaseOrder.Status = hasApprovedItems
+                    ? PurchaseOrderStatus.PartiallyApproved
+                    : PurchaseOrderStatus.PartiallyFinanceProcessed;
             }
             else if (anyItemsVerified)
             {
                 // Some items are verified
-                purchaseOrder.Status = PurchaseOrderStatus.PartiallyFinanceProcessed;
+                purchaseOrder.Status = hasApprovedItems
+                    ? PurchaseOrderStatus.PartiallyApproved
+                    : PurchaseOrderStatus.PartiallyFinanceProcessed;
             }
             else
             {
-                // No items verified yet - stay in registration status
-                purchaseOrder.Status = purchaseOrder.Items.All(i =>
-                    i.QuantityRegistered.HasValue &&
-                    i.QuantityAccepted.HasValue &&
-                    i.QuantityRegistered.Value >= i.QuantityAccepted.Value)
-                    ? PurchaseOrderStatus.CompletelyRegistered
-                    : PurchaseOrderStatus.PartiallyRegistered;
+                // No items verified yet - stay in registration or approval status
+                if (hasApprovedItems)
+                {
+                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
+                }
+                else
+                {
+                    purchaseOrder.Status = allItemsFullyRegistered
+                        ? PurchaseOrderStatus.CompletelyRegistered
+                        : PurchaseOrderStatus.PartiallyRegistered;
+                }
             }
         }
         private async Task<decimal> GetDefaultMarkupPercentageAsync()
@@ -497,22 +589,51 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                if (purchaseOrder.Status != PurchaseOrderStatus.FullyFinanceProcessed &&
-                    purchaseOrder.Status != PurchaseOrderStatus.PartiallyFinanceProcessed)
+                // ALLOWED STATUSES FOR FINAL APPROVAL:
+                // - After finance: PartiallyFinanceProcessed, FullyFinanceProcessed
+                // - After previous approvals: PartiallyApproved
+                var allowedStatuses = new List<PurchaseOrderStatus>
+        {
+            PurchaseOrderStatus.PartiallyFinanceProcessed,
+            PurchaseOrderStatus.FullyFinanceProcessed,
+            PurchaseOrderStatus.PartiallyApproved  // Can approve more items even after partial approval
+        };
+
+                if (!allowedStatuses.Contains(purchaseOrder.Status))
                 {
                     _logger.LogWarning("Purchase order not in correct status for final approval: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in FullyFinanceProcessed or PartiallyFinanceProcessed status for final approval");
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order must be in PartiallyFinanceProcessed, FullyFinanceProcessed, or PartiallyApproved status for final approval");
+                }
+
+                // Cannot approve if fully approved
+                if (purchaseOrder.Status == PurchaseOrderStatus.FullyApproved)
+                {
+                    _logger.LogWarning("Purchase order already fully approved: {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order is already fully approved");
                 }
 
                 // Determine which items to approve
                 var itemsToApprove = dto.ItemIds != null && dto.ItemIds.Any()
-                    ? purchaseOrder.Items.Where(i => dto.ItemIds.Contains(i.Id) && i.FinanceVerified == true).ToList()
-                    : purchaseOrder.Items.Where(i => i.FinanceVerified == true).ToList();
+                    ? purchaseOrder.Items.Where(i => dto.ItemIds.Contains(i.Id) && i.FinanceVerified == true && !i.IsApproved).ToList()
+                    : purchaseOrder.Items.Where(i => i.FinanceVerified == true && !i.IsApproved).ToList();
 
                 if (!itemsToApprove.Any())
                 {
                     _logger.LogWarning("No items to approve for purchase order {PurchaseOrderId}", dto.PurchaseOrderId);
-                    return ApiResponse<PurchaseOrderDto>.Fail("No verified items found to approve");
+
+                    // Check if all items are already approved
+                    if (purchaseOrder.Items.All(i => i.IsApproved))
+                    {
+                        purchaseOrder.Status = PurchaseOrderStatus.FullyApproved;
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        // FIX: Rename this to avoid conflict
+                        var orderResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
+                        return ApiResponse<PurchaseOrderDto>.Success(orderResult, "All items are already approved");
+                    }
+
+                    return ApiResponse<PurchaseOrderDto>.Fail("No verified and unapproved items found to approve");
                 }
 
                 // Update stock and prices for approved items
@@ -522,6 +643,14 @@ namespace ShopMgtSys.Infrastructure.Services
                     {
                         _logger.LogWarning("Item {ItemId} missing required data for approval", item.Id);
                         continue;
+                    }
+
+                    // Check if item is fully registered
+                    if (item.QuantityRegistered.Value < item.QuantityAccepted.Value)
+                    {
+                        _logger.LogWarning("Item {ItemId} is not fully registered: {Registered}/{Accepted}",
+                            item.Id, item.QuantityRegistered.Value, item.QuantityAccepted.Value);
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is not fully registered. Registered: {item.QuantityRegistered.Value}, Accepted: {item.QuantityAccepted.Value}");
                     }
 
                     // Update product prices
@@ -549,53 +678,78 @@ namespace ShopMgtSys.Infrastructure.Services
                     item.UpdatedAt = DateTime.UtcNow;
                 }
 
-                // Check if ALL items are fully registered (QuantityRegistered >= QuantityAccepted)
-                var allItemsFullyRegistered = purchaseOrder.Items.All(i =>
-                    i.QuantityRegistered.HasValue &&
-                    i.QuantityAccepted.HasValue &&
-                    i.QuantityRegistered.Value >= i.QuantityAccepted.Value);
+                // Check current state
+                var allItems = purchaseOrder.Items;
+                var totalItems = allItems.Count();
+                var acceptedItems = allItems.Count(i => i.QuantityAccepted > 0);
+                var registeredItems = allItems.Count(i => i.QuantityRegistered > 0);
+                var financeVerifiedItems = allItems.Count(i => i.FinanceVerified == true);
+                var approvedItems = allItems.Count(i => i.IsApproved);
+
+                // Check if ALL items are fully registered
+                var allItemsFullyRegistered = allItems.All(i =>
+                    !i.QuantityAccepted.HasValue || // Skip items not accepted
+                    (i.QuantityRegistered.HasValue &&
+                     i.QuantityAccepted.HasValue &&
+                     i.QuantityRegistered.Value >= i.QuantityAccepted.Value));
 
                 // Check if ALL finance-verified items are approved
-                var allFinanceVerifiedItemsApproved = purchaseOrder.Items
+                var allFinanceVerifiedItemsApproved = allItems
                     .Where(i => i.FinanceVerified == true)
-                    .All(i => i.ApprovedAt.HasValue);
+                    .All(i => i.IsApproved);
 
-                // Check if there are any finance-verified items
-                var hasFinanceVerifiedItems = purchaseOrder.Items.Any(i => i.FinanceVerified == true);
+                // Check if there are any unapproved finance-verified items
+                var hasUnapprovedFinanceVerified = allItems
+                    .Any(i => i.FinanceVerified == true && !i.IsApproved);
 
                 // Update purchase order status
-                if (allFinanceVerifiedItemsApproved && allItemsFullyRegistered && hasFinanceVerifiedItems)
+                if (allFinanceVerifiedItemsApproved && allItemsFullyRegistered)
                 {
-                    // All finance-verified items are approved AND all items are fully registered
+                    // All finance-verified items are approved AND all accepted items are fully registered
                     purchaseOrder.Status = PurchaseOrderStatus.FullyApproved;
                 }
-                else if (allFinanceVerifiedItemsApproved && !allItemsFullyRegistered)
+                else if (approvedItems > 0)
                 {
-                    // All finance-verified items are approved BUT not all items are fully registered
+                    // Some items are approved
                     purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
                 }
-                else if (itemsToApprove.Any())
+                else if (financeVerifiedItems > 0)
                 {
-                    // Some items approved
-                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
+                    // Some items are finance verified but none approved yet
+                    purchaseOrder.Status = allItemsFullyRegistered
+                        ? PurchaseOrderStatus.FullyFinanceProcessed
+                        : PurchaseOrderStatus.PartiallyFinanceProcessed;
+                }
+                else if (registeredItems > 0)
+                {
+                    // Some items are registered but not finance verified
+                    purchaseOrder.Status = allItemsFullyRegistered
+                        ? PurchaseOrderStatus.CompletelyRegistered
+                        : PurchaseOrderStatus.PartiallyRegistered;
+                }
+                else
+                {
+                    // Only accepted, nothing else
+                    purchaseOrder.Status = PurchaseOrderStatus.AcceptedByAdmin;
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
-                var approvedCount = purchaseOrder.Items.Count(i => i.ApprovedAt.HasValue);
+                var approvedCount = purchaseOrder.Items.Count(i => i.IsApproved);
                 var totalValue = purchaseOrder.Items
-                    .Where(i => i.ApprovedAt.HasValue && i.BuyingPrice.HasValue && i.QuantityRegistered.HasValue)
+                    .Where(i => i.IsApproved && i.BuyingPrice.HasValue && i.QuantityRegistered.HasValue)
                     .Sum(i => i.BuyingPrice.Value * i.QuantityRegistered.Value);
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "FinalApprovedByAdmin", userId,
-                    $"Admin approved {approvedCount} items. Total value: ${totalValue}");
+                    $"Admin approved {itemsToApprove.Count} new items. Total approved: {approvedCount}. Total value: ${totalValue}");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}. Items approved: {ApprovedCount}",
-                    purchaseOrder.Id, approvedCount);
+                // FIX: Use a different variable name here
+                var finalResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
+                _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}. New items approved: {NewApproved}, Total approved: {TotalApproved}",
+                    purchaseOrder.Id, itemsToApprove.Count, approvedCount);
 
                 // Determine the correct message
                 string statusMessage;
@@ -605,10 +759,11 @@ namespace ShopMgtSys.Infrastructure.Services
                 }
                 else
                 {
-                    statusMessage = $"Purchase order partially approved. {approvedCount} items added to inventory. Waiting for remaining items to be fully registered.";
+                    var remainingItems = allItems.Count(i => i.FinanceVerified == true && !i.IsApproved);
+                    statusMessage = $"Purchase order partially approved. {itemsToApprove.Count} new items approved. Total approved: {approvedCount}. Remaining items to approve: {remainingItems}.";
                 }
 
-                return ApiResponse<PurchaseOrderDto>.Success(result, statusMessage);
+                return ApiResponse<PurchaseOrderDto>.Success(finalResult, statusMessage);
             }
             catch (Exception ex)
             {
