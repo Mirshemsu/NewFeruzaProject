@@ -4,6 +4,7 @@ using FeruzaShopProject.Infrastructre.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FeruzaShopProject.Infrastructre.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    partial class ShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260217084233_feruz pro")]
+    partial class feruzpro
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -409,9 +412,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<Guid>("PurchaseOrderId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("PurchaseOrderItemId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -420,8 +420,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.HasIndex("PerformedByUserId");
 
                     b.HasIndex("PurchaseOrderId");
-
-                    b.HasIndex("PurchaseOrderItemId");
 
                     b.ToTable("PurchaseHistory");
                 });
@@ -473,18 +471,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("AcceptedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("AcceptedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal?>("BuyingPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -494,26 +480,8 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Property<bool?>("FinanceVerified")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("FinanceVerifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("FinanceVerifiedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastRegistrationEditAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PriceEditCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("PriceSetAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("PriceSetBy")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
@@ -528,15 +496,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("QuantityRequested")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RegisteredAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("RegisteredBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("RegistrationEditCount")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("UnitPrice")
@@ -1145,20 +1104,14 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .IsRequired();
 
                     b.HasOne("FeruzaShopProject.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany("History")
+                        .WithMany()
                         .HasForeignKey("PurchaseOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FeruzaShopProject.Domain.Entities.PurchaseOrderItem", "PurchaseOrderItem")
-                        .WithMany()
-                        .HasForeignKey("PurchaseOrderItemId");
-
                     b.Navigation("PerformedByUser");
 
                     b.Navigation("PurchaseOrder");
-
-                    b.Navigation("PurchaseOrderItem");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
@@ -1432,8 +1385,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.PurchaseOrder", b =>
                 {
-                    b.Navigation("History");
-
                     b.Navigation("Items");
                 });
 

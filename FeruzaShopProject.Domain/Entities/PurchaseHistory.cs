@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FeruzaShopProject.Domain.Entities
 {
@@ -11,12 +7,21 @@ namespace FeruzaShopProject.Domain.Entities
     {
         [Required]
         public Guid PurchaseOrderId { get; set; }
+
         [Required]
-        public string Action { get; set; } // e.g., "Submitted", "Received", "Approved"
+        public string Action { get; set; } // "Created", "Accepted", "Registered", "Edited", "FinanceVerified", "Approved", "Rejected", "Cancelled"
+
         [Required]
         public Guid PerformedByUserId { get; set; }
-        public string Details { get; set; } // e.g., "Received 100 items", "Approved 100 items"
+
+        public string Details { get; set; } // What changed: "Registered 20 units", "Updated price from $10 to $9.50", etc.
+
+        // Optional: Track which item was affected
+        public Guid? PurchaseOrderItemId { get; set; }
+
+        // Navigation Properties
         public PurchaseOrder PurchaseOrder { get; set; }
         public User PerformedByUser { get; set; }
+        public PurchaseOrderItem PurchaseOrderItem { get; set; }
     }
 }

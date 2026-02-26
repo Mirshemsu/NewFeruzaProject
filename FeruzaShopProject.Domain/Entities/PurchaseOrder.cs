@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FeruzaShopProject.Domain.Entities
 {
@@ -14,14 +12,24 @@ namespace FeruzaShopProject.Domain.Entities
 
         [Required]
         public Guid CreatedBy { get; set; }
+
         public Guid? SupplierId { get; set; }
 
-        [Required, EnumDataType(typeof(PurchaseOrderStatus))]
+        [Required]
         public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.PendingAdminAcceptance;
 
+        // Simple progress tracking
+        public int TotalItems => Items?.Count ?? 0;
+        public int AcceptedItems => Items?.Count(i => i.QuantityAccepted > 0) ?? 0;
+        public int RegisteredItems => Items?.Count(i => i.QuantityRegistered > 0) ?? 0;
+        public int FinanceVerifiedItems => Items?.Count(i => i.FinanceVerified == true) ?? 0;
+        public int ApprovedItems => Items?.Count(i => i.ApprovedAt != null) ?? 0;
+
+        // Navigation Properties
         public Branch Branch { get; set; }
         public User Creator { get; set; }
         public Supplier? Supplier { get; set; }
         public List<PurchaseOrderItem> Items { get; set; } = new();
+        public List<PurchaseHistory> History { get; set; } = new();
     }
 }

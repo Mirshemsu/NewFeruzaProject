@@ -1,8 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\",
+  "WorkspaceRootPath": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\",
   "Documents": [
     {
+<<<<<<< HEAD
       "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -84,102 +85,194 @@
     },
     {
       "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+=======
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
       "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\entities\\enums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\controllers\\purchasescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\controllers\\purchasescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\purchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\enums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\enums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\dtos\\purchasedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\dtos\\purchasedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\services\\supplierservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\supplierservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\interface\\ipurchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\interface\\ipurchaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\services\\stockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\stockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\mapper\\purchasemapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\mapper\\purchasemapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\entities\\purchaseorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\purchasehistory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\purchasehistory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\purchaseorderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\purchaseorderitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\purchaseorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\purchaseorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\data\\shopdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260217084233_feruz pro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260217084233_feruz pro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\product.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\productservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\controllers\\productscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\interface\\iproductservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\interface\\iproductservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\dtos\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\dtos\\productdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\transactionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\transactionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\mapper\\dailysalesmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\mapper\\dailysalesmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\dailysales.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\dailysales.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\dtos\\transcactiondto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\dtos\\transcactiondto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\mapper\\transactionmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\mapper\\transactionmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\controllers\\bankaccountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\controllers\\bankaccountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260206142817_update purchase2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260206142817_update purchase2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\stockmovement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\stockmovement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\supplierservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\supplierservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\stockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\stockservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\data\\shopdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\data\\shopdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\authorization\\branchauthorizationhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\authorization\\branchauthorizationhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\authorization\\branchauthorizationhandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.application\\mapper\\branchmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\mapper\\branchmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\mapper\\branchmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.application\\interface\\itransactionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.application\\interface\\itransactionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{E87A407D-54A4-452A-B427-2053D4EABDE7}|FeruzaShopProject.Application\\FeruzaShopProject.Application.csproj|solutionrelative:feruzashopproject.application\\interface\\itransactionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\entities\\transaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\transaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\transaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260113174802_update 1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260113174802_update 1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260113174802_update 1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\entities\\creditpayment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\creditpayment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\creditpayment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\entities\\productexchange.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\entities\\productexchange.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\entities\\productexchange.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.api\\controllers\\transactionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.api\\controllers\\transactionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FD5024C7-8E28-490B-B4E1-845A812499DD}|FeruzaShopProject.Api\\FeruzaShopProject.Api.csproj|solutionrelative:feruzashopproject.api\\controllers\\transactionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\services\\productexchangeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\services\\productexchangeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\services\\productexchangeservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.domain\\dtos\\productexchangedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.domain\\dtos\\productexchangedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{FDC43CDF-5F2B-405C-9AC9-24119293EC35}|FeruzaShopProject.Domain\\FeruzaShopProject.Domain.csproj|solutionrelative:feruzashopproject.domain\\dtos\\productexchangedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260113212750_update.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260113212750_update.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260113212750_update.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260206134700_update purchase1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260206134700_update purchase1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260206134700_update purchase1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260206113903_update purchase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260206113903_update purchase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260206113903_update purchase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\hp\\desktop\\newferuza\\newferuza\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260211105824_update purchase order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|c:\\users\\miraj\\onedrive\\desktop\\feruz project\\newferuzaproject\\feruzashopproject.infrastructre\\migrations\\20260211105824_update purchase order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4B166CCC-213E-49BD-A52B-26531E80FE02}|FeruzaShopProject.Infrastructre\\FeruzaShopProject.Infrastructre.csproj|solutionrelative:feruzashopproject.infrastructre\\migrations\\20260211105824_update purchase order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -190,7 +283,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -202,6 +295,7 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 6,
               "Title": "ProductDto.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductDto.cs",
@@ -259,15 +353,225 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAANgDAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-13T21:45:44.499Z",
+=======
+              "DocumentIndex": 1,
+              "Title": "20260225135924_update final purchase.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs",
+              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260225135924_update final purchase.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-25T13:59:25.306Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "PurchaseDto.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
+              "ViewState": "AgIAAOwBAAAAAAAAAAAQwPsBAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-13T08:34:16.155Z",
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+<<<<<<< HEAD
+              "DocumentIndex": 5,
               "Title": "IProductService.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IProductService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Interface\\IProductService.cs",
               "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IProductService.cs",
+=======
+              "DocumentIndex": 7,
+              "Title": "PurchaseMapper.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
+              "RelativeToolTip": "FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
+              "ViewState": "AgIAAAwBAAAAAAAAAAAkwCsBAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T07:49:23.03Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "IPurchaseService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IPurchaseService.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Interface\\IPurchaseService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IPurchaseService.cs",
+              "RelativeToolTip": "FeruzaShopProject.Application\\Interface\\IPurchaseService.cs",
+              "ViewState": "AgIAAIYAAAAAAAAAAAAYwKQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T12:11:00.04Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "PurchaseService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\PurchaseService.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\PurchaseService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\PurchaseService.cs",
+              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\PurchaseService.cs",
+              "ViewState": "AgIAACQHAAAAAAAAAAArwBkHAABrAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-13T21:45:44.499Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Enums.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Enums.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Enums.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Enums.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\Enums.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAswC0AAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-13T17:58:37.602Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\appsettings.json",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Api\\appsettings.json",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\appsettings.json",
+              "RelativeToolTip": "FeruzaShopProject.Api\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-01-13T08:30:51.999Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "PurchaseHistory.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseHistory.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\PurchaseHistory.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseHistory.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\PurchaseHistory.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAgwBYAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-25T12:57:52.58Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PurchasesController.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
+              "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
+              "ViewState": "AgIAALEBAAAAAAAAAAAkwM0BAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T11:38:44.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "PurchaseOrderItem.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAQwEAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T08:25:58.337Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "PurchaseOrder.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAADwvyIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-06T07:51:05.349Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "20260217084233_feruz pro.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260217084233_feruz pro.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260217084233_feruz pro.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260217084233_feruz pro.cs",
+              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260217084233_feruz pro.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-17T08:42:35.429Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\ProductsController.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAAIAAAAAAAAAAAAAqwD0AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T11:41:45.793Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Product.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Product.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Product.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Product.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\Product.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAA8wDMAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-13T09:32:13.633Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ProductService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductService.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\ProductService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductService.cs",
+              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\ProductService.cs",
+              "ViewState": "AgIAAHsAAAAAAAAAAAAmwHcAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-11T12:50:23.343Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "ProductDto.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductDto.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\DTOs\\ProductDto.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductDto.cs",
+              "RelativeToolTip": "FeruzaShopProject.Domain\\DTOs\\ProductDto.cs",
+              "ViewState": "AgIAAE8AAAAAAAAAAAAywFsAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-11T13:44:47.285Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "IProductService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IProductService.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Interface\\IProductService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IProductService.cs",
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "RelativeToolTip": "FeruzaShopProject.Application\\Interface\\IProductService.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAcwAsAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -275,11 +579,19 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 2,
               "Title": "Category.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Category.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Category.cs",
               "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Category.cs",
+=======
+              "DocumentIndex": 13,
+              "Title": "Category.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Category.cs",
+              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Category.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Category.cs",
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\Category.cs",
               "ViewState": "AgIAAAQAAAAAAAAAAAAgwBEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -287,11 +599,15 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 8,
+=======
+              "DocumentIndex": 18,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "TransactionService.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\TransactionService.cs",
               "ViewState": "AgIAABwCAAAAAAAAAADwvwoAAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -299,11 +615,15 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 12,
+=======
+              "DocumentIndex": 22,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "TransactionMapper.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
               "RelativeToolTip": "FeruzaShopProject.Application\\Mapper\\TransactionMapper.cs",
               "ViewState": "AgIAAG4AAAAAAAAAAAAswHwAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -311,6 +631,7 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 7,
               "Title": "IPurchaseService.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\IPurchaseService.cs",
@@ -324,10 +645,13 @@
             {
               "$type": "Document",
               "DocumentIndex": 9,
+=======
+              "DocumentIndex": 19,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "DailySalesMapper.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
               "RelativeToolTip": "FeruzaShopProject.Application\\Mapper\\DailySalesMapper.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAAAkwEIAAABdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -335,11 +659,15 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 11,
+=======
+              "DocumentIndex": 21,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "TranscactionDTO.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\DTOs\\TranscactionDTO.cs",
               "ViewState": "AgIAAKIAAAAAAAAAAAAowI8AAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -347,11 +675,15 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 10,
+=======
+              "DocumentIndex": 20,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "DailySales.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\DailySales.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\DailySales.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\DailySales.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\DailySales.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\DailySales.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\DailySales.cs",
               "ViewState": "AgIAACMAAAAAAAAAAAAswDEAAABkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -359,11 +691,15 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
               "DocumentIndex": 44,
+=======
+              "DocumentIndex": 47,
+>>>>>>> 1c427e3bbbae980ade888caaca83ef420b316f71
               "Title": "20260211105824_update purchase order.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260211105824_update purchase order.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -371,59 +707,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "PurchasesController.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
-              "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\PurchasesController.cs",
-              "ViewState": "AgIAAB8AAAAAAAAAAAAQwD0AAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-06T11:38:44.54Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "PurchaseDto.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
-              "RelativeToolTip": "FeruzaShopProject.Domain\\DTOs\\PurchaseDto.cs",
-              "ViewState": "AgIAAEoAAAAAAAAAAAAUwFQAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-13T08:34:16.155Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "PurchaseOrderItem.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
-              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\PurchaseOrderItem.cs",
-              "ViewState": "AgIAACAAAAAAAAAAAAAswCMAAAAtAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-06T08:25:58.337Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "PurchaseMapper.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
-              "RelativeToolTip": "FeruzaShopProject.Application\\Mapper\\PurchaseMapper.cs",
-              "ViewState": "AgIAAFsAAAAAAAAAAAAQwGMAAABdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-06T07:49:23.03Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 23,
               "Title": "BankAccountController.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
               "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\BankAccountController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAEcAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -431,11 +719,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 25,
               "Title": "StockMovement.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\StockMovement.cs",
               "ViewState": "AgIAAAwAAAAAAAAAAAAswBAAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -443,11 +731,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 26,
               "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Program.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Program.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Program.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Program.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Program.cs",
               "RelativeToolTip": "FeruzaShopProject.Api\\Program.cs",
               "ViewState": "AgIAAE8AAAAAAAAAAAAAAFsAAABAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -455,11 +743,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 24,
               "Title": "20260206142817_update purchase2.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260206142817_update purchase2.cs",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAAcAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -467,35 +755,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
-              "Title": "Enums.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Enums.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Enums.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Enums.cs",
-              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\Enums.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAiwDEAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-13T17:58:37.602Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 20,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\appsettings.json",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Api\\appsettings.json",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\appsettings.json",
-              "RelativeToolTip": "FeruzaShopProject.Api\\appsettings.json",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAoAAABMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-01-13T08:30:51.999Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 27,
               "Title": "SupplierService.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\SupplierService.cs",
               "ViewState": "AgIAAIMAAAAAAAAAAAAswI4AAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -503,11 +767,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 45,
               "Title": "20260206134700_update purchase1.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260206134700_update purchase1.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAxwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -515,11 +779,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 28,
               "Title": "StockService.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\StockService.cs",
               "ViewState": "AgIAAK4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -527,23 +791,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
-              "Title": "PurchaseOrder.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
-              "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\PurchaseOrder.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAcwBsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-06T07:51:05.349Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 46,
               "Title": "20260206113903_update purchase.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260206113903_update purchase.cs",
               "ViewState": "AgIAABAAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -551,11 +803,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 29,
               "Title": "ShopDbContext.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Data\\ShopDbContext.cs",
               "ViewState": "AgIAABAAAAAAAAAAAAAwwG4BAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -563,11 +815,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 30,
               "Title": "BranchAuthorizationHandler.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Authorization\\BranchAuthorizationHandler.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAIwGQAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -575,11 +827,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 31,
               "Title": "BranchMapper.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
               "RelativeToolTip": "FeruzaShopProject.Application\\Mapper\\BranchMapper.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -587,11 +839,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 44,
               "Title": "20260113212750_update.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260113212750_update.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAxwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -599,11 +851,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 32,
               "Title": "ITransactionService.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
               "RelativeToolTip": "FeruzaShopProject.Application\\Interface\\ITransactionService.cs",
               "ViewState": "AgIAABUAAAAAAAAAAAAmwBoAAAB2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -611,23 +863,23 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 35,
               "Title": "20260113173454_update daily sales.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
               "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
-              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113173454_update daily sales.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-13T17:34:55.144Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 34,
               "Title": "20260113174802_update 1.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260113174802_update 1.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -635,11 +887,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 33,
               "Title": "Transaction.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Transaction.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Transaction.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\Transaction.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Transaction.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\Transaction.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\Transaction.cs",
               "ViewState": "AgIAAB8AAAAAAAAAAAAwwCQAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -647,11 +899,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 36,
               "Title": "CreditPayment.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\CreditPayment.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAowBYAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -659,11 +911,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 38,
               "Title": "ProductExchange.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\Entities\\ProductExchange.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -671,23 +923,23 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 37,
               "Title": "20260113094220_hu.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
               "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
-              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113094220_hu.cs",
               "ViewState": "AgIAAB8AAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-13T09:42:20.785Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 39,
               "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
               "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\WeatherForecastController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAABEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -695,11 +947,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 40,
               "Title": "TransactionsController.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
               "RelativeToolTip": "FeruzaShopProject.Api\\Controllers\\TransactionsController.cs",
               "ViewState": "AgIAAEcBAAAAAAAAAADwvyIBAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -707,23 +959,23 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 41,
               "Title": "20260113084947_fromnew.cs",
               "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
-              "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
               "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
-              "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Migrations\\20260113084947_fromnew.cs",
               "ViewState": "AgIAABMAAAAAAAAAAAAQwAkAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-13T08:49:48.258Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 42,
               "Title": "ProductExchangeService.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
               "RelativeToolTip": "FeruzaShopProject.Infrastructre\\Services\\ProductExchangeService.cs",
               "ViewState": "AgIAAKwAAAAAAAAAAAAQwJgAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -731,11 +983,11 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 43,
               "Title": "ProductExchangeDto.cs",
-              "DocumentMoniker": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
+              "DocumentMoniker": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
               "RelativeDocumentMoniker": "FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
-              "ToolTip": "C:\\Users\\Hp\\Desktop\\NewFeruza\\NewFeruza\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
+              "ToolTip": "C:\\Users\\Miraj\\OneDrive\\Desktop\\Feruz Project\\NewFeruzaProject\\FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
               "RelativeToolTip": "FeruzaShopProject.Domain\\DTOs\\ProductExchangeDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAADQAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",

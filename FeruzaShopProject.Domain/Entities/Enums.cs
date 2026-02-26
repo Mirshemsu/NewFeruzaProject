@@ -40,12 +40,12 @@ namespace FeruzaShopProject.Domain.Entities
     {
         PendingAdminAcceptance,    // Created by Sales
         AcceptedByAdmin,           // Admin accepted quantities
-        PendingRegistration,       // Sales needs to register received items
         PartiallyRegistered,       // Sales registered some items
-        CompletelyRegistered,      // Sales registered all items
-        PendingFinanceProcessing,  // Ready for Finance to add details
-        ProcessedByFinance,        // Finance added supplier, prices, verified
-        FullyApproved,             // Admin gave final approval
+        CompletelyRegistered,      // All items received
+        PartiallyFinanceProcessed, // Some items have prices
+        FullyFinanceProcessed,     // All items have prices
+        PartiallyApproved,         // Some items in stock
+        FullyApproved,             // All items in stock
         Rejected,
         Cancelled
     }
