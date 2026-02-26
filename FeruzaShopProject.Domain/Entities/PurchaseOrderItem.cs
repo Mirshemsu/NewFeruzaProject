@@ -19,6 +19,7 @@ namespace FeruzaShopProject.Domain.Entities
         public int? QuantityAccepted { get; set; }
         public DateTime? AcceptedAt { get; set; }
         public Guid? AcceptedBy { get; set; }
+        public string? SupplierName { get; set; }
 
         // Step 3: Sales Registers (can be updated multiple times before finance)
         public int? QuantityRegistered { get; set; }

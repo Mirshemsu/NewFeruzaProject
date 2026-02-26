@@ -17,7 +17,6 @@ namespace FeruzaShopProject.Domain.Entities
 
         public string? Address { get; set; }
 
-        public List<PurchaseOrder> PurchaseOrders { get; set; } = new();
 
         public void Update(string name, string? contactInfo, string? address)
         {

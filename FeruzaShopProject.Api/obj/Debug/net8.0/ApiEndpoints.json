@@ -884,6 +884,37 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
+    "Method": "DeleteItemFromOrder",
+    "RelativePath": "api/Purchases/{purchaseOrderId}/items/{itemId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "purchaseOrderId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "itemId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
     "Method": "AcceptAll",
     "RelativePath": "api/Purchases/accept-all/{purchaseOrderId}",
     "HttpMethod": "POST",
@@ -1521,32 +1552,6 @@
       {
         "Name": "status",
         "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "GetBySupplier",
-    "RelativePath": "api/Purchases/supplier/{supplierId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "supplierId",
-        "Type": "System.Guid",
         "IsRequired": true
       }
     ],

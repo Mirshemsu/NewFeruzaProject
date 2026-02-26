@@ -125,9 +125,9 @@ namespace FeruzaShopProject.Application.Interface
         Task<ApiResponse<List<PurchaseOrderDto>>> GetPurchaseOrdersByDateRangeAsync(DateTime fromDate, DateTime toDate, Guid? branchId = null);
 
         /// <summary>
-        /// Get purchase orders by supplier
+        /// Sales can delete a specific item from their purchase order (only in PendingAdminAcceptance status)
         /// </summary>
-        Task<ApiResponse<List<PurchaseOrderDto>>> GetPurchaseOrdersBySupplierAsync(Guid supplierId);
+        Task<ApiResponse<PurchaseOrderDto>> DeleteItemFromPurchaseOrderBySalesAsync(Guid purchaseOrderId, Guid itemId);
 
         /// <summary>
         /// Get purchase order statistics

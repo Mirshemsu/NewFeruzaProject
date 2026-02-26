@@ -2146,6 +2146,55 @@
         }
       }
     },
+    "/api/Purchases/{purchaseOrderId}/items/{itemId}": {
+      "delete": {
+        "tags": [
+          "Purchases"
+        ],
+        "parameters": [
+          {
+            "name": "purchaseOrderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Purchases/accept-all/{purchaseOrderId}": {
       "post": {
         "tags": [
@@ -2410,46 +2459,6 @@
           {
             "name": "branchId",
             "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseOrderDtoListApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Purchases/supplier/{supplierId}": {
-      "get": {
-        "tags": [
-          "Purchases"
-        ],
-        "parameters": [
-          {
-            "name": "supplierId",
-            "in": "path",
-            "required": true,
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -4023,18 +4032,13 @@
       },
       "CancelPurchaseOrderDto": {
         "required": [
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
           "purchaseOrderId": {
             "type": "string",
             "format": "uuid"
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -4872,8 +4876,7 @@
       "EditAcceptedQuantitiesByAdminDto": {
         "required": [
           "items",
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
@@ -4887,10 +4890,6 @@
             "items": {
               "$ref": "#/components/schemas/EditAcceptedQuantityItemDto"
             }
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -4943,8 +4942,7 @@
       "EditPricesByAdminDto": {
         "required": [
           "items",
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
@@ -4958,18 +4956,13 @@
             "items": {
               "$ref": "#/components/schemas/EditPriceItemDto"
             }
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "EditPurchaseOrderByAdminDto": {
         "required": [
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
@@ -4978,11 +4971,6 @@
             "format": "uuid"
           },
           "branchId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "supplierId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -5001,10 +4989,6 @@
               "format": "uuid"
             },
             "nullable": true
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5063,8 +5047,7 @@
       "EditRegisteredQuantitiesByAdminDto": {
         "required": [
           "items",
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
@@ -5078,10 +5061,6 @@
             "items": {
               "$ref": "#/components/schemas/EditRegisteredQuantityItemDto"
             }
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5089,8 +5068,7 @@
       "EditRegisteredQuantitiesBySalesDto": {
         "required": [
           "items",
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
@@ -5104,10 +5082,6 @@
             "items": {
               "$ref": "#/components/schemas/EditRegisteredQuantityItemDto"
             }
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5210,10 +5184,6 @@
               "format": "uuid"
             },
             "nullable": true
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5228,11 +5198,6 @@
           "purchaseOrderId": {
             "type": "string",
             "format": "uuid"
-          },
-          "supplierId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
           },
           "items": {
             "minItems": 1,
@@ -5268,6 +5233,10 @@
           },
           "isVerified": {
             "type": "boolean"
+          },
+          "supplierName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5732,11 +5701,6 @@
             "type": "string",
             "nullable": true
           },
-          "supplierId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
           "supplierName": {
             "type": "string",
             "nullable": true
@@ -5938,6 +5902,10 @@
             "nullable": true
           },
           "approvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplierName": {
             "type": "string",
             "nullable": true
           },
@@ -6187,10 +6155,6 @@
             "items": {
               "$ref": "#/components/schemas/RegisterQuantityItemDto"
             }
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6238,18 +6202,13 @@
       },
       "RejectPurchaseOrderDto": {
         "required": [
-          "purchaseOrderId",
-          "reason"
+          "purchaseOrderId"
         ],
         "type": "object",
         "properties": {
           "purchaseOrderId": {
             "type": "string",
             "format": "uuid"
-          },
-          "reason": {
-            "minLength": 1,
-            "type": "string"
           },
           "itemIds": {
             "type": "array",

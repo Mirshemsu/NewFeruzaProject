@@ -17,10 +17,8 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -59,13 +57,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -103,13 +99,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -145,7 +139,6 @@ namespace FeruzaShopProject.Application.Mapper
             // ========== STEP 4: FINANCE VERIFICATION ==========
             CreateMap<FinanceVerificationDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
-                .ForMember(dest => dest.SupplierId, opt => opt.MapFrom(src => src.SupplierId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
@@ -154,7 +147,6 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -193,13 +185,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -213,13 +203,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.BranchId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -260,13 +248,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -307,7 +293,6 @@ namespace FeruzaShopProject.Application.Mapper
             CreateMap<EditPurchaseOrderByAdminDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
                 .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.BranchId))
-                .ForMember(dest => dest.SupplierId, opt => opt.MapFrom(src => src.SupplierId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
@@ -315,7 +300,6 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -354,13 +338,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -369,13 +351,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -385,13 +365,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -404,9 +382,7 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
                 .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
                     src.Creator != null ? src.Creator.Name : string.Empty))
-                .ForMember(dest => dest.SupplierId, opt => opt.MapFrom(src => src.SupplierId))
-                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src =>
-                    src.Supplier != null ? src.Supplier.Name : string.Empty))
+
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
@@ -470,7 +446,8 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.IsAccepted, opt => opt.MapFrom(src => src.IsAccepted))
                 .ForMember(dest => dest.IsRegistered, opt => opt.MapFrom(src => src.IsRegistered))
                 .ForMember(dest => dest.IsFinanceVerified, opt => opt.MapFrom(src => src.IsFinanceVerified))
-                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved));
+                .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName)); ;
 
             // ========== BACKWARD COMPATIBILITY MAPPINGS ==========
             CreateMap<ReceivePurchaseOrderDto, PurchaseOrder>()
@@ -478,13 +455,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
@@ -522,13 +497,11 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.SupplierId, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Branch, opt => opt.Ignore())
                 .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 

@@ -51,7 +51,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required, MinLength(1)]
         public List<RegisterQuantityItemDto> Items { get; init; }
 
-        public string? Notes { get; init; }
     }
 
     public record RegisterQuantityItemDto
@@ -69,8 +68,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid PurchaseOrderId { get; init; }
 
-        public Guid? SupplierId { get; init; }
-
         [Required, MinLength(1)]
         public List<FinanceVerificationItemDto> Items { get; init; }
     }
@@ -81,12 +78,15 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid ItemId { get; init; }
 
         [Required, Range(0.01, double.MaxValue)]
-        public decimal BuyingPrice { get; init; }  // Now required for verified items
+        public decimal BuyingPrice { get; init; }
 
         [Range(0.01, double.MaxValue)]
-        public decimal? SellingPrice { get; init; } // Optional - will auto-calculate with markup
+        public decimal? SellingPrice { get; init; }
 
-        public bool IsVerified { get; init; } = true; // Mark as verified
+        public bool IsVerified { get; init; } = true;
+
+        // Supplier name for this specific item
+        public string? SupplierName { get; init; }
     }
 
     // ========== STEP 5: ADMIN FINAL APPROVAL (PARTIAL SUPPORTED) ==========
@@ -98,7 +98,6 @@ namespace FeruzaShopProject.Domain.DTOs
         // If null, approve all verified items. If provided, approve specific items
         public List<Guid>? ItemIds { get; init; }
 
-        public string? Notes { get; init; }
     }
 
     // ========== NEW: SALES EDIT OPERATIONS ==========
@@ -173,7 +172,6 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public Guid? BranchId { get; init; }
 
-        public Guid? SupplierId { get; init; }
 
         public List<AdminEditPurchaseOrderItemDto>? Items { get; init; }
 
@@ -304,7 +302,6 @@ namespace FeruzaShopProject.Domain.DTOs
         public string BranchName { get; set; }
         public Guid CreatedBy { get; set; }
         public string CreatorName { get; set; }
-        public Guid? SupplierId { get; set; }
         public string SupplierName { get; set; }
         public string Status { get; set; }
         public bool IsActive { get; set; }
@@ -358,6 +355,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public DateTime? ApprovedAt { get; set; }
         public string ApprovedBy { get; set; }
 
+        public string? SupplierName { get; set; }
         // Calculated
         public decimal? TotalCost => BuyingPrice.HasValue && QuantityRegistered.HasValue
             ? BuyingPrice.Value * QuantityRegistered.Value

@@ -241,15 +241,18 @@ namespace ShopMgtSys.Infrastructure.Services
                         return ApiResponse<PurchaseOrderDto>.Fail($"Item not accepted by admin: {itemDto.ItemId}");
                     }
 
-                    if (itemDto.QuantityRegistered > item.QuantityAccepted.Value)
+                    // Calculate new total registered quantity
+                    int newTotalRegistered = (item.QuantityRegistered ?? 0) + itemDto.QuantityRegistered;
+
+                    if (newTotalRegistered > item.QuantityAccepted.Value)
                     {
-                        _logger.LogWarning("Registered quantity exceeds accepted quantity: {Registered} > {Accepted}",
-                            itemDto.QuantityRegistered, item.QuantityAccepted.Value);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Registered quantity cannot exceed accepted quantity for item: {itemDto.ItemId}");
+                        _logger.LogWarning("Total registered quantity exceeds accepted quantity: {NewTotal} > {Accepted}",
+                            newTotalRegistered, item.QuantityAccepted.Value);
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Total registered quantity ({newTotalRegistered}) would exceed accepted quantity ({item.QuantityAccepted.Value}) for item: {itemDto.ItemId}");
                     }
 
                     // Update registered quantity (accumulate for multiple registrations)
-                    item.QuantityRegistered = itemDto.QuantityRegistered;
+                    item.QuantityRegistered = newTotalRegistered;
                     item.RegisteredAt = DateTime.UtcNow;
                     item.RegisteredBy = userId;
                     item.RegistrationEditCount = 0; // Reset on new registration
@@ -278,13 +281,12 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error registering received quantities");
             }
         }
-
         private void UpdateRegistrationStatus(PurchaseOrder purchaseOrder)
         {
             var allItemsRegistered = purchaseOrder.Items.All(i =>
                 i.QuantityAccepted.HasValue &&
                 i.QuantityRegistered.HasValue &&
-                i.QuantityRegistered.Value > 0);
+                i.QuantityRegistered.Value >= i.QuantityAccepted.Value); // Changed from > 0 to >= accepted
 
             var someItemsRegistered = purchaseOrder.Items.Any(i =>
                 i.QuantityRegistered.HasValue &&
@@ -328,19 +330,7 @@ namespace ShopMgtSys.Infrastructure.Services
                     purchaseOrder.Status != PurchaseOrderStatus.AcceptedByAdmin)
                 {
                     _logger.LogWarning("Purchase order not in correct status for finance verification: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in CompletelyRegistered, PartiallyRegistered, or PendingFinanceProcessing status");
-                }
-
-                // Validate supplier if provided
-                if (dto.SupplierId.HasValue)
-                {
-                    var supplier = await _context.Suppliers.FindAsync(dto.SupplierId.Value);
-                    if (supplier == null || !supplier.IsActive)
-                    {
-                        _logger.LogWarning("Invalid or inactive supplier: {SupplierId}", dto.SupplierId.Value);
-                        return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive supplier");
-                    }
-                    purchaseOrder.SupplierId = dto.SupplierId.Value;
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in CompletelyRegistered, PartiallyRegistered, or AcceptedByAdmin status");
                 }
 
                 bool allItemsVerified = true;
@@ -396,6 +386,12 @@ namespace ShopMgtSys.Infrastructure.Services
                             item.UnitPrice = itemDto.BuyingPrice * (1 + defaultMarkupPercentage / 100);
                         }
 
+                        // Set supplier name for this item (if provided)
+                        if (!string.IsNullOrWhiteSpace(itemDto.SupplierName))
+                        {
+                            item.SupplierName = itemDto.SupplierName;
+                        }
+
                         item.FinanceVerified = true;
                         item.FinanceVerifiedAt = DateTime.UtcNow;
                         item.FinanceVerifiedBy = userId;
@@ -439,23 +435,43 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in finance verification");
             }
         }
-
         private void UpdateFinanceStatus(PurchaseOrder purchaseOrder, bool allItemsVerified, bool anyItemsVerified)
         {
-            if (allItemsVerified && purchaseOrder.Items.All(i => i.FinanceVerified == true))
+            // Check if ALL items are fully registered (QuantityRegistered >= QuantityAccepted)
+            var allItemsFullyRegistered = purchaseOrder.Items.All(i =>
+                i.QuantityRegistered.HasValue &&
+                i.QuantityAccepted.HasValue &&
+                i.QuantityRegistered.Value >= i.QuantityAccepted.Value);
+
+            // Check if ALL items are finance verified
+            var allItemsFinanceVerified = purchaseOrder.Items.All(i => i.FinanceVerified == true);
+
+            if (allItemsFinanceVerified && allItemsFullyRegistered)
             {
+                // Only when ALL items are BOTH fully registered AND finance verified
                 purchaseOrder.Status = PurchaseOrderStatus.FullyFinanceProcessed;
+            }
+            else if (allItemsFinanceVerified && !allItemsFullyRegistered)
+            {
+                // All items are verified BUT not fully registered yet
+                purchaseOrder.Status = PurchaseOrderStatus.PartiallyFinanceProcessed;
             }
             else if (anyItemsVerified)
             {
+                // Some items are verified
                 purchaseOrder.Status = PurchaseOrderStatus.PartiallyFinanceProcessed;
             }
             else
             {
-                purchaseOrder.Status = PurchaseOrderStatus.CompletelyRegistered;
+                // No items verified yet - stay in registration status
+                purchaseOrder.Status = purchaseOrder.Items.All(i =>
+                    i.QuantityRegistered.HasValue &&
+                    i.QuantityAccepted.HasValue &&
+                    i.QuantityRegistered.Value >= i.QuantityAccepted.Value)
+                    ? PurchaseOrderStatus.CompletelyRegistered
+                    : PurchaseOrderStatus.PartiallyRegistered;
             }
         }
-
         private async Task<decimal> GetDefaultMarkupPercentageAsync()
         {
             // You can store this in a configuration table or app settings
@@ -533,9 +549,37 @@ namespace ShopMgtSys.Infrastructure.Services
                     item.UpdatedAt = DateTime.UtcNow;
                 }
 
+                // Check if ALL items are fully registered (QuantityRegistered >= QuantityAccepted)
+                var allItemsFullyRegistered = purchaseOrder.Items.All(i =>
+                    i.QuantityRegistered.HasValue &&
+                    i.QuantityAccepted.HasValue &&
+                    i.QuantityRegistered.Value >= i.QuantityAccepted.Value);
+
+                // Check if ALL finance-verified items are approved
+                var allFinanceVerifiedItemsApproved = purchaseOrder.Items
+                    .Where(i => i.FinanceVerified == true)
+                    .All(i => i.ApprovedAt.HasValue);
+
+                // Check if there are any finance-verified items
+                var hasFinanceVerifiedItems = purchaseOrder.Items.Any(i => i.FinanceVerified == true);
+
                 // Update purchase order status
-                var allItemsApproved = purchaseOrder.Items.All(i => i.FinanceVerified != true || i.ApprovedAt.HasValue);
-                purchaseOrder.Status = allItemsApproved ? PurchaseOrderStatus.FullyApproved : PurchaseOrderStatus.PartiallyApproved;
+                if (allFinanceVerifiedItemsApproved && allItemsFullyRegistered && hasFinanceVerifiedItems)
+                {
+                    // All finance-verified items are approved AND all items are fully registered
+                    purchaseOrder.Status = PurchaseOrderStatus.FullyApproved;
+                }
+                else if (allFinanceVerifiedItemsApproved && !allItemsFullyRegistered)
+                {
+                    // All finance-verified items are approved BUT not all items are fully registered
+                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
+                }
+                else if (itemsToApprove.Any())
+                {
+                    // Some items approved
+                    purchaseOrder.Status = PurchaseOrderStatus.PartiallyApproved;
+                }
+
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 var approvedCount = purchaseOrder.Items.Count(i => i.ApprovedAt.HasValue);
@@ -553,8 +597,18 @@ namespace ShopMgtSys.Infrastructure.Services
                 _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}. Items approved: {ApprovedCount}",
                     purchaseOrder.Id, approvedCount);
 
-                return ApiResponse<PurchaseOrderDto>.Success(result,
-                    $"Purchase order {(allItemsApproved ? "fully" : "partially")} approved. {approvedCount} items added to inventory.");
+                // Determine the correct message
+                string statusMessage;
+                if (purchaseOrder.Status == PurchaseOrderStatus.FullyApproved)
+                {
+                    statusMessage = $"Purchase order fully approved. All {approvedCount} items added to inventory with updated prices.";
+                }
+                else
+                {
+                    statusMessage = $"Purchase order partially approved. {approvedCount} items added to inventory. Waiting for remaining items to be fully registered.";
+                }
+
+                return ApiResponse<PurchaseOrderDto>.Success(result, statusMessage);
             }
             catch (Exception ex)
             {
@@ -563,7 +617,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in final approval by admin");
             }
         }
-
         // ========== SALES EDIT OPERATIONS ==========
 
         public async Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderBySalesAsync(EditPurchaseOrderBySalesDto dto)
@@ -865,19 +918,7 @@ namespace ShopMgtSys.Infrastructure.Services
                     }
                     purchaseOrder.BranchId = dto.BranchId.Value;
                 }
-
-                // Update supplier if provided
-                if (dto.SupplierId.HasValue)
-                {
-                    var supplier = await _context.Suppliers.FindAsync(dto.SupplierId.Value);
-                    if (supplier == null || !supplier.IsActive)
-                    {
-                        _logger.LogWarning("Invalid or inactive supplier: {SupplierId}", dto.SupplierId.Value);
-                        return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive supplier");
-                    }
-                    purchaseOrder.SupplierId = dto.SupplierId.Value;
-                }
-
+              
                 // Update items
                 if (dto.Items != null && dto.Items.Any())
                 {
@@ -1436,6 +1477,120 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<bool>.Fail("Error cancelling purchase order");
             }
         }
+
+        public async Task<ApiResponse<PurchaseOrderDto>> DeleteItemFromPurchaseOrderBySalesAsync(Guid purchaseOrderId, Guid itemId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var userId = await GetCurrentUserIdAsync();
+
+                var purchaseOrder = await _context.PurchaseOrders
+                    .Include(po => po.Items)
+                    .Include(po => po.History) // Include history
+                    .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
+
+                if (purchaseOrder == null)
+                {
+                    _logger.LogWarning("Purchase order not found or inactive: {PurchaseOrderId}", purchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
+                }
+
+                // Check if sales can edit (only PendingAdminAcceptance status)
+                if (purchaseOrder.Status != PurchaseOrderStatus.PendingAdminAcceptance)
+                {
+                    _logger.LogWarning("Sales cannot delete items from purchase order in status: {Status}", purchaseOrder.Status);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Items can only be deleted when order is in PendingAdminAcceptance status");
+                }
+
+                // Verify that the current user is the creator
+                if (purchaseOrder.CreatedBy != userId)
+                {
+                    _logger.LogWarning("User {UserId} is not the creator of purchase order {PurchaseOrderId}", userId, purchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("You can only delete items from purchase orders that you created");
+                }
+
+                // Find the item
+                var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemId);
+                if (item == null)
+                {
+                    _logger.LogWarning("Item not found: {ItemId}", itemId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Item not found");
+                }
+
+                // FIRST: Delete any purchase history records that reference this item
+                var itemHistory = await _context.PurchaseHistory
+                    .Where(h => h.PurchaseOrderItemId == itemId)
+                    .ToListAsync();
+
+                if (itemHistory.Any())
+                {
+                    _context.PurchaseHistory.RemoveRange(itemHistory);
+                }
+
+                // THEN: Delete the item itself
+                _context.PurchaseOrderItems.Remove(item);
+
+                // Remove from the collection
+                purchaseOrder.Items.Remove(item);
+
+                // If no items left, delete the entire order and its history
+                if (!purchaseOrder.Items.Any())
+                {
+                    // Delete all remaining history for this order
+                    var orderHistory = await _context.PurchaseHistory
+                        .Where(h => h.PurchaseOrderId == purchaseOrderId)
+                        .ToListAsync();
+
+                    if (orderHistory.Any())
+                    {
+                        _context.PurchaseHistory.RemoveRange(orderHistory);
+                    }
+
+                    // Delete the purchase order
+                    _context.PurchaseOrders.Remove(purchaseOrder);
+                }
+                else
+                {
+                    purchaseOrder.UpdatedAt = DateTime.UtcNow;
+
+                    // Add deletion history (this will be saved after item is deleted)
+                    var history = new PurchaseHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        PurchaseOrderId = purchaseOrder.Id,
+                        Action = "ItemDeleted",
+                        PerformedByUserId = userId,
+                        Details = $"Item {item.ProductId} permanently deleted from purchase order",
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    _context.PurchaseHistory.Add(history);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // If order was deleted, return not found
+                if (!purchaseOrder.Items.Any())
+                {
+                    _logger.LogInformation("Purchase order {PurchaseOrderId} deleted as all items were removed", purchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Success(null, "Purchase order deleted as all items were removed");
+                }
+
+                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
+                _logger.LogInformation("Sales permanently deleted item {ItemId} from purchase order {PurchaseOrderId}", itemId, purchaseOrderId);
+
+                return ApiResponse<PurchaseOrderDto>.Success(result, "Item permanently deleted from purchase order");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting item from purchase order: {PurchaseOrderId}, Item: {ItemId}", purchaseOrderId, itemId);
+                await transaction.RollbackAsync();
+                return ApiResponse<PurchaseOrderDto>.Fail("Error deleting item from purchase order");
+            }
+        }
+        
         // ========== UPDATE PURCHASE ORDER (Legacy) ==========
         public async Task<ApiResponse<PurchaseOrderDto>> UpdatePurchaseOrderAsync(UpdatePurchaseOrderDto dto)
         {
@@ -1516,7 +1671,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .FirstOrDefaultAsync(po => po.Id == id);
 
@@ -1543,7 +1697,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .OrderByDescending(po => po.CreatedAt)
                     .ToListAsync();
@@ -1565,7 +1718,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.Status == status && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1588,7 +1740,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.BranchId == branchId && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1611,7 +1762,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.CreatedBy == createdBy && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1634,7 +1784,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var query = _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.CreatedAt.Date >= fromDate.Date && po.CreatedAt.Date <= toDate.Date);
 
@@ -1657,29 +1806,7 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        public async Task<ApiResponse<List<PurchaseOrderDto>>> GetPurchaseOrdersBySupplierAsync(Guid supplierId)
-        {
-            try
-            {
-                var purchaseOrders = await _context.PurchaseOrders
-                    .Include(po => po.Branch)
-                    .Include(po => po.Creator)
-                    .Include(po => po.Supplier)
-                    .Include(po => po.Items).ThenInclude(pi => pi.Product)
-                    .Where(po => po.SupplierId == supplierId && po.IsActive)
-                    .OrderByDescending(po => po.CreatedAt)
-                    .ToListAsync();
-
-                var result = _mapper.Map<List<PurchaseOrderDto>>(purchaseOrders);
-                return ApiResponse<List<PurchaseOrderDto>>.Success(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving purchase orders by supplier {SupplierId}", supplierId);
-                return ApiResponse<List<PurchaseOrderDto>>.Fail($"Error retrieving purchase orders by supplier: {supplierId}");
-            }
-        }
-
+     
         public async Task<ApiResponse<PurchaseOrderStatsDto>> GetPurchaseOrderStatsAsync(Guid? branchId = null)
         {
             try
@@ -2171,6 +2298,7 @@ namespace ShopMgtSys.Infrastructure.Services
                    validTransitions[currentStatus].Contains(newStatus);
         }
 
+
         private PurchaseOrderStatus DeterminePurchaseOrderStatus(PurchaseOrder purchaseOrder)
         {
             if (purchaseOrder.Items.All(i => i.IsActive == false))
@@ -2202,5 +2330,7 @@ namespace ShopMgtSys.Infrastructure.Services
 
             return PurchaseOrderStatus.PendingAdminAcceptance;
         }
+
+
     }
 }

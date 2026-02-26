@@ -569,6 +569,37 @@ namespace ShopMgtSys.Api.Controllers
                 return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while canceling purchase order"));
             }
         }
+        /// <summary>
+        /// Sales can delete a specific item from their purchase order (only in PendingAdminAcceptance status)
+        /// </summary>
+        [HttpDelete("{purchaseOrderId:guid}/items/{itemId:guid}")]
+        [Authorize(Roles = "Sales")]
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> DeleteItemFromOrder(Guid purchaseOrderId, Guid itemId)
+        {
+            try
+            {
+                _logger.LogInformation("Sales deleting item {ItemId} from purchase order: {PurchaseOrderId}", itemId, purchaseOrderId);
+
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
+                if (!purchaseOrder.IsCompletedSuccessfully)
+                {
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", purchaseOrderId);
+                    return NotFound(purchaseOrder);
+                }
+
+                // Check branch access
+                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
+                    return Forbid();
+
+                var result = await _purchaseService.DeleteItemFromPurchaseOrderBySalesAsync(purchaseOrderId, itemId);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting item from purchase order: {PurchaseOrderId}, Item: {ItemId}", purchaseOrderId, itemId);
+                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while deleting item from purchase order"));
+            }
+        }
 
         [HttpPut]
         [Authorize(Roles = "Sales")]
@@ -819,34 +850,7 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
-        [HttpGet("supplier/{supplierId:guid}")]
-        [Authorize(Roles = "Manager,Finance")]
-        public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetBySupplier(Guid supplierId)
-        {
-            try
-            {
-                var result = await _purchaseService.GetPurchaseOrdersBySupplierAsync(supplierId);
-
-                // For Manager users, filter by their branch
-                if (User.IsInRole("Manager"))
-                {
-                    var branchId = GetUserBranchId();
-                    if (branchId.HasValue)
-                    {
-                        var filtered = result.Data.Where(po => po.BranchId == branchId.Value).ToList();
-                        return Ok(ApiResponse<List<PurchaseOrderDto>>.Success(filtered));
-                    }
-                }
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting purchase orders by supplier: {SupplierId}", supplierId);
-                return StatusCode(500, ApiResponse<List<PurchaseOrderDto>>.Fail("An error occurred while retrieving purchase orders by supplier"));
-            }
-        }
-
+       
         [HttpGet("stats")]
         [Authorize(Roles = "Manager,Finance")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderStatsDto>>> GetStats([FromQuery] Guid? branchId = null)
