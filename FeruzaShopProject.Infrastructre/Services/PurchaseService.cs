@@ -612,13 +612,9 @@ namespace ShopMgtSys.Infrastructure.Services
                 // Update items
                 if (dto.Items != null && dto.Items.Any())
                 {
-                    // Deactivate existing items
-                    foreach (var item in purchaseOrder.Items)
-                    {
-                        item.Deactivate();
-                    }
+                    // Create a list of new items to add
+                    var newItems = new List<PurchaseOrderItem>();
 
-                    // Add new items
                     foreach (var itemDto in dto.Items)
                     {
                         var product = await _context.Products.FindAsync(itemDto.ProductId);
@@ -628,23 +624,55 @@ namespace ShopMgtSys.Infrastructure.Services
                             return ApiResponse<PurchaseOrderDto>.Fail($"Invalid or inactive product: {itemDto.ProductId}");
                         }
 
-                        var poItem = new PurchaseOrderItem
+                        // Check if this item already exists
+                        var existingItem = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId);
+
+                        if (existingItem != null)
                         {
-                            Id = itemDto.ItemId ?? Guid.NewGuid(),
-                            PurchaseOrderId = purchaseOrder.Id,
-                            ProductId = itemDto.ProductId,
-                            QuantityRequested = itemDto.QuantityRequested,
-                            CreatedAt = DateTime.UtcNow,
-                            IsActive = true
-                        };
-                        purchaseOrder.Items.Add(poItem);
+                            // Update existing item instead of creating new one
+                            existingItem.ProductId = itemDto.ProductId;
+                            existingItem.QuantityRequested = itemDto.QuantityRequested;
+                            existingItem.UpdatedAt = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            // Create new item only if it doesn't exist
+                            var poItem = new PurchaseOrderItem
+                            {
+                                Id = Guid.NewGuid(), // Always generate new ID for new items
+                                PurchaseOrderId = purchaseOrder.Id,
+                                ProductId = itemDto.ProductId,
+                                QuantityRequested = itemDto.QuantityRequested,
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true
+                            };
+                            newItems.Add(poItem);
+                        }
+                    }
+
+                    // Add all new items at once
+                    foreach (var newItem in newItems)
+                    {
+                        purchaseOrder.Items.Add(newItem);
+                    }
+
+                    // Find and deactivate items that are no longer in the list
+                    var requestedItemIds = dto.Items.Where(i => i.ItemId.HasValue).Select(i => i.ItemId.Value).ToHashSet();
+                    var itemsToRemove = purchaseOrder.Items
+                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
+                        .ToList();
+
+                    foreach (var item in itemsToRemove)
+                    {
+                        item.Deactivate();
+                        item.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedBySales", userId,
-                    $"Sales edited purchase order. Items: {purchaseOrder.Items.Count}");
+                    $"Sales edited purchase order. Items: {purchaseOrder.Items.Count(i => i.IsActive)}");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -660,7 +688,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing purchase order");
             }
         }
-
         public async Task<ApiResponse<bool>> DeletePurchaseOrderBySalesAsync(Guid purchaseOrderId, string? reason = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -785,7 +812,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "RegisteredQuantitiesEditedBySales", userId,
-                    $"Sales edited registered quantities. Reason: {dto.Reason}");
+                    $"Sales edited registered quantities");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -801,7 +828,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing registered quantities");
             }
         }
-
         // ========== ADMIN EDIT OPERATIONS ==========
 
         public async Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderByAdminAsync(EditPurchaseOrderByAdminDto dto)
@@ -971,7 +997,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedByAdmin", userId,
-                    $"Admin edited purchase order. New status: {purchaseOrder.Status}. Reason: {dto.Reason}");
+                    $"Admin edited purchase order. New status: {purchaseOrder.Status}");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -987,7 +1013,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing purchase order");
             }
         }
-
         public async Task<ApiResponse<PurchaseOrderDto>> EditAcceptedQuantitiesByAdminAsync(EditAcceptedQuantitiesByAdminDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1040,7 +1065,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "AcceptedQuantitiesEditedByAdmin", userId,
-                    $"Admin edited accepted quantities. Reason: {dto.Reason}");
+                    $"Admin edited accepted quantities");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1056,7 +1081,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing accepted quantities");
             }
         }
-
         public async Task<ApiResponse<PurchaseOrderDto>> EditRegisteredQuantitiesByAdminAsync(EditRegisteredQuantitiesByAdminDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1116,7 +1140,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "RegisteredQuantitiesEditedByAdmin", userId,
-                    $"Admin edited registered quantities. Reason: {dto.Reason}");
+                    $"Admin edited registered quantities");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1132,7 +1156,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing registered quantities");
             }
         }
-
         public async Task<ApiResponse<PurchaseOrderDto>> EditPricesByAdminAsync(EditPricesByAdminDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1202,7 +1225,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "PricesEditedByAdmin", userId,
-                    $"Admin edited prices. Reason: {dto.Reason}");
+                    $"Admin edited prices");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1218,7 +1241,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing prices");
             }
         }
-
         public async Task<ApiResponse<bool>> DeletePurchaseOrderByAdminAsync(Guid purchaseOrderId, string reason)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1291,14 +1313,14 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 // Can reject only in certain statuses
                 var allowedStatuses = new List<PurchaseOrderStatus>
-                {
-                    PurchaseOrderStatus.PendingAdminAcceptance,
-                    PurchaseOrderStatus.AcceptedByAdmin,
-                    PurchaseOrderStatus.PartiallyRegistered,
-                    PurchaseOrderStatus.CompletelyRegistered,
-                    PurchaseOrderStatus.PartiallyFinanceProcessed,
-                    PurchaseOrderStatus.FullyFinanceProcessed
-                };
+        {
+            PurchaseOrderStatus.PendingAdminAcceptance,
+            PurchaseOrderStatus.AcceptedByAdmin,
+            PurchaseOrderStatus.PartiallyRegistered,
+            PurchaseOrderStatus.CompletelyRegistered,
+            PurchaseOrderStatus.PartiallyFinanceProcessed,
+            PurchaseOrderStatus.FullyFinanceProcessed
+        };
 
                 if (!allowedStatuses.Contains(purchaseOrder.Status))
                 {
@@ -1320,13 +1342,12 @@ namespace ShopMgtSys.Infrastructure.Services
                             item.AcceptedBy = userId;
                             item.UpdatedAt = DateTime.UtcNow;
 
-                            // You can store rejection reason in notes or history
-                            // For example, add to PurchaseHistory
+                            // Add rejection to history
                             await AddPurchaseHistoryAsync(
                                 purchaseOrder.Id,
                                 "ItemRejected",
                                 userId,
-                                $"Item {item.ProductId} rejected. Reason: {dto.Reason}",
+                                $"Item {item.ProductId} rejected",
                                 item.Id
                             );
                         }
@@ -1343,8 +1364,9 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
+                // Add main rejection history
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
-                    $"Purchase order rejected. Reason: {dto.Reason}");
+                    $"Purchase order rejected");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1360,7 +1382,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error rejecting purchase order");
             }
         }
-
         public async Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1380,11 +1401,11 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 // Can cancel only in early stages
                 var allowedStatuses = new List<PurchaseOrderStatus>
-                {
-                    PurchaseOrderStatus.PendingAdminAcceptance,
-                    PurchaseOrderStatus.AcceptedByAdmin,
-                    PurchaseOrderStatus.PartiallyRegistered
-                };
+        {
+            PurchaseOrderStatus.PendingAdminAcceptance,
+            PurchaseOrderStatus.AcceptedByAdmin,
+            PurchaseOrderStatus.PartiallyRegistered
+        };
 
                 if (!allowedStatuses.Contains(purchaseOrder.Status))
                 {
@@ -1400,7 +1421,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 }
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "Cancelled", userId,
-                    $"Purchase order cancelled. Reason: {dto.Reason}");
+                    $"Purchase order cancelled");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -1415,7 +1436,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<bool>.Fail("Error cancelling purchase order");
             }
         }
-
         // ========== UPDATE PURCHASE ORDER (Legacy) ==========
         public async Task<ApiResponse<PurchaseOrderDto>> UpdatePurchaseOrderAsync(UpdatePurchaseOrderDto dto)
         {
@@ -1868,7 +1888,6 @@ namespace ShopMgtSys.Infrastructure.Services
             var dto = new RejectPurchaseOrderDto
             {
                 PurchaseOrderId = purchaseOrderId,
-                Reason = reason
             };
 
             return await RejectPurchaseOrderAsync(dto);
@@ -1879,7 +1898,6 @@ namespace ShopMgtSys.Infrastructure.Services
             var dto = new CancelPurchaseOrderDto
             {
                 PurchaseOrderId = purchaseOrderId,
-                Reason = reason ?? "Not specified"
             };
 
             return await CancelPurchaseOrderAsync(dto);

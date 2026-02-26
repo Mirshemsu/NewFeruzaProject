@@ -136,7 +136,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid PurchaseOrderId { get; init; }
 
-        public string? Reason { get; init; }
     }
 
     /// <summary>
@@ -150,8 +149,7 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required, MinLength(1)]
         public List<EditRegisteredQuantityItemDto> Items { get; init; }
 
-        [Required]
-        public string Reason { get; init; } // Why editing?
+
     }
 
     public record EditRegisteredQuantityItemDto
@@ -181,8 +179,6 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public List<Guid>? ItemIdsToRemove { get; init; }
 
-        [Required]
-        public string Reason { get; init; } // Why editing?
     }
 
     public record AdminEditPurchaseOrderItemDto
@@ -215,8 +211,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required, MinLength(1)]
         public List<EditAcceptedQuantityItemDto> Items { get; init; }
 
-        [Required]
-        public string Reason { get; init; }
     }
 
     public record EditAcceptedQuantityItemDto
@@ -239,8 +233,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required, MinLength(1)]
         public List<EditRegisteredQuantityItemDto> Items { get; init; }
 
-        [Required]
-        public string Reason { get; init; }
     }
 
     /// <summary>
@@ -254,8 +246,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required, MinLength(1)]
         public List<EditPriceItemDto> Items { get; init; }
 
-        [Required]
-        public string Reason { get; init; }
     }
 
     public record EditPriceItemDto
@@ -278,8 +268,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid PurchaseOrderId { get; init; }
 
-        [Required]
-        public string Reason { get; init; }
     }
 
     // ========== REJECT/CANCEL OPERATIONS ==========
@@ -287,9 +275,6 @@ namespace FeruzaShopProject.Domain.DTOs
     {
         [Required]
         public Guid PurchaseOrderId { get; init; }
-
-        [Required, MinLength(1)]
-        public string Reason { get; init; }
 
         public List<Guid>? ItemIds { get; init; } // If rejecting specific items only
     }
@@ -299,8 +284,6 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid PurchaseOrderId { get; init; }
 
-        [Required, MinLength(1)]
-        public string Reason { get; init; }
     }
 
     // ========== UPDATE PURCHASE ORDER (Legacy/Compatibility) ==========
