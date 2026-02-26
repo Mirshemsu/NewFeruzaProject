@@ -125,7 +125,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                          .ToListAsync())
                          .ToHashSet();
 
-
                 // Get all branch IDs for validation
                 var allBranchIds = dto.Products
                     .SelectMany(p => p.BranchStocks.Select(b => b.BranchId))
@@ -137,13 +136,13 @@ namespace FeruzaShopProject.Infrastructure.Services
                         .ToListAsync())
                         .ToHashSet();
 
-                // Get existing item codes
+                // Get existing products by ItemCode
                 var allItemCodes = dto.Products.Select(p => p.ItemCode).Distinct().ToList();
-                var existingItemCodes = (await _context.Products
-                        .Where(p => allItemCodes.Contains(p.ItemCode) && p.IsActive)
-                        .Select(p => p.ItemCode)
-                        .ToListAsync())
-                        .ToHashSet();
+                var existingProducts = await _context.Products
+                    .Include(p => p.Stocks)
+                    .Where(p => allItemCodes.Contains(p.ItemCode) && p.IsActive)
+                    .ToDictionaryAsync(p => p.ItemCode);
+
                 var productsToAdd = new List<Product>();
                 var stocksToAdd = new List<Stock>();
 
@@ -157,12 +156,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                     if (!validCategories.Contains(productDto.CategoryId))
                     {
                         errors.Add($"Category '{productDto.CategoryId}' not found or inactive");
-                    }
-
-                    // Validate item code uniqueness
-                    if (existingItemCodes.Contains(productDto.ItemCode))
-                    {
-                        errors.Add($"Item code '{productDto.ItemCode}' already exists");
                     }
 
                     // Validate branches
@@ -185,82 +178,178 @@ namespace FeruzaShopProject.Infrastructure.Services
                         errors.Add("Stock quantity cannot be negative");
                     }
 
-                    if (errors.Any())
+                    // Check if product already exists
+                    var existingProduct = existingProducts.GetValueOrDefault(productDto.ItemCode);
+
+                    if (existingProduct != null)
                     {
-                        result.FailedCount++;
-                        result.FailedProducts.Add(new BulkProductErrorDto
+                        // PRODUCT EXISTS - Check for branch conflicts
+                        var existingBranchIds = existingProduct.Stocks?.Select(s => s.BranchId).ToHashSet() ?? new HashSet<Guid>();
+                        var newBranchIds = productDto.BranchStocks.Select(b => b.BranchId).ToHashSet();
+
+                        // Find branches that already have this product
+                        var conflictingBranches = existingBranchIds.Intersect(newBranchIds).ToList();
+
+                        if (conflictingBranches.Any())
                         {
-                            RowIndex = i + 1,
-                            ItemCode = productDto.ItemCode,
-                            ProductName = productDto.Name,
-                            ErrorMessage = string.Join("; ", errors)
-                        });
-                        continue;
-                    }
-
-                    try
-                    {
-                        // Create product
-                        var product = _mapper.Map<Product>(productDto);
-                        product.Id = Guid.NewGuid();
-                        product.CreatedAt = DateTime.UtcNow;
-                        product.IsActive = true;
-
-                        // Validate amount
-                        product.ValidateAmount();
-
-                        productsToAdd.Add(product);
-                        existingItemCodes.Add(product.ItemCode); // Add to cache to prevent duplicates within same batch
-
-                        // Create stock entries
-                        foreach (var branchStock in productDto.BranchStocks)
-                        {
-                            var stock = new Stock
-                            {
-                                Id = Guid.NewGuid(),
-                                ProductId = product.Id,
-                                BranchId = branchStock.BranchId,
-                                Quantity = branchStock.Quantity,
-                                CreatedAt = DateTime.UtcNow,
-                                IsActive = true
-                            };
-                            stocksToAdd.Add(stock);
+                            errors.Add($"Product already exists in branches: {string.Join(", ", conflictingBranches)}. Use update endpoint to modify existing stock.");
                         }
 
-                        result.SuccessCount++;
-                        _logger.LogDebug("Prepared product for bulk insert: {ItemCode}", product.ItemCode);
-                    }
-                    catch (Exception ex)
-                    {
-                        result.FailedCount++;
-                        result.FailedProducts.Add(new BulkProductErrorDto
+                        if (errors.Any())
                         {
-                            RowIndex = i + 1,
-                            ItemCode = productDto.ItemCode,
-                            ProductName = productDto.Name,
-                            ErrorMessage = $"Validation error: {ex.Message}"
-                        });
+                            result.FailedCount++;
+                            result.FailedProducts.Add(new BulkProductErrorDto
+                            {
+                                RowIndex = i + 1,
+                                ItemCode = productDto.ItemCode,
+                                ProductName = productDto.Name,
+                                ErrorMessage = string.Join("; ", errors)
+                            });
+                            continue;
+                        }
+
+                        // Add stocks for NEW branches only
+                        try
+                        {
+                            foreach (var branchStock in productDto.BranchStocks)
+                            {
+                                // Only add if product doesn't exist in this branch
+                                if (!existingBranchIds.Contains(branchStock.BranchId))
+                                {
+                                    var stock = new Stock
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        ProductId = existingProduct.Id,
+                                        BranchId = branchStock.BranchId,
+                                        Quantity = branchStock.Quantity,
+                                        CreatedAt = DateTime.UtcNow,
+                                        IsActive = true
+                                    };
+                                    stocksToAdd.Add(stock);
+
+                                    _logger.LogDebug("Adding existing product {ItemCode} to new branch {BranchId} with quantity {Quantity}",
+                                        productDto.ItemCode, branchStock.BranchId, branchStock.Quantity);
+                                }
+                            }
+
+                            // Add to successful results (will fetch complete product later)
+                            result.SuccessCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            result.FailedCount++;
+                            result.FailedProducts.Add(new BulkProductErrorDto
+                            {
+                                RowIndex = i + 1,
+                                ItemCode = productDto.ItemCode,
+                                ProductName = productDto.Name,
+                                ErrorMessage = $"Error adding to new branch: {ex.Message}"
+                            });
+                        }
+                    }
+                    else
+                    {
+                        // NEW PRODUCT - Create product and all stocks
+                        if (errors.Any())
+                        {
+                            result.FailedCount++;
+                            result.FailedProducts.Add(new BulkProductErrorDto
+                            {
+                                RowIndex = i + 1,
+                                ItemCode = productDto.ItemCode,
+                                ProductName = productDto.Name,
+                                ErrorMessage = string.Join("; ", errors)
+                            });
+                            continue;
+                        }
+
+                        try
+                        {
+                            // Create new product
+                            var product = _mapper.Map<Product>(productDto);
+                            product.Id = Guid.NewGuid();
+                            product.CreatedAt = DateTime.UtcNow;
+                            product.IsActive = true;
+
+                            // Validate amount
+                            product.ValidateAmount();
+
+                            productsToAdd.Add(product);
+
+                            // Add to existing products dictionary to prevent duplicates within same batch
+                            existingProducts[product.ItemCode] = product;
+
+                            // Create stock entries for all branches
+                            foreach (var branchStock in productDto.BranchStocks)
+                            {
+                                var stock = new Stock
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ProductId = product.Id,
+                                    BranchId = branchStock.BranchId,
+                                    Quantity = branchStock.Quantity,
+                                    CreatedAt = DateTime.UtcNow,
+                                    IsActive = true
+                                };
+                                stocksToAdd.Add(stock);
+                            }
+
+                            result.SuccessCount++;
+                            _logger.LogDebug("Prepared new product for bulk insert: {ItemCode}", product.ItemCode);
+                        }
+                        catch (Exception ex)
+                        {
+                            result.FailedCount++;
+                            result.FailedProducts.Add(new BulkProductErrorDto
+                            {
+                                RowIndex = i + 1,
+                                ItemCode = productDto.ItemCode,
+                                ProductName = productDto.Name,
+                                ErrorMessage = $"Validation error: {ex.Message}"
+                            });
+                        }
                     }
                 }
 
-                // Bulk insert all valid products and stocks
+                // Bulk insert all new products and stocks
                 if (productsToAdd.Any())
                 {
                     await _context.Products.AddRangeAsync(productsToAdd);
-                    await _context.Stocks.AddRangeAsync(stocksToAdd);
-                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Adding {Count} new products", productsToAdd.Count);
+                }
 
-                    _logger.LogInformation("Successfully bulk inserted {Count} products and {StockCount} stock entries",
-                        productsToAdd.Count, stocksToAdd.Count);
+                if (stocksToAdd.Any())
+                {
+                    await _context.Stocks.AddRangeAsync(stocksToAdd);
+                    _logger.LogInformation("Adding {Count} stock entries", stocksToAdd.Count);
+                }
+
+                if (productsToAdd.Any() || stocksToAdd.Any())
+                {
+                    await _context.SaveChangesAsync();
                 }
 
                 await transaction.CommitAsync();
 
-                // Get the complete product responses for successful items
+                // Get complete product responses for successful items
+                var allAffectedProducts = new HashSet<Guid>();
+
+                // Add newly created products
                 foreach (var product in productsToAdd)
                 {
-                    var productResponse = await GetProductResponse(product.Id);
-                    if (productResponse != null)
+                    allAffectedProducts.Add(product.Id);
+                }
+
+                // Add existing products that got new stocks
+                foreach (var stock in stocksToAdd.Where(s => productsToAdd.All(p => p.Id != s.ProductId)))
+                {
+                    allAffectedProducts.Add(stock.ProductId);
+                }
+
+                foreach (var productId in allAffectedProducts)
+                {
+                    var productResponse = await GetProductResponse(productId);
+                    if (productResponse != null && !result.SuccessfulProducts.Any(p => p.Id == productId))
                     {
                         result.SuccessfulProducts.Add(productResponse);
                     }
@@ -269,7 +358,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                 _logger.LogInformation("Bulk product creation completed. Success: {Success}, Failed: {Failed}",
                     result.SuccessCount, result.FailedCount);
 
-                var message = $"Bulk product creation completed. {result.SuccessCount} products created successfully, {result.FailedCount} failed.";
+                var message = $"Bulk product creation completed. {result.SuccessCount} products processed successfully, {result.FailedCount} failed.";
                 return ApiResponse<BulkProductResultDto>.Success(result, message);
             }
             catch (Exception ex)
@@ -279,7 +368,6 @@ namespace FeruzaShopProject.Infrastructure.Services
                 return ApiResponse<BulkProductResultDto>.Fail("Failed to bulk create products");
             }
         }
-
         // ========== EXISTING METHODS ==========
         public async Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(UpdateProductDto dto)
         {
