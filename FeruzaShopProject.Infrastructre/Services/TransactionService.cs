@@ -309,10 +309,30 @@ namespace FeruzaShopProject.Infrastructre.Services
             try
             {
                 var existingTransaction = await _context.Transactions
+                    .Include(t => t.Product)
                     .FirstOrDefaultAsync(t => t.Id == dto.Id);
 
                 if (existingTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Transaction not found");
+
+                // Check if transaction can be updated (e.g., not fully paid credit transaction)
+                if (existingTransaction.PaymentMethod == PaymentMethod.Credit)
+                {
+                    var paidAmount = await CalculatePaidAmountAsync(existingTransaction.Id);
+                    if (paidAmount > 0)
+                    {
+                        return ApiResponse<TransactionResponseDto>.Fail("Cannot update credit transaction with existing payments");
+                    }
+                }
+
+                // Store old values for comparison
+                var oldQuantity = existingTransaction.Quantity;
+                var oldUnitPrice = existingTransaction.UnitPrice;
+                var oldPaymentMethod = existingTransaction.PaymentMethod;
+                var oldCustomerId = existingTransaction.CustomerId;
+                var oldPainterId = existingTransaction.PainterId;
+                var oldCommissionRate = existingTransaction.CommissionRate;
+                var oldCommissionPaid = existingTransaction.CommissionPaid;
 
                 // Update properties
                 if (dto.CustomerId.HasValue) existingTransaction.CustomerId = dto.CustomerId;
@@ -324,8 +344,86 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.CommissionPaid.HasValue) existingTransaction.CommissionPaid = dto.CommissionPaid.Value;
 
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
-
                 existingTransaction.Validate();
+
+                // Handle stock updates if quantity changed
+                if (dto.Quantity.HasValue && dto.Quantity.Value != oldQuantity)
+                {
+                    var quantityDifference = dto.Quantity.Value - oldQuantity;
+
+                    // For non-credit transactions, update stock
+                    if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
+                    {
+                        var stock = await _context.Stocks
+                            .FirstOrDefaultAsync(s => s.ProductId == existingTransaction.ProductId &&
+                                                     s.BranchId == existingTransaction.BranchId);
+
+                        if (stock != null)
+                        {
+                            // Check if we have enough stock for increase
+                            if (quantityDifference > 0 && stock.Quantity < quantityDifference)
+                            {
+                                return ApiResponse<TransactionResponseDto>.Fail($"Insufficient stock. Available: {stock.Quantity}, Needed: {quantityDifference}");
+                            }
+
+                            stock.Quantity -= quantityDifference; // Subtract difference (negative = add back to stock)
+                            stock.UpdatedAt = DateTime.UtcNow;
+
+                            // Create stock movement for the adjustment
+                            var stockMovement = new StockMovement
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = existingTransaction.ProductId,
+                                BranchId = existingTransaction.BranchId,
+                                TransactionId = existingTransaction.Id,
+                                MovementType = StockMovementType.Adjustment,
+                                Quantity = -quantityDifference, // Positive = adding back to stock, Negative = removing more
+                                PreviousQuantity = stock.Quantity + quantityDifference,
+                                NewQuantity = stock.Quantity,
+                                MovementDate = DateTime.UtcNow,
+                                Reason = $"Transaction update - Quantity changed from {oldQuantity} to {dto.Quantity.Value}",
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsActive = true
+                            };
+                            await _context.StockMovements.AddAsync(stockMovement);
+                        }
+                    }
+                }
+
+                // Update DailySales entries
+                var existingDailySales = await _context.DailySales
+                    .Where(ds => ds.TransactionId == existingTransaction.Id)
+                    .ToListAsync();
+
+                if (existingDailySales.Any())
+                {
+                    foreach (var dailySale in existingDailySales)
+                    {
+                        // Update basic fields
+                        dailySale.ProductId = existingTransaction.ProductId;
+                        dailySale.CustomerId = existingTransaction.CustomerId;
+                        dailySale.PainterId = existingTransaction.PainterId;
+                        dailySale.Quantity = existingTransaction.Quantity;
+                        dailySale.UnitPrice = existingTransaction.UnitPrice;
+                        dailySale.TotalAmount = existingTransaction.UnitPrice * existingTransaction.Quantity;
+                        dailySale.CommissionRate = existingTransaction.CommissionRate;
+                        dailySale.CommissionAmount = existingTransaction.Quantity * existingTransaction.CommissionRate;
+                        dailySale.CommissionPaid = existingTransaction.CommissionPaid;
+                        dailySale.PaymentMethod = existingTransaction.PaymentMethod;
+                        dailySale.UpdatedAt = DateTime.UtcNow;
+
+                        _context.DailySales.Update(dailySale);
+                    }
+                }
+                else
+                {
+                    // If no DailySales exist, create one (for non-credit transactions)
+                    if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
+                    {
+                        await CreateDailySalesAsync(existingTransaction, false);
+                    }
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -340,6 +438,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     result.PaidAmount = await CalculatePaidAmountAsync(existingTransaction.Id);
                 }
 
+                _logger.LogInformation("Successfully updated transaction {TransactionId} and related DailySales", existingTransaction.Id);
                 return ApiResponse<TransactionResponseDto>.Success(result, "Transaction updated successfully");
             }
             catch (Exception ex)
@@ -349,13 +448,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error updating transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<bool>> DeleteTransactionAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var existingTransaction = await _context.Transactions
+                    .Include(t => t.Product)
                     .FirstOrDefaultAsync(t => t.Id == id);
 
                 if (existingTransaction == null)
@@ -367,7 +466,41 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<bool>.Fail("Cannot delete credit transaction with payments");
                 }
 
-                // Also delete associated DailySales entries
+                // Restore stock for non-credit transactions
+                if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
+                {
+                    var stock = await _context.Stocks
+                        .FirstOrDefaultAsync(s => s.ProductId == existingTransaction.ProductId &&
+                                                 s.BranchId == existingTransaction.BranchId);
+
+                    if (stock != null)
+                    {
+                        var previousQuantity = stock.Quantity;
+                        stock.Quantity += existingTransaction.Quantity;
+                        stock.UpdatedAt = DateTime.UtcNow;
+
+                        // Create stock movement for deletion
+                        var stockMovement = new StockMovement
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = existingTransaction.ProductId,
+                            BranchId = existingTransaction.BranchId,
+                            TransactionId = existingTransaction.Id,
+                            MovementType = StockMovementType.Adjustment,
+                            Quantity = existingTransaction.Quantity, // Positive = adding back to stock
+                            PreviousQuantity = previousQuantity,
+                            NewQuantity = stock.Quantity,
+                            MovementDate = DateTime.UtcNow,
+                            Reason = $"Transaction deleted - {existingTransaction.ItemCode}",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        await _context.StockMovements.AddAsync(stockMovement);
+                    }
+                }
+
+                // Delete associated DailySales entries
                 var dailySales = await _context.DailySales
                     .Where(ds => ds.TransactionId == id)
                     .ToListAsync();
@@ -375,6 +508,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dailySales.Any())
                 {
                     _context.DailySales.RemoveRange(dailySales);
+                    _logger.LogInformation("Deleted {Count} DailySales entries for transaction {TransactionId}",
+                        dailySales.Count, id);
+                }
+
+                // Delete associated CreditPayments
+                var creditPayments = await _context.CreditPayments
+                    .Where(cp => cp.TransactionId == id)
+                    .ToListAsync();
+
+                if (creditPayments.Any())
+                {
+                    _context.CreditPayments.RemoveRange(creditPayments);
                 }
 
                 _context.Transactions.Remove(existingTransaction);
@@ -391,7 +536,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<bool>.Fail($"Error deleting transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
