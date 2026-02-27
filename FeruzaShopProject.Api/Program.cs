@@ -78,7 +78,6 @@ builder.Services.AddAutoMapper(typeof(TransactionMapper));
 builder.Services.AddAutoMapper(typeof(DailySalesMapper));
 builder.Services.AddAutoMapper(typeof(CustomerMapper));
 builder.Services.AddAutoMapper(typeof(PainterMapper));
-builder.Services.AddAutoMapper(typeof(SupplierMapper));
 builder.Services.AddAutoMapper(typeof(PurchaseMapper));
 builder.Services.AddAutoMapper(typeof(ProductExchangeMapper));
 
@@ -90,7 +89,6 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
-builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IProductExchangeService, ProductExchangeService>();
 builder.Services.AddScoped<IStockService, StockService>();
 

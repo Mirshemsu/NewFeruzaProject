@@ -628,7 +628,6 @@ namespace ShopMgtSys.Infrastructure.Services
                         await _context.SaveChangesAsync();
                         await transaction.CommitAsync();
 
-                        // FIX: Rename this to avoid conflict
                         var orderResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
                         return ApiResponse<PurchaseOrderDto>.Success(orderResult, "All items are already approved");
                     }
@@ -642,15 +641,15 @@ namespace ShopMgtSys.Infrastructure.Services
                     if (!item.QuantityRegistered.HasValue || !item.BuyingPrice.HasValue || !item.UnitPrice.HasValue)
                     {
                         _logger.LogWarning("Item {ItemId} missing required data for approval", item.Id);
-                        continue;
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Item {item.Id} is missing required data (quantity, buying price, or selling price)");
                     }
 
-                    // Check if item is fully registered
+                    // Check if item is fully registered (must be fully registered before approval)
                     if (item.QuantityRegistered.Value < item.QuantityAccepted.Value)
                     {
                         _logger.LogWarning("Item {ItemId} is not fully registered: {Registered}/{Accepted}",
                             item.Id, item.QuantityRegistered.Value, item.QuantityAccepted.Value);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is not fully registered. Registered: {item.QuantityRegistered.Value}, Accepted: {item.QuantityAccepted.Value}");
+                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is not fully registered. Registered: {item.QuantityRegistered.Value}, Accepted: {item.QuantityAccepted.Value}. Please register all quantities before approval.");
                     }
 
                     // Update product prices
@@ -686,7 +685,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 var financeVerifiedItems = allItems.Count(i => i.FinanceVerified == true);
                 var approvedItems = allItems.Count(i => i.IsApproved);
 
-                // Check if ALL items are fully registered
+                // Check if ALL items are fully registered (QuantityRegistered >= QuantityAccepted)
                 var allItemsFullyRegistered = allItems.All(i =>
                     !i.QuantityAccepted.HasValue || // Skip items not accepted
                     (i.QuantityRegistered.HasValue &&
@@ -702,6 +701,11 @@ namespace ShopMgtSys.Infrastructure.Services
                 var hasUnapprovedFinanceVerified = allItems
                     .Any(i => i.FinanceVerified == true && !i.IsApproved);
 
+                // Check if there are any finance-verified items that are NOT fully registered yet
+                var financeVerifiedNotFullyRegistered = allItems
+                    .Any(i => i.FinanceVerified == true &&
+                             i.QuantityRegistered < i.QuantityAccepted);
+
                 // Update purchase order status
                 if (allFinanceVerifiedItemsApproved && allItemsFullyRegistered)
                 {
@@ -716,9 +720,9 @@ namespace ShopMgtSys.Infrastructure.Services
                 else if (financeVerifiedItems > 0)
                 {
                     // Some items are finance verified but none approved yet
-                    purchaseOrder.Status = allItemsFullyRegistered
-                        ? PurchaseOrderStatus.FullyFinanceProcessed
-                        : PurchaseOrderStatus.PartiallyFinanceProcessed;
+                    purchaseOrder.Status = financeVerifiedNotFullyRegistered
+                        ? PurchaseOrderStatus.PartiallyFinanceProcessed  // Still waiting for full registration
+                        : PurchaseOrderStatus.FullyFinanceProcessed;      // All verified items are fully registered
                 }
                 else if (registeredItems > 0)
                 {
@@ -746,7 +750,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // FIX: Use a different variable name here
                 var finalResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
                 _logger.LogInformation("Admin gave final approval for purchase order {PurchaseOrderId}. New items approved: {NewApproved}, Total approved: {TotalApproved}",
                     purchaseOrder.Id, itemsToApprove.Count, approvedCount);
@@ -759,8 +762,15 @@ namespace ShopMgtSys.Infrastructure.Services
                 }
                 else
                 {
-                    var remainingItems = allItems.Count(i => i.FinanceVerified == true && !i.IsApproved);
-                    statusMessage = $"Purchase order partially approved. {itemsToApprove.Count} new items approved. Total approved: {approvedCount}. Remaining items to approve: {remainingItems}.";
+                    var remainingToApprove = allItems.Count(i => i.FinanceVerified == true && !i.IsApproved);
+                    var remainingToRegister = allItems.Count(i => i.QuantityRegistered < i.QuantityAccepted);
+                    var remainingToVerify = allItems.Count(i => i.FinanceVerified != true && i.QuantityRegistered > 0);
+
+                    statusMessage = $"Purchase order partially approved. {itemsToApprove.Count} new items approved. " +
+                                   $"Total approved: {approvedCount}. " +
+                                   $"Remaining to approve: {remainingToApprove}, " +
+                                   $"Remaining to register: {remainingToRegister}, " +
+                                   $"Remaining to verify: {remainingToVerify}.";
                 }
 
                 return ApiResponse<PurchaseOrderDto>.Success(finalResult, statusMessage);
@@ -771,8 +781,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 await transaction.RollbackAsync();
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in final approval by admin");
             }
-        }
-        // ========== SALES EDIT OPERATIONS ==========
+        }        // ========== SALES EDIT OPERATIONS ==========
 
         public async Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderBySalesAsync(EditPurchaseOrderBySalesDto dto)
         {
@@ -820,9 +829,25 @@ namespace ShopMgtSys.Infrastructure.Services
                 // Update items
                 if (dto.Items != null && dto.Items.Any())
                 {
-                    // Create a list of new items to add
-                    var newItems = new List<PurchaseOrderItem>();
+                    // Get IDs of items that should remain
+                    var requestedItemIds = dto.Items
+                        .Where(i => i.ItemId.HasValue)
+                        .Select(i => i.ItemId.Value)
+                        .ToHashSet();
 
+                    // Find items to remove (existing items not in the request)
+                    var itemsToRemove = purchaseOrder.Items
+                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
+                        .ToList();
+
+                    // REMOVE items from context FIRST (before any other operations)
+                    if (itemsToRemove.Any())
+                    {
+                        _context.PurchaseOrderItems.RemoveRange(itemsToRemove);
+                        _logger.LogInformation("Removing {Count} items from purchase order", itemsToRemove.Count);
+                    }
+
+                    // Process each item from the DTO
                     foreach (var itemDto in dto.Items)
                     {
                         var product = await _context.Products.FindAsync(itemDto.ProductId);
@@ -832,52 +857,39 @@ namespace ShopMgtSys.Infrastructure.Services
                             return ApiResponse<PurchaseOrderDto>.Fail($"Invalid or inactive product: {itemDto.ProductId}");
                         }
 
-                        // Check if this item already exists
-                        var existingItem = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId);
-
-                        if (existingItem != null)
+                        if (itemDto.ItemId.HasValue)
                         {
-                            // Update existing item instead of creating new one
-                            existingItem.ProductId = itemDto.ProductId;
-                            existingItem.QuantityRequested = itemDto.QuantityRequested;
-                            existingItem.UpdatedAt = DateTime.UtcNow;
+                            // Update existing item
+                            var existingItem = await _context.PurchaseOrderItems
+                                .FirstOrDefaultAsync(i => i.Id == itemDto.ItemId.Value && i.PurchaseOrderId == purchaseOrder.Id);
+
+                            if (existingItem != null)
+                            {
+                                existingItem.ProductId = itemDto.ProductId;
+                                existingItem.QuantityRequested = itemDto.QuantityRequested;
+                                existingItem.UpdatedAt = DateTime.UtcNow;
+                                _context.PurchaseOrderItems.Update(existingItem);
+                            }
                         }
                         else
                         {
-                            // Create new item only if it doesn't exist
-                            var poItem = new PurchaseOrderItem
+                            // Create new item
+                            var newItem = new PurchaseOrderItem
                             {
-                                Id = Guid.NewGuid(), // Always generate new ID for new items
+                                Id = Guid.NewGuid(),
                                 PurchaseOrderId = purchaseOrder.Id,
                                 ProductId = itemDto.ProductId,
                                 QuantityRequested = itemDto.QuantityRequested,
                                 CreatedAt = DateTime.UtcNow,
                                 IsActive = true
                             };
-                            newItems.Add(poItem);
+                            await _context.PurchaseOrderItems.AddAsync(newItem);
                         }
-                    }
-
-                    // Add all new items at once
-                    foreach (var newItem in newItems)
-                    {
-                        purchaseOrder.Items.Add(newItem);
-                    }
-
-                    // Find and deactivate items that are no longer in the list
-                    var requestedItemIds = dto.Items.Where(i => i.ItemId.HasValue).Select(i => i.ItemId.Value).ToHashSet();
-                    var itemsToRemove = purchaseOrder.Items
-                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
-                        .ToList();
-
-                    foreach (var item in itemsToRemove)
-                    {
-                        item.Deactivate();
-                        item.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
+                _context.PurchaseOrders.Update(purchaseOrder);
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedBySales", userId,
                     $"Sales edited purchase order. Items: {purchaseOrder.Items.Count(i => i.IsActive)}");
@@ -885,9 +897,22 @@ namespace ShopMgtSys.Infrastructure.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
+                // Refresh the purchase order to get latest state
+                var updatedOrder = await _context.PurchaseOrders
+                    .Include(po => po.Items)
+                    .Include(po => po.Branch)
+                    .Include(po => po.Creator)
+                    .FirstOrDefaultAsync(po => po.Id == purchaseOrder.Id);
+
+                var result = _mapper.Map<PurchaseOrderDto>(updatedOrder);
                 _logger.LogInformation("Sales edited purchase order {PurchaseOrderId}", purchaseOrder.Id);
                 return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order updated successfully");
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Concurrency error editing purchase order by sales: {@Dto}", dto);
+                return ApiResponse<PurchaseOrderDto>.Fail("The purchase order was modified by another user. Please refresh and try again.");
             }
             catch (Exception ex)
             {

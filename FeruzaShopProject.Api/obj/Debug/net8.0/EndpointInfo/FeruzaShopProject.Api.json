@@ -2744,205 +2744,6 @@
         }
       }
     },
-    "/api/Suppliers": {
-      "post": {
-        "tags": [
-          "Suppliers"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSupplierDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSupplierDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSupplierDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Suppliers"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSupplierDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSupplierDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSupplierDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Suppliers"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoListApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoListApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoListApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Suppliers/{id}": {
-      "get": {
-        "tags": [
-          "Suppliers"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SupplierDtoApiResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Suppliers"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BooleanApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Transactions": {
       "post": {
         "tags": [
@@ -4254,30 +4055,6 @@
         },
         "additionalProperties": false
       },
-      "CreateSupplierDto": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "contactInfo": {
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string",
-            "nullable": true
-          },
-          "address": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "CreateTransactionDto": {
         "required": [
           "branchId",
@@ -4591,9 +4368,25 @@
             "type": "integer",
             "format": "int32"
           },
-          "totalValue": {
+          "totalPhysicalValue": {
             "type": "number",
             "format": "double"
+          },
+          "totalCreditValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalNetValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "lowStockItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "outOfStockItems": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -6273,6 +6066,13 @@
           "changeType": {
             "type": "string",
             "nullable": true
+          },
+          "movements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockMovementSummaryDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6328,7 +6128,15 @@
             "type": "string",
             "nullable": true
           },
-          "quantity": {
+          "physicalQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "unpaidCreditQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "netAvailableQuantity": {
             "type": "number",
             "format": "double"
           },
@@ -6336,95 +6144,35 @@
             "type": "number",
             "format": "double"
           },
+          "buyingPrice": {
+            "type": "number",
+            "format": "double"
+          },
           "totalValue": {
             "type": "number",
             "format": "double"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SupplierDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
           },
-          "name": {
+          "status": {
             "type": "string",
-            "nullable": true
-          },
-          "contactInfo": {
-            "type": "string",
-            "nullable": true
-          },
-          "address": {
-            "type": "string",
-            "nullable": true
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
             "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "SupplierDtoApiResponse": {
+      "StockMovementSummaryDto": {
         "type": "object",
         "properties": {
-          "data": {
-            "$ref": "#/components/schemas/SupplierDto"
-          },
-          "errorMessage": {
+          "type": {
             "type": "string",
             "nullable": true
           },
-          "message": {
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "reason": {
             "type": "string",
             "nullable": true
-          },
-          "isCompletedSuccessfully": {
-            "type": "boolean"
-          },
-          "generatedOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SupplierDtoListApiResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SupplierDto"
-            },
-            "nullable": true
-          },
-          "errorMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "isCompletedSuccessfully": {
-            "type": "boolean"
-          },
-          "generatedOn": {
-            "type": "string",
-            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -7036,35 +6784,6 @@
             "items": {
               "$ref": "#/components/schemas/CreatePurchaseOrderItemDto"
             }
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateSupplierDto": {
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "contactInfo": {
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string",
-            "nullable": true
-          },
-          "address": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

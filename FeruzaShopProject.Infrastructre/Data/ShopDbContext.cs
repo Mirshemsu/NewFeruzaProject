@@ -19,7 +19,6 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<Painter> Painters { get; set; }
         public DbSet<DailySales> DailySales { get; set; }
         public DbSet<CreditPayment> CreditPayments { get; set; }
-        public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseHistory> PurchaseHistory { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
@@ -329,10 +328,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(ba => ba.BranchId)
                     .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade
             });
-            modelBuilder.Entity<Supplier>().HasQueryFilter(s => s.IsActive);
-            modelBuilder.Entity<Supplier>()
-               .HasIndex(s => s.Name)
-               .IsUnique();
+          
             modelBuilder.Entity<PurchaseOrder>()
                .HasIndex(po => po.Id)
                .IsUnique();
