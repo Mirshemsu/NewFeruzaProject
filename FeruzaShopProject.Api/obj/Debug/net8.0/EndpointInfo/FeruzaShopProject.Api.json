@@ -3736,6 +3736,24 @@
         },
         "additionalProperties": false
       },
+      "BranchStockDto": {
+        "required": [
+          "branchId",
+          "quantity"
+        ],
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "BulkCreateProductDto": {
         "required": [
           "products"
@@ -4368,25 +4386,9 @@
             "type": "integer",
             "format": "int32"
           },
-          "totalPhysicalValue": {
+          "totalValue": {
             "type": "number",
             "format": "double"
-          },
-          "totalCreditValue": {
-            "type": "number",
-            "format": "double"
-          },
-          "totalNetValue": {
-            "type": "number",
-            "format": "double"
-          },
-          "lowStockItems": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "outOfStockItems": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -6066,13 +6068,6 @@
           "changeType": {
             "type": "string",
             "nullable": true
-          },
-          "movements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StockMovementSummaryDto"
-            },
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6128,15 +6123,7 @@
             "type": "string",
             "nullable": true
           },
-          "physicalQuantity": {
-            "type": "number",
-            "format": "double"
-          },
-          "unpaidCreditQuantity": {
-            "type": "number",
-            "format": "double"
-          },
-          "netAvailableQuantity": {
+          "quantity": {
             "type": "number",
             "format": "double"
           },
@@ -6144,35 +6131,9 @@
             "type": "number",
             "format": "double"
           },
-          "buyingPrice": {
-            "type": "number",
-            "format": "double"
-          },
           "totalValue": {
             "type": "number",
             "format": "double"
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "StockMovementSummaryDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "nullable": true
-          },
-          "quantity": {
-            "type": "number",
-            "format": "double"
-          },
-          "reason": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6762,6 +6723,13 @@
           "categoryId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "branchStocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchStockDto"
+            },
             "nullable": true
           }
         },

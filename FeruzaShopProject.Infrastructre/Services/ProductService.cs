@@ -418,6 +418,7 @@ namespace FeruzaShopProject.Infrastructure.Services
         // ========== EXISTING METHODS ==========
         public async Task<ApiResponse<ProductResponseDto>> UpdateProductAsync(UpdateProductDto dto)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var product = await _context.Products
@@ -457,15 +458,87 @@ namespace FeruzaShopProject.Infrastructure.Services
                     product.ValidateAmount();
                 }
 
+                // ========== HANDLE BRANCH STOCKS UPDATE ==========
+                if (dto.BranchStocks != null && dto.BranchStocks.Any())
+                {
+                    // Validate branches exist
+                    var branchIds = dto.BranchStocks.Select(b => b.BranchId).Distinct().ToList();
+                    var existingBranches = await _context.Branches
+                        .Where(b => branchIds.Contains(b.Id) && b.IsActive)
+                        .Select(b => b.Id)
+                        .ToListAsync();
+
+                    var invalidBranches = branchIds.Except(existingBranches).ToList();
+                    if (invalidBranches.Any())
+                    {
+                        _logger.LogWarning("Invalid branches: {BranchIds}", string.Join(", ", invalidBranches));
+                        return ApiResponse<ProductResponseDto>.Fail($"Invalid branches: {string.Join(", ", invalidBranches)}");
+                    }
+
+                    // Get existing stock records
+                    var existingStocks = product.Stocks.ToDictionary(s => s.BranchId);
+
+                    // Track which branches we've processed
+                    var processedBranchIds = new HashSet<Guid>();
+
+                    foreach (var branchStock in dto.BranchStocks)
+                    {
+                        processedBranchIds.Add(branchStock.BranchId);
+
+                        if (existingStocks.TryGetValue(branchStock.BranchId, out var existingStock))
+                        {
+                            // UPDATE existing stock
+                            var oldQuantity = existingStock.Quantity;
+                            existingStock.Quantity = branchStock.Quantity;
+                            existingStock.UpdatedAt = DateTime.UtcNow;
+
+                            _logger.LogDebug("Updated stock for Product {ProductId} in Branch {BranchId}: {OldQuantity} -> {NewQuantity}",
+                                product.Id, branchStock.BranchId, oldQuantity, branchStock.Quantity);
+                        }
+                        else
+                        {
+                            // CREATE new stock for new branch
+                            var newStock = new Stock
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = product.Id,
+                                BranchId = branchStock.BranchId,
+                                Quantity = branchStock.Quantity,
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true
+                            };
+                            await _context.Stocks.AddAsync(newStock);
+
+                            _logger.LogDebug("Added new stock for Product {ProductId} in Branch {BranchId} with quantity {Quantity}",
+                                product.Id, branchStock.BranchId, branchStock.Quantity);
+                        }
+                    }
+
+                    // REMOVE stocks for branches that are no longer in the list
+                    var stocksToRemove = product.Stocks
+                        .Where(s => !processedBranchIds.Contains(s.BranchId))
+                        .ToList();
+
+                    foreach (var stock in stocksToRemove)
+                    {
+                        stock.IsActive = false;
+                        stock.UpdatedAt = DateTime.UtcNow;
+                        _logger.LogDebug("Removed stock for Product {ProductId} from Branch {BranchId}",
+                            product.Id, stock.BranchId);
+                    }
+                }
+
                 _context.Products.Update(product);
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 var result = await GetProductResponse(product.Id);
-                _logger.LogInformation("Updated product {ProductId}", product.Id);
+                _logger.LogInformation("Updated product {ProductId} with branch stocks", product.Id);
                 return ApiResponse<ProductResponseDto>.Success(result, "Product updated successfully");
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error updating product: {@Dto}", dto);
                 return ApiResponse<ProductResponseDto>.Fail("Failed to update product");
             }
@@ -540,37 +613,65 @@ namespace FeruzaShopProject.Infrastructure.Services
             }
         }
 
-        public async Task<ApiResponse<List<ProductResponseDto>>> GetProductsByBranchAsync(Guid branchId)
+        public async Task<ApiResponse<List<ProductBranchDto>>> GetProductsByBranchAsync(Guid branchId)
         {
             try
             {
                 if (!await _context.Branches.AnyAsync(b => b.Id == branchId && b.IsActive))
                 {
                     _logger.LogWarning("Branch not found: {BranchId}", branchId);
-                    return ApiResponse<List<ProductResponseDto>>.Fail("Branch not found");
+                    return ApiResponse<List<ProductBranchDto>>.Fail("Branch not found");
                 }
 
-                var products = await _context.Stocks
+                var stocks = await _context.Stocks
                     .Include(s => s.Product)
-                    .ThenInclude(p => p.Category)
-                    .Include(s => s.Product.Stocks)
-                    .ThenInclude(st => st.Branch)
+                        .ThenInclude(p => p.Category)
+                    .Include(s => s.Branch)
                     .Where(s => s.BranchId == branchId && s.IsActive && s.Product.IsActive)
-                    .Select(s => s.Product)
-                    .Distinct()
-                    .OrderBy(p => p.Name)
+                    .OrderBy(s => s.Product.Name)
                     .ToListAsync();
 
-                var result = _mapper.Map<List<ProductResponseDto>>(products);
-                return ApiResponse<List<ProductResponseDto>>.Success(result);
+                var result = stocks.Select(s => new ProductBranchDto
+                {
+                    ProductId = s.ProductId,
+                    ProductName = s.Product.Name,
+                    ItemCode = s.Product.ItemCode,
+                    ItemDescription = s.Product.ItemDescription,
+                    BuyingPrice = s.Product.BuyingPrice,
+                    SellingPrice = s.Product.UnitPrice,
+                    CommissionPerProduct = s.Product.CommissionPerProduct,
+                    ReorderLevel = s.Product.ReorderLevel,
+                    CategoryId = s.Product.CategoryId,
+                    CategoryName = s.Product.Category?.Name,
+                    BranchId = s.BranchId,
+                    BranchName = s.Branch.Name,
+                    Quantity = s.Quantity, // Branch-specific quantity
+                    Amount = s.Product.Amount,
+                    Unit = s.Product.Unit,
+                    QuantityDisplay = $"{s.Product.Amount} {s.Product.Unit}",
+                    Status = GetStockStatus(s.Quantity, s.Product.ReorderLevel),
+                    CreatedAt = s.Product.CreatedAt,
+                    UpdatedAt = s.Product.UpdatedAt
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} products for branch: {BranchId}", result.Count, branchId);
+                return ApiResponse<List<ProductBranchDto>>.Success(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving products for branch: {BranchId}", branchId);
-                return ApiResponse<List<ProductResponseDto>>.Fail("Failed to retrieve products");
+                return ApiResponse<List<ProductBranchDto>>.Fail("Failed to retrieve products");
             }
         }
 
+        private string GetStockStatus(decimal quantity, int reorderLevel)
+        {
+            if (quantity <= 0)
+                return "Out of Stock";
+            if (quantity <= reorderLevel)
+                return "Low Stock";
+            return "In Stock";
+        }
         public async Task<ApiResponse<List<ProductLowStockDto>>> GetLowStockProductsAsync(int threshold = 10)
         {
             try

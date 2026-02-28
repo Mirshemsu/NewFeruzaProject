@@ -25,6 +25,28 @@ namespace FeruzaShopProject.Domain.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
+    public class ProductBranchDto
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public string ItemCode { get; set; }
+        public string ItemDescription { get; set; }
+        public decimal BuyingPrice { get; set; }
+        public decimal SellingPrice { get; set; }
+        public decimal CommissionPerProduct { get; set; }
+        public int ReorderLevel { get; set; }
+        public Guid CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public Guid BranchId { get; set; }
+        public string BranchName { get; set; }
+        public decimal Quantity { get; set; } // Branch-specific quantity
+        public decimal Amount { get; set; }
+        public UnitType Unit { get; set; }
+        public string QuantityDisplay { get; set; }
+        public string Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
 
     public class CreateProductDto
     {
@@ -132,6 +154,16 @@ namespace FeruzaShopProject.Domain.DTOs
         public int? ReorderLevel { get; set; }
 
         public Guid? CategoryId { get; set; }
+
+        public List<BranchStockDto>? BranchStocks { get; set; }
+    }
+    public class BranchStockDto
+    {
+        [Required]
+        public Guid BranchId { get; set; }
+
+        [Required]
+        public decimal Quantity { get; set; }
     }
 
     public class ProductLowStockDto

@@ -16,7 +16,7 @@ namespace FeruzaShopProject.Application.Interface
         Task<ApiResponse<ProductResponseDto>> GetProductByIdAsync(Guid id);
         Task<ApiResponse<List<ProductResponseDto>>> GetAllProductsAsync();
         Task<ApiResponse<List<ProductResponseDto>>> GetProductsByCategoryAsync(Guid categoryId);
-        Task<ApiResponse<List<ProductResponseDto>>> GetProductsByBranchAsync(Guid branchId);
+        Task<ApiResponse<List<ProductBranchDto>>> GetProductsByBranchAsync(Guid branchId);
         Task<ApiResponse<List<ProductLowStockDto>>> GetLowStockProductsAsync(int threshold = 10);
         Task<ApiResponse<bool>> DeleteProductAsync(Guid id);
         Task<ApiResponse<ProductStockDto>> AddProductToBranchAsync(AddProductToBranchDto dto);
