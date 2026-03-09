@@ -4107,6 +4107,28 @@
         },
         "additionalProperties": false
       },
+      "BranchStockInfoDto": {
+        "type": "object",
+        "properties": {
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockStatus": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BulkCreateProductDto": {
         "required": [
           "products"
@@ -5785,8 +5807,15 @@
             "format": "int32"
           },
           "totalStock": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
+          },
+          "branchStocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchStockInfoDto"
+            },
+            "nullable": true
           },
           "categoryId": {
             "type": "string",

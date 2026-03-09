@@ -14,16 +14,30 @@ namespace FeruzaShopProject.Domain.DTOs
         public string Name { get; set; }
         public string ItemCode { get; set; }
         public string ItemDescription { get; set; }
-        public string Quantity { get; set; } // e.g., "25 kg", "1 Pcs"
+        public string Quantity { get; set; } // Display quantity (e.g., "10.000 Kg")
         public decimal BuyingPrice { get; set; }
         public decimal SellingPrice { get; set; }
         public decimal CommissionPerProduct { get; set; }
         public int ReorderLevel { get; set; }
-        public int TotalStock { get; set; }
+
+        // Total stock across ALL branches
+        public decimal TotalStock { get; set; }
+
+        // Branch-specific stock details
+        public List<BranchStockInfoDto> BranchStocks { get; set; }
+
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class BranchStockInfoDto
+    {
+        public Guid BranchId { get; set; }
+        public string BranchName { get; set; }
+        public decimal Quantity { get; set; }
+        public string StockStatus { get; set; }
     }
     public class ProductBranchDto
     {

@@ -104,127 +104,81 @@ namespace FeruzaShopProject.Infrastructre.Services
                     OutOfStockItems = 0
                 };
 
-                // Get all active products and branches
-                var productsQuery = _context.Products
-                    .Include(p => p.Category)
-                    .Where(p => p.IsActive);
-
-                var branchesQuery = _context.Branches.Where(b => b.IsActive);
-
-                if (productId.HasValue)
-                    productsQuery = productsQuery.Where(p => p.Id == productId.Value);
-
-                if (branchId.HasValue)
-                    branchesQuery = branchesQuery.Where(b => b.Id == branchId.Value);
-
-                var products = await productsQuery.ToListAsync();
-                var branches = await branchesQuery.ToListAsync();
-
-                if (!products.Any() || !branches.Any())
-                {
-                    return ApiResponse<CurrentStockDto>.Success(result, "No products or branches found");
-                }
-
-                // Get all stock movements
-                var movementsQuery = _context.StockMovements
-                    .Where(m => m.IsActive)
+                // Get stocks directly from Stock table (this is the source of truth)
+                var stocksQuery = _context.Stocks
+                    .Include(s => s.Product)
+                        .ThenInclude(p => p.Category)
+                    .Include(s => s.Branch)
+                    .Where(s => s.IsActive && s.Product.IsActive)
                     .AsQueryable();
 
-                if (productId.HasValue)
-                    movementsQuery = movementsQuery.Where(m => m.ProductId == productId.Value);
-
                 if (branchId.HasValue)
-                    movementsQuery = movementsQuery.Where(m => m.BranchId == branchId.Value);
+                    stocksQuery = stocksQuery.Where(s => s.BranchId == branchId.Value);
 
-                var allMovements = await movementsQuery
-                    .OrderBy(m => m.ProductId)
-                    .ThenBy(m => m.BranchId)
-                    .ThenBy(m => m.MovementDate)
-                    .ToListAsync();
+                if (productId.HasValue)
+                    stocksQuery = stocksQuery.Where(s => s.ProductId == productId.Value);
+
+                var stocks = await stocksQuery.ToListAsync();
 
                 // Get unpaid credit quantities
                 var unpaidCreditQuantities = await GetUnpaidCreditQuantitiesAsync(branchId, productId);
 
-                // Process each product-branch combination
-                foreach (var product in products)
+                foreach (var stock in stocks)
                 {
-                    foreach (var branch in branches)
+                    var key = $"{stock.ProductId}_{stock.BranchId}";
+                    decimal creditStock = unpaidCreditQuantities.ContainsKey(key) ? unpaidCreditQuantities[key] : 0;
+                    decimal netStock = stock.Quantity - creditStock;
+                    if (netStock < 0) netStock = 0;
+
+                    var stockItem = new StockItemDetailDto
                     {
-                        // Filter movements for this specific product and branch
-                        var productMovements = allMovements
-                            .Where(m => m.ProductId == product.Id && m.BranchId == branch.Id)
-                            .ToList();
+                        // Product Info
+                        ProductId = stock.ProductId,
+                        ProductName = stock.Product.Name,
+                        ItemCode = stock.Product.ItemCode,
+                        CategoryName = stock.Product.Category?.Name,
 
-                        // Calculate physical stock
-                        decimal actualStock = 0;
-                        foreach (var movement in productMovements)
-                        {
-                            actualStock = ApplyMovementToStock(actualStock, movement);
-                        }
+                        // Branch Info
+                        BranchId = stock.BranchId,
+                        BranchName = stock.Branch.Name,
 
-                        // Skip if no stock and no movements (optional - remove if you want to show zero stock items)
-                        if (actualStock == 0 && !productMovements.Any())
-                            continue;
+                        // Stock Quantities
+                        ActualQuantity = stock.Quantity,  // Direct from Stock table
+                        CreditQuantity = creditStock,
+                        NetQuantity = netStock,
 
-                        // Get unpaid credit quantity
-                        var key = $"{product.Id}_{branch.Id}";
-                        decimal creditStock = unpaidCreditQuantities.ContainsKey(key)
-                            ? unpaidCreditQuantities[key]
-                            : 0;
+                        // Financial Values
+                        BuyingPrice = stock.Product.BuyingPrice,
+                        SellingPrice = stock.Product.UnitPrice,
+                        ActualValue = stock.Quantity * stock.Product.BuyingPrice,
+                        CreditValue = creditStock * stock.Product.BuyingPrice,
+                        NetValue = netStock * stock.Product.BuyingPrice,
 
-                        decimal netStock = actualStock - creditStock;
-                        if (netStock < 0) netStock = 0;
+                        // Status
+                        ReorderLevel = stock.Product.ReorderLevel,
+                        StockStatus = GetStockStatus(netStock, stock.Product.ReorderLevel),
 
-                        var stockItem = new StockItemDetailDto
-                        {
-                            // Product Info
-                            ProductId = product.Id,
-                            ProductName = product.Name,
-                            ItemCode = product.ItemCode,
-                            CategoryName = product.Category?.Name,
+                        // Unit Info
+                        UnitAmount = stock.Product.Amount,
+                        UnitType = stock.Product.Unit.ToString()
+                    };
 
-                            // Branch Info
-                            BranchId = branch.Id,
-                            BranchName = branch.Name,
+                    result.Items.Add(stockItem);
 
-                            // Stock Quantities
-                            ActualQuantity = actualStock,
-                            CreditQuantity = creditStock,
-                            NetQuantity = netStock,
+                    // Update totals
+                    result.TotalActualStock += stock.Quantity;
+                    result.TotalCreditStock += creditStock;
+                    result.TotalNetStock += netStock;
+                    result.TotalActualValue += stock.Quantity * stock.Product.BuyingPrice;
+                    result.TotalCreditValue += creditStock * stock.Product.BuyingPrice;
+                    result.TotalNetValue += netStock * stock.Product.BuyingPrice;
 
-                            // Financial Values
-                            BuyingPrice = product.BuyingPrice,
-                            SellingPrice = product.UnitPrice,
-                            ActualValue = actualStock * product.BuyingPrice,
-                            CreditValue = creditStock * product.BuyingPrice,
-                            NetValue = netStock * product.BuyingPrice,
-
-                            // Status
-                            ReorderLevel = product.ReorderLevel,
-                            StockStatus = GetStockStatus(netStock, product.ReorderLevel),
-
-                            // Unit Info
-                            UnitAmount = product.Amount,
-                            UnitType = product.Unit.ToString()
-                        };
-
-                        result.Items.Add(stockItem);
-
-                        // Update totals
-                        result.TotalActualStock += actualStock;
-                        result.TotalCreditStock += creditStock;
-                        result.TotalNetStock += netStock;
-                        result.TotalActualValue += actualStock * product.BuyingPrice;
-                        result.TotalCreditValue += creditStock * product.BuyingPrice;
-                        result.TotalNetValue += netStock * product.BuyingPrice;
-
-                        // Update status counts
-                        switch (stockItem.StockStatus)
-                        {
-                            case "In Stock": result.InStockItems++; break;
-                            case "Low Stock": result.LowStockItems++; break;
-                            case "Out of Stock": result.OutOfStockItems++; break;
-                        }
+                    // Update status counts
+                    switch (stockItem.StockStatus)
+                    {
+                        case "In Stock": result.InStockItems++; break;
+                        case "Low Stock": result.LowStockItems++; break;
+                        case "Out of Stock": result.OutOfStockItems++; break;
                     }
                 }
 
@@ -241,7 +195,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<CurrentStockDto>.Fail($"Error retrieving current stock: {ex.Message}");
             }
         }
-
         /// <summary>
         /// Get detailed stock history with movement breakdown
         /// </summary>

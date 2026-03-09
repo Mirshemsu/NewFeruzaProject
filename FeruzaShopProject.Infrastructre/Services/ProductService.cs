@@ -570,12 +570,37 @@ namespace FeruzaShopProject.Infrastructure.Services
                 var products = await _context.Products
                     .Include(p => p.Category)
                     .Include(p => p.Stocks)
-                    .ThenInclude(s => s.Branch)
+                        .ThenInclude(s => s.Branch)
                     .Where(p => p.IsActive)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
 
-                var result = _mapper.Map<List<ProductResponseDto>>(products);
+                var result = new List<ProductResponseDto>();
+
+                foreach (var product in products)
+                {
+                    var productDto = _mapper.Map<ProductResponseDto>(product);
+
+                    // Calculate total stock across ALL branches
+                    productDto.TotalStock = product.Stocks?
+                        .Where(s => s.IsActive)
+                        .Sum(s => s.Quantity) ?? 0;
+
+                    // Add branch-specific stock information
+                    productDto.BranchStocks = product.Stocks?
+                        .Where(s => s.IsActive && s.Branch != null)
+                        .Select(s => new BranchStockInfoDto
+                        {
+                            BranchId = s.BranchId,
+                            BranchName = s.Branch.Name,
+                            Quantity = s.Quantity,
+                            StockStatus = GetStockStatus(s.Quantity, product.ReorderLevel)
+                        })
+                        .ToList() ?? new List<BranchStockInfoDto>();
+
+                    result.Add(productDto);
+                }
+
                 return ApiResponse<List<ProductResponseDto>>.Success(result);
             }
             catch (Exception ex)
