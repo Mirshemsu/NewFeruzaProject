@@ -6,10 +6,29 @@ namespace FeruzaShopProject.Domain.DTOs
     // For stock on a specific date
     public class StockOnDateDto
     {
+        // Product Info
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; }
+        public string ItemCode { get; set; }
+
+        // Branch Info
+        public Guid BranchId { get; set; }
+        public string BranchName { get; set; }
+
+        // Date
         public DateTime Date { get; set; }
+
+        // Stock Quantities
         public decimal Quantity { get; set; }
-        public decimal? CreditQuantity { get; set; }
-        public decimal? NetQuantity { get; set; }
+        public decimal CreditQuantity { get; set; }
+        public decimal NetQuantity { get; set; }
+
+        // Financial Values
+        public decimal UnitPrice { get; set; }
+        public decimal BuyingPrice { get; set; }
+        public decimal TotalValue { get; set; }
+        public decimal CreditValue { get; set; }
+        public decimal NetValue { get; set; }
     }
 
     // For current stock view with credit information

@@ -27,57 +27,131 @@ namespace FeruzaShopProject.Infrastructre.Services
         /// <summary>
         /// Get stock on a specific date with credit information
         /// </summary>
-        public async Task<ApiResponse<StockOnDateDto>> GetStockOnDateAsync(Guid productId, Guid branchId, DateTime date)
+        /// <summary>
+        /// Get stock for all products on a specific date with credit information
+        /// </summary>
+        public async Task<ApiResponse<List<StockOnDateDto>>> GetStockOnDateAsync(DateTime date, Guid? branchId = null, Guid? productId = null)
         {
             try
             {
-                _logger.LogInformation("Getting stock for Product:{ProductId}, Branch:{BranchId}, Date:{Date}",
-                    productId, branchId, date.Date);
+                _logger.LogInformation("Getting stock for all products on Date:{Date}, Branch:{BranchId}, Product:{ProductId}",
+                    date.Date, branchId, productId);
 
-                // Get the MOST RECENT StockMovement up to the requested date
-                var lastMovement = await _context.StockMovements
-                    .Where(m => m.ProductId == productId
-                             && m.BranchId == branchId
-                             && m.MovementDate.Date <= date.Date)
-                    .OrderByDescending(m => m.MovementDate)
-                    .FirstOrDefaultAsync();
+                var result = new List<StockOnDateDto>();
 
-                // If no movements, stock is 0
-                if (lastMovement == null)
+                // Get all active products
+                var productsQuery = _context.Products
+                    .Where(p => p.IsActive)
+                    .AsQueryable();
+
+                if (productId.HasValue)
+                    productsQuery = productsQuery.Where(p => p.Id == productId.Value);
+
+                var products = await productsQuery.ToListAsync();
+
+                // Get all active branches
+                var branchesQuery = _context.Branches
+                    .Where(b => b.IsActive)
+                    .AsQueryable();
+
+                if (branchId.HasValue)
+                    branchesQuery = branchesQuery.Where(b => b.Id == branchId.Value);
+
+                var branches = await branchesQuery.ToListAsync();
+
+                if (!products.Any() || !branches.Any())
                 {
-                    return ApiResponse<StockOnDateDto>.Success(new StockOnDateDto
-                    {
-                        Date = date,
-                        Quantity = 0,
-                        CreditQuantity = 0,
-                        NetQuantity = 0
-                    }, $"Stock quantity on {date:yyyy-MM-dd} is 0");
+                    return ApiResponse<List<StockOnDateDto>>.Success(result, "No products or branches found");
                 }
 
-                // Calculate credit stock on that date
-                decimal creditStock = await GetCreditStockOnDateAsync(productId, branchId, date);
+                // Get all stock movements up to the requested date
+                var movementsQuery = _context.StockMovements
+                    .Where(m => m.MovementDate.Date <= date.Date && m.IsActive)
+                    .AsQueryable();
 
-                var result = new StockOnDateDto
+                if (branchId.HasValue)
+                    movementsQuery = movementsQuery.Where(m => m.BranchId == branchId.Value);
+
+                if (productId.HasValue)
+                    movementsQuery = movementsQuery.Where(m => m.ProductId == productId.Value);
+
+                var allMovements = await movementsQuery
+                    .OrderBy(m => m.ProductId)
+                    .ThenBy(m => m.BranchId)
+                    .ThenBy(m => m.MovementDate)
+                    .ToListAsync();
+
+                // Process each product-branch combination
+                foreach (var product in products)
                 {
-                    Date = date,
-                    Quantity = lastMovement.NewQuantity,
-                    CreditQuantity = creditStock,
-                    NetQuantity = lastMovement.NewQuantity - creditStock
-                };
+                    foreach (var branch in branches)
+                    {
+                        // Get the most recent movement for this product and branch up to the date
+                        var lastMovement = allMovements
+                            .Where(m => m.ProductId == product.Id && m.BranchId == branch.Id)
+                            .OrderByDescending(m => m.MovementDate)
+                            .FirstOrDefault();
 
-                _logger.LogInformation("Calculated stock for {Date}: {Quantity} items (Credit: {Credit})",
-                    date.Date, result.Quantity, result.CreditQuantity);
+                        decimal quantity = 0;
 
-                return ApiResponse<StockOnDateDto>.Success(result, $"Stock on {date:yyyy-MM-dd}");
+                        if (lastMovement != null)
+                        {
+                            quantity = lastMovement.NewQuantity;
+                        }
+                        else
+                        {
+                            // If no movements, check if there's a stock record with initial quantity
+                            var stockRecord = await _context.Stocks
+                                .FirstOrDefaultAsync(s => s.ProductId == product.Id &&
+                                                         s.BranchId == branch.Id &&
+                                                         s.IsActive);
+
+                            if (stockRecord != null && stockRecord.CreatedAt.Date <= date.Date)
+                            {
+                                // This product existed on that date with this quantity
+                                quantity = stockRecord.Quantity;
+                            }
+                            else
+                            {
+                                // No stock on this date
+                                continue;
+                            }
+                        }
+
+                        // Calculate credit stock on that date
+                        decimal creditStock = await GetCreditStockOnDateAsync(product.Id, branch.Id, date);
+
+                        result.Add(new StockOnDateDto
+                        {
+                            ProductId = product.Id,
+                            ProductName = product.Name,
+                            ItemCode = product.ItemCode,
+                            BranchId = branch.Id,
+                            BranchName = branch.Name,
+                            Date = date,
+                            Quantity = quantity,
+                            CreditQuantity = creditStock,
+                            NetQuantity = quantity - creditStock,
+                            UnitPrice = product.UnitPrice,
+                            BuyingPrice = product.BuyingPrice,
+                            TotalValue = quantity * product.BuyingPrice,
+                            CreditValue = creditStock * product.BuyingPrice,
+                            NetValue = (quantity - creditStock) * product.BuyingPrice
+                        });
+                    }
+                }
+
+                _logger.LogInformation("Retrieved stock for {Count} product-branch combinations on {Date}",
+                    result.Count, date.Date);
+
+                return ApiResponse<List<StockOnDateDto>>.Success(result, $"Stock on {date:yyyy-MM-dd} retrieved successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating stock for Product:{ProductId}, Branch:{BranchId}, Date:{Date}",
-                    productId, branchId, date);
-                return ApiResponse<StockOnDateDto>.Fail($"Error calculating stock: {ex.Message}");
+                _logger.LogError(ex, "Error calculating stock for date: {Date}", date);
+                return ApiResponse<List<StockOnDateDto>>.Fail($"Error calculating stock: {ex.Message}");
             }
         }
-
         /// <summary>
         /// Get current stock with credit information for all products/branches
         /// </summary>

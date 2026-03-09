@@ -9,8 +9,7 @@ namespace FeruzaShopProject.Application.Interface
     public interface IStockService
     {
         // Get stock on a specific date
-        Task<ApiResponse<StockOnDateDto>> GetStockOnDateAsync(Guid productId, Guid branchId, DateTime date);
-
+        Task<ApiResponse<List<StockOnDateDto>>> GetStockOnDateAsync(DateTime date, Guid? branchId = null, Guid? productId = null);
         // Get current stock with credit information
         Task<ApiResponse<CurrentStockDto>> GetCurrentStockAsync(Guid? branchId = null, Guid? productId = null);
 

@@ -2597,11 +2597,11 @@
         ],
         "parameters": [
           {
-            "name": "productId",
+            "name": "date",
             "in": "query",
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "format": "date-time"
             }
           },
           {
@@ -2613,11 +2613,11 @@
             }
           },
           {
-            "name": "date",
+            "name": "productId",
             "in": "query",
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "uuid"
             }
           }
         ],
@@ -2627,17 +2627,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoListApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoListApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoListApiResponse"
                 }
               }
             }
@@ -6903,6 +6903,26 @@
       "StockOnDateDto": {
         "type": "object",
         "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
           "date": {
             "type": "string",
             "format": "date-time"
@@ -6913,22 +6933,44 @@
           },
           "creditQuantity": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
           },
           "netQuantity": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "buyingPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "netValue": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
       },
-      "StockOnDateDtoApiResponse": {
+      "StockOnDateDtoListApiResponse": {
         "type": "object",
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/StockOnDateDto"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockOnDateDto"
+            },
+            "nullable": true
           },
           "errorMessage": {
             "type": "string",

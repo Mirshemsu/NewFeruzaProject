@@ -29,22 +29,19 @@ namespace FeruzaShopProject.API.Controllers
         /// <summary>
         /// Get stock quantity for a specific date with credit information
         /// </summary>
+        /// <summary>
+        /// Get stock for all products on a specific date
+        /// </summary>
         [HttpGet("on-date")]
         [Authorize(Roles = "Manager,Sales,Finance")]
-        public async Task<ActionResult<ApiResponse<StockOnDateDto>>> GetStockOnDate(
-            [FromQuery] Guid productId,
-            [FromQuery] Guid branchId,
-            [FromQuery] DateTime date)
+        public async Task<ActionResult<ApiResponse<List<StockOnDateDto>>>> GetStockOnDate(
+            [FromQuery] DateTime date,
+            [FromQuery] Guid? branchId = null,
+            [FromQuery] Guid? productId = null)
         {
             try
             {
-                if (productId == Guid.Empty)
-                    return BadRequest(ApiResponse<StockOnDateDto>.Fail("Product ID is required"));
-
-                if (branchId == Guid.Empty)
-                    return BadRequest(ApiResponse<StockOnDateDto>.Fail("Branch ID is required"));
-
-                var result = await _stockService.GetStockOnDateAsync(productId, branchId, date);
+                var result = await _stockService.GetStockOnDateAsync(date, branchId, productId);
 
                 if (!result.IsCompletedSuccessfully)
                     return BadRequest(result);
@@ -54,10 +51,9 @@ namespace FeruzaShopProject.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetStockOnDate endpoint");
-                return StatusCode(500, ApiResponse<StockOnDateDto>.Fail("Internal server error"));
+                return StatusCode(500, ApiResponse<List<StockOnDateDto>>.Fail("Internal server error"));
             }
         }
-
         /// <summary>
         /// Get current stock with credit information (actual vs credit)
         /// </summary>
