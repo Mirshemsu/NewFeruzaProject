@@ -21,16 +21,18 @@ namespace FeruzaShopProject.Domain.DTOs
         // Stock Quantities
         public decimal Quantity { get; set; }
         public decimal CreditQuantity { get; set; }
-        public decimal NetQuantity { get; set; }
+        public decimal NetQuantity { get; set; }  // Can be negative
 
         // Financial Values
         public decimal UnitPrice { get; set; }
         public decimal BuyingPrice { get; set; }
         public decimal TotalValue { get; set; }
         public decimal CreditValue { get; set; }
-        public decimal NetValue { get; set; }
-    }
+        public decimal NetValue { get; set; }  // Can be negative
 
+        // Status
+        public string StockStatus { get; set; }
+    }
     // For current stock view with credit information
     public class CurrentStockDto
     {
@@ -41,17 +43,22 @@ namespace FeruzaShopProject.Domain.DTOs
         // Summary totals
         public decimal TotalActualStock { get; set; }
         public decimal TotalCreditStock { get; set; }
-        public decimal TotalNetStock { get; set; }
+        public decimal TotalNetStock { get; set; }      // Can be negative overall
+
         public decimal TotalActualValue { get; set; }
         public decimal TotalCreditValue { get; set; }
-        public decimal TotalNetValue { get; set; }
+        public decimal TotalNetValue { get; set; }       // Can be negative overall
 
         // Status counts
         public int InStockItems { get; set; }
         public int LowStockItems { get; set; }
         public int OutOfStockItems { get; set; }
-    }
+        public int OversoldItems { get; set; }           // New: count of oversold items
 
+        // Totals for oversold items
+        public decimal TotalOversoldQuantity { get; set; }
+        public decimal TotalOversoldValue { get; set; }
+    }
     // Enhanced stock item with credit information
     public class StockItemDetailDto
     {
@@ -68,23 +75,48 @@ namespace FeruzaShopProject.Domain.DTOs
         // Stock Quantities
         public decimal ActualQuantity { get; set; }      // Physical stock in warehouse
         public decimal CreditQuantity { get; set; }      // Items sold on credit but unpaid
-        public decimal NetQuantity { get; set; }         // Available for sale (Actual - Credit)
+        public decimal NetQuantity { get; set; }         // Available for sale (Actual - Credit) - Can be negative
 
         // Financial Values
         public decimal BuyingPrice { get; set; }
         public decimal SellingPrice { get; set; }
         public decimal ActualValue { get; set; }         // Actual * BuyingPrice
         public decimal CreditValue { get; set; }         // Credit * BuyingPrice
-        public decimal NetValue { get; set; }            // Net * BuyingPrice
+        public decimal NetValue { get; set; }            // Net * BuyingPrice - Can be negative
 
         // Status
-        public string StockStatus { get; set; }          // "In Stock", "Low Stock", "Out of Stock"
+        public string StockStatus { get; set; }          // "In Stock", "Low Stock", "Out of Stock", "Oversold"
         public int ReorderLevel { get; set; }
 
         // Unit Info
         public decimal UnitAmount { get; set; }
         public string UnitType { get; set; }
         public string DisplayQuantity => $"{UnitAmount} {UnitType}";
+
+        // Additional helpful properties for negative stock scenarios
+        public bool IsOversold => NetQuantity < 0;
+        public decimal OversoldQuantity => IsOversold ? Math.Abs(NetQuantity) : 0;
+        public decimal OversoldValue => IsOversold ? Math.Abs(NetValue) : 0;
+
+        // Color coding for UI
+        public string StatusColor => StockStatus switch
+        {
+            "In Stock" => "green",
+            "Low Stock" => "orange",
+            "Out of Stock" => "red",
+            "Oversold" => "darkred",
+            _ => "gray"
+        };
+
+        // Priority for alerts (higher number = more urgent)
+        public int AlertPriority => StockStatus switch
+        {
+            "Oversold" => 4,
+            "Out of Stock" => 3,
+            "Low Stock" => 2,
+            "In Stock" => 1,
+            _ => 0
+        };
     }
 
     // For stock history with detailed changes

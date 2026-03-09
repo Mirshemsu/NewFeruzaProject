@@ -4887,6 +4887,18 @@
           "outOfStockItems": {
             "type": "integer",
             "format": "int32"
+          },
+          "oversoldItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalOversoldQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalOversoldValue": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -6810,6 +6822,30 @@
             "type": "string",
             "nullable": true,
             "readOnly": true
+          },
+          "isOversold": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "oversoldQuantity": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "oversoldValue": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "statusColor": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "alertPriority": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -6958,6 +6994,10 @@
           "netValue": {
             "type": "number",
             "format": "double"
+          },
+          "stockStatus": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

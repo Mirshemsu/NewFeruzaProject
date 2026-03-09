@@ -30,6 +30,9 @@ namespace FeruzaShopProject.Infrastructre.Services
         /// <summary>
         /// Get stock for all products on a specific date with credit information
         /// </summary>
+        /// <summary>
+        /// Get stock for all products on a specific date with credit information
+        /// </summary>
         public async Task<ApiResponse<List<StockOnDateDto>>> GetStockOnDateAsync(DateTime date, Guid? branchId = null, Guid? productId = null)
         {
             try
@@ -121,6 +124,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         // Calculate credit stock on that date
                         decimal creditStock = await GetCreditStockOnDateAsync(product.Id, branch.Id, date);
 
+                        // ✅ Allow negative net stock
+                        decimal netQuantity = quantity - creditStock;
+
                         result.Add(new StockOnDateDto
                         {
                             ProductId = product.Id,
@@ -131,12 +137,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                             Date = date,
                             Quantity = quantity,
                             CreditQuantity = creditStock,
-                            NetQuantity = quantity - creditStock,
+                            NetQuantity = netQuantity,  // Can be negative
                             UnitPrice = product.UnitPrice,
                             BuyingPrice = product.BuyingPrice,
                             TotalValue = quantity * product.BuyingPrice,
                             CreditValue = creditStock * product.BuyingPrice,
-                            NetValue = (quantity - creditStock) * product.BuyingPrice
+                            NetValue = netQuantity * product.BuyingPrice,  // Can be negative
+                            StockStatus = GetStockStatus(netQuantity, product.ReorderLevel)
                         });
                     }
                 }
@@ -151,10 +158,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error calculating stock for date: {Date}", date);
                 return ApiResponse<List<StockOnDateDto>>.Fail($"Error calculating stock: {ex.Message}");
             }
-        }
-        /// <summary>
-        /// Get current stock with credit information for all products/branches
-        /// </summary>
+        }        /// <summary>
+                 /// Get current stock with credit information for all products/branches
+                 /// </summary>
+                 /// <summary>
+                 /// Get current stock with credit information for all products/branches
+                 /// </summary>
         public async Task<ApiResponse<CurrentStockDto>> GetCurrentStockAsync(Guid? branchId = null, Guid? productId = null)
         {
             try
@@ -201,8 +210,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                 {
                     var key = $"{stock.ProductId}_{stock.BranchId}";
                     decimal creditStock = unpaidCreditQuantities.ContainsKey(key) ? unpaidCreditQuantities[key] : 0;
+
+                    // ✅ Allow negative net stock (credit > actual)
                     decimal netStock = stock.Quantity - creditStock;
-                    if (netStock < 0) netStock = 0;
+
+                    // Don't force to zero - keep negative values to show oversold status
 
                     var stockItem = new StockItemDetailDto
                     {
@@ -217,20 +229,20 @@ namespace FeruzaShopProject.Infrastructre.Services
                         BranchName = stock.Branch.Name,
 
                         // Stock Quantities
-                        ActualQuantity = stock.Quantity,  // Direct from Stock table
+                        ActualQuantity = stock.Quantity,
                         CreditQuantity = creditStock,
-                        NetQuantity = netStock,
+                        NetQuantity = netStock,  // Can be negative
 
                         // Financial Values
                         BuyingPrice = stock.Product.BuyingPrice,
                         SellingPrice = stock.Product.UnitPrice,
                         ActualValue = stock.Quantity * stock.Product.BuyingPrice,
                         CreditValue = creditStock * stock.Product.BuyingPrice,
-                        NetValue = netStock * stock.Product.BuyingPrice,
+                        NetValue = netStock * stock.Product.BuyingPrice,  // Can be negative
 
                         // Status
                         ReorderLevel = stock.Product.ReorderLevel,
-                        StockStatus = GetStockStatus(netStock, stock.Product.ReorderLevel),
+                        StockStatus = GetStockStatus(netStock, stock.Product.ReorderLevel),  // Will show "Oversold" for negative
 
                         // Unit Info
                         UnitAmount = stock.Product.Amount,
@@ -242,10 +254,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                     // Update totals
                     result.TotalActualStock += stock.Quantity;
                     result.TotalCreditStock += creditStock;
-                    result.TotalNetStock += netStock;
+                    result.TotalNetStock += netStock;  // Can be negative overall
                     result.TotalActualValue += stock.Quantity * stock.Product.BuyingPrice;
                     result.TotalCreditValue += creditStock * stock.Product.BuyingPrice;
-                    result.TotalNetValue += netStock * stock.Product.BuyingPrice;
+                    result.TotalNetValue += netStock * stock.Product.BuyingPrice;  // Can be negative
 
                     // Update status counts
                     switch (stockItem.StockStatus)
@@ -253,6 +265,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         case "In Stock": result.InStockItems++; break;
                         case "Low Stock": result.LowStockItems++; break;
                         case "Out of Stock": result.OutOfStockItems++; break;
+                        case "Oversold": result.OutOfStockItems++; break; // Count oversold as out of stock
                     }
                 }
 
@@ -651,7 +664,9 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         private string GetStockStatus(decimal quantity, int reorderLevel)
         {
-            if (quantity <= 0)
+            if (quantity < 0)
+                return "Oversold";  // Credit > Actual
+            if (quantity == 0)
                 return "Out of Stock";
             if (quantity <= reorderLevel)
                 return "Low Stock";
