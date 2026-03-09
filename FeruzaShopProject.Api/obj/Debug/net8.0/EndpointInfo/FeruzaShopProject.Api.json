@@ -2627,17 +2627,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecimalApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecimalApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DecimalApiResponse"
+                  "$ref": "#/components/schemas/StockOnDateDtoApiResponse"
                 }
               }
             }
@@ -2748,6 +2748,336 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StockHistoryDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/credit-summary": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCreditSummaryDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCreditSummaryDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCreditSummaryDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/alerts": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockAlertDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockAlertDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockAlertDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/product-detail": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/branch-summary/{branchId}": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/product-summary/{productId}": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentStockDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/overdue-credit": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditStockItemDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditStockItemDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditStockItemDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/low-stock": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stock/out-of-stock": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockItemDetailDtoListApiResponse"
                 }
               }
             }
@@ -4204,6 +4534,97 @@
         },
         "additionalProperties": false
       },
+      "CreditStockItemDto": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paidAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "pendingAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "pendingQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastPaymentDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "daysOverdue": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreditStockItemDtoListApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditStockItemDto"
+            },
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreditSummaryDto": {
         "type": "object",
         "properties": {
@@ -4401,7 +4822,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StockItemDto"
+              "$ref": "#/components/schemas/StockItemDetailDto"
             },
             "nullable": true
           },
@@ -4409,9 +4830,41 @@
             "type": "integer",
             "format": "int32"
           },
-          "totalValue": {
+          "totalActualStock": {
             "type": "number",
             "format": "double"
+          },
+          "totalCreditStock": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalNetStock": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalActualValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalCreditValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalNetValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "inStockItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lowStockItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "outOfStockItems": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -4647,31 +5100,6 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/DailySalesReportDto"
-          },
-          "errorMessage": {
-            "type": "string",
-            "nullable": true
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "isCompletedSuccessfully": {
-            "type": "boolean"
-          },
-          "generatedOn": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DecimalApiResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "number",
-            "format": "double"
           },
           "errorMessage": {
             "type": "string",
@@ -6073,6 +6501,118 @@
         "type": "integer",
         "format": "int32"
       },
+      "StockAlertDto": {
+        "type": "object",
+        "properties": {
+          "lowStockItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockItemDetailDto"
+            },
+            "nullable": true
+          },
+          "outOfStockItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockItemDetailDto"
+            },
+            "nullable": true
+          },
+          "overdueCreditItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditStockItemDto"
+            },
+            "nullable": true
+          },
+          "alertCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockAlertDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StockAlertDto"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockCreditSummaryDto": {
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditStockItemDto"
+            },
+            "nullable": true
+          },
+          "totalCustomers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCreditAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPaidAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalPendingAmount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockCreditSummaryDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StockCreditSummaryDto"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "StockHistoryDto": {
         "type": "object",
         "properties": {
@@ -6080,16 +6620,55 @@
             "type": "string",
             "format": "date-time"
           },
-          "quantity": {
+          "openingBalance": {
             "type": "number",
             "format": "double"
           },
-          "change": {
+          "closingBalance": {
+            "type": "number",
+            "format": "double"
+          },
+          "netChange": {
             "type": "number",
             "format": "double"
           },
           "changeType": {
             "type": "string",
+            "nullable": true
+          },
+          "purchases": {
+            "type": "number",
+            "format": "double"
+          },
+          "sales": {
+            "type": "number",
+            "format": "double"
+          },
+          "returns": {
+            "type": "number",
+            "format": "double"
+          },
+          "adjustments": {
+            "type": "number",
+            "format": "double"
+          },
+          "damages": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditStock": {
+            "type": "number",
+            "format": "double"
+          },
+          "netAvailable": {
+            "type": "number",
+            "format": "double"
+          },
+          "movements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockMovementSummaryDto"
+            },
             "nullable": true
           }
         },
@@ -6123,7 +6702,7 @@
         },
         "additionalProperties": false
       },
-      "StockItemDto": {
+      "StockItemDetailDto": {
         "type": "object",
         "properties": {
           "productId": {
@@ -6138,6 +6717,10 @@
             "type": "string",
             "nullable": true
           },
+          "categoryName": {
+            "type": "string",
+            "nullable": true
+          },
           "branchId": {
             "type": "string",
             "format": "uuid"
@@ -6146,17 +6729,192 @@
             "type": "string",
             "nullable": true
           },
+          "actualQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "netQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "buyingPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "sellingPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "actualValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "netValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "stockStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "reorderLevel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unitAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "unitType": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayQuantity": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockItemDetailDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StockItemDetailDto"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockItemDetailDtoListApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockItemDetailDto"
+            },
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockMovementSummaryDto": {
+        "type": "object",
+        "properties": {
+          "movementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "movementType": {
+            "type": "string",
+            "nullable": true
+          },
           "quantity": {
             "type": "number",
             "format": "double"
           },
-          "unitPrice": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previousQuantity": {
             "type": "number",
             "format": "double"
           },
-          "totalValue": {
+          "newQuantity": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockOnDateDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "netQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockOnDateDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StockOnDateDto"
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCompletedSuccessfully": {
+            "type": "boolean"
+          },
+          "generatedOn": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

@@ -1585,6 +1585,89 @@
   },
   {
     "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetStockAlerts",
+    "RelativePath": "api/Stock/alerts",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.StockAlertDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetStockByBranch",
+    "RelativePath": "api/Stock/branch-summary/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.CurrentStockDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetCreditStockSummary",
+    "RelativePath": "api/Stock/credit-summary",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "customerId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.StockCreditSummaryDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
     "Method": "GetCurrentStock",
     "RelativePath": "api/Stock/current",
     "HttpMethod": "GET",
@@ -1657,6 +1740,32 @@
   },
   {
     "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetLowStock",
+    "RelativePath": "api/Stock/low-stock",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.StockItemDetailDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
     "Method": "GetStockOnDate",
     "RelativePath": "api/Stock/on-date",
     "HttpMethod": "GET",
@@ -1681,7 +1790,116 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.StockOnDateDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetOutOfStock",
+    "RelativePath": "api/Stock/out-of-stock",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.StockItemDetailDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetOverdueCredit",
+    "RelativePath": "api/Stock/overdue-credit",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Collections.Generic.List\u00601[[FeruzaShopProject.Domain.DTOs.CreditStockItemDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetProductStockDetail",
+    "RelativePath": "api/Stock/product-detail",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.StockItemDetailDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "FeruzaShopProject.API.Controllers.StockController",
+    "Method": "GetStockByProduct",
+    "RelativePath": "api/Stock/product-summary/{productId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.CurrentStockDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
