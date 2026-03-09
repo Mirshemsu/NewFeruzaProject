@@ -754,6 +754,22 @@
   },
   {
     "ContainingType": "FeruzaShopProject.Api.Controllers.ProductsController",
+    "Method": "GetCategoriesByBranch",
+    "RelativePath": "api/Products/categories/by-branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.ProductsController",
     "Method": "GetByCategory",
     "RelativePath": "api/Products/category/{categoryId}",
     "HttpMethod": "GET",

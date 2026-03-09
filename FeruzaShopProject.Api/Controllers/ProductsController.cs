@@ -6,6 +6,7 @@ using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Shared;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace FeruzaShopProject.Api.Controllers
 {
@@ -37,6 +38,7 @@ namespace FeruzaShopProject.Api.Controllers
                 ? CreatedAtAction(nameof(Get), new { id = result.Data?.Id }, result)
                 : BadRequest(result);
         }
+
         [HttpPost("bulk")]
         [Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<BulkProductResultDto>>> BulkCreateProducts([FromBody] BulkCreateProductDto dto)
@@ -104,6 +106,29 @@ namespace FeruzaShopProject.Api.Controllers
             return Ok(result);
         }
 
+        // ========== NEW ENDPOINT: Get Categories by Branch ==========
+        [HttpGet("categories/by-branch/{branchId:guid}")]
+        [Authorize(Roles = "Admin,Manager,Staff,Sales,Finance")]
+        public async Task<IActionResult> GetCategoriesByBranch(Guid branchId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting categories for branch: {BranchId}", branchId);
+
+                // You can add branch access check here if needed
+                // var hasAccess = await CheckBranchAccessAsync(branchId);
+                // if (!hasAccess) return Forbid();
+
+                var result = await _productService.GetCategoriesByBranchAsync(branchId);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting categories for branch: {BranchId}", branchId);
+                return StatusCode(500, ApiResponse<List<CategoryBranchDto>>.Fail("An error occurred while retrieving categories"));
+            }
+        }
+
         [HttpGet("low-stock")]
         [Authorize(Roles = "Admin,Manager,Staff")]
         public async Task<IActionResult> GetLowStock([FromQuery] int threshold = 10)
@@ -130,6 +155,7 @@ namespace FeruzaShopProject.Api.Controllers
             var result = await _productService.AdjustStockAsync(dto);
             return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
         }
+
         [HttpPost("add-to-branch")]
         [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> AddProductToBranch([FromBody] AddProductToBranchDto dto)
@@ -140,6 +166,7 @@ namespace FeruzaShopProject.Api.Controllers
             var result = await _productService.AddProductToBranchAsync(dto);
             return Ok(result);
         }
+
         [HttpGet("branch/{branchId:guid}/stock")]
         [Authorize(Roles = "Admin,Manager,Staff")]
         public async Task<IActionResult> GetProductStockByBranch(Guid branchId)

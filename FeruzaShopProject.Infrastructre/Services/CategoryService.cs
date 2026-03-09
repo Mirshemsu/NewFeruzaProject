@@ -67,13 +67,19 @@ namespace FeruzaShopProject.Infrastructre.Services
         public async Task<ApiResponse<List<CategoryDto>>> GetAllCategoriesAsync()
         {
             var categories = await _context.Categories
-                .Include(c => c.Products)
+                .Where(c => c.IsActive) // Only active categories
+                .Include(c => c.Products.Where(p => p.IsActive)) // Only active products
                 .ToListAsync();
 
-            var result = _mapper.Map<List<CategoryDto>>(categories);
+            var result = categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                ProductCount = c.Products.Count // Now this will count only active products
+            }).ToList();
+
             return ApiResponse<List<CategoryDto>>.Success(result);
         }
-
         public async Task<ApiResponse<CategoryDto>> UpdateCategoryAsync(UpdateCategoryDto dto)
         {
             try

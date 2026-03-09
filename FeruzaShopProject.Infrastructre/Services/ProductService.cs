@@ -663,6 +663,66 @@ namespace FeruzaShopProject.Infrastructure.Services
                 return ApiResponse<List<ProductBranchDto>>.Fail("Failed to retrieve products");
             }
         }
+        public async Task<ApiResponse<List<CategoryBranchDto>>> GetCategoriesByBranchAsync(Guid branchId)   
+        {
+            try
+            {
+                if (!await _context.Branches.AnyAsync(b => b.Id == branchId && b.IsActive))
+                {
+                    _logger.LogWarning("Branch not found: {BranchId}", branchId);
+                    return ApiResponse<List<CategoryBranchDto>>.Fail("Branch not found");
+                }
+
+                // Get all categories that have products in this branch
+                var categories = await _context.Stocks
+                    .Include(s => s.Product)
+                        .ThenInclude(p => p.Category)
+                    .Where(s => s.BranchId == branchId &&
+                               s.IsActive &&
+                               s.Product.IsActive &&
+                               s.Product.Category.IsActive)
+                    .Select(s => s.Product.Category)
+                    .Distinct()
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+
+                var result = new List<CategoryBranchDto>();
+
+                foreach (var category in categories)
+                {
+                    // Get product count for this category in this branch
+                    var productCount = await _context.Stocks
+                        .CountAsync(s => s.BranchId == branchId &&
+                                         s.Product.CategoryId == category.Id &&
+                                         s.IsActive &&
+                                         s.Product.IsActive);
+
+                    // Get total stock value for this category in this branch
+                    var totalStockValue = await _context.Stocks
+                        .Where(s => s.BranchId == branchId &&
+                                   s.Product.CategoryId == category.Id &&
+                                   s.IsActive &&
+                                   s.Product.IsActive)
+                        .SumAsync(s => s.Quantity * s.Product.BuyingPrice);
+
+                    result.Add(new CategoryBranchDto
+                    {
+                        CategoryId = category.Id,
+                        CategoryName = category.Name,
+                        ProductCount = productCount,
+                        TotalStockValue = totalStockValue
+                    });
+                }
+
+                _logger.LogInformation("Retrieved {Count} categories for branch: {BranchId}", result.Count, branchId);
+                return ApiResponse<List<CategoryBranchDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving categories for branch: {BranchId}", branchId);
+                return ApiResponse<List<CategoryBranchDto>>.Fail("Failed to retrieve categories");
+            }
+        }
 
         private string GetStockStatus(decimal quantity, int reorderLevel)
         {

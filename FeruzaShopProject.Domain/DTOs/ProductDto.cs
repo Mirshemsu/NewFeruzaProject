@@ -96,6 +96,14 @@ namespace FeruzaShopProject.Domain.DTOs
         public List<CreateProductDto> Products { get; set; } = new();
     }
 
+    public class CategoryBranchDto
+    {
+        public Guid CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public string CategoryDescription { get; set; }
+        public int ProductCount { get; set; }
+        public decimal TotalStockValue { get; set; }
+    }
     public class BulkProductResultDto
     {
         public int TotalProcessed { get; set; }
