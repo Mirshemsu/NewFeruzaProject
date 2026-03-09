@@ -40,6 +40,10 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
 
         public decimal CommissionRate { get; set; }
+
+        // ========== NEW: Remark field ==========
+        [StringLength(500)]
+        public string? Remark { get; set; }
     }
 
     public class UpdateTransactionDto
@@ -62,6 +66,10 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal? CommissionRate { get; set; }
 
         public bool? CommissionPaid { get; set; }
+
+        // ========== NEW: Remark field ==========
+        [StringLength(500)]
+        public string? Remark { get; set; }
     }
 
     public class PayCreditDto
@@ -76,6 +84,10 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
 
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+
+        // ========== NEW: Remark field for credit payment notes ==========
+        [StringLength(500)]
+        public string? Remark { get; set; }
     }
 
     public class TransactionResponseDto
@@ -93,6 +105,9 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
         public decimal CommissionRate { get; set; }
         public bool CommissionPaid { get; set; }
+
+        // ========== NEW: Remark field ==========
+        public string? Remark { get; set; }
 
         // From related entities
         public string BranchName { get; set; }
@@ -130,6 +145,9 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal RemainingAmount => TotalAmount - PaidAmount;
         public bool IsFullyPaid => RemainingAmount <= 0;
         public DateTime? LastPaymentDate { get; set; }
+
+        // ========== NEW: Remark field ==========
+        public string? Remark { get; set; }
 
         // Customer info
         public Guid CustomerId { get; set; }
@@ -199,7 +217,11 @@ namespace FeruzaShopProject.Domain.DTOs
         public string PainterName { get; set; }
         public bool IsPartialPayment { get; set; }
         public bool IsCreditPayment { get; set; }
+
+        // ========== NEW: Remark field ==========
+        public string? Remark { get; set; }
     }
+
     public class PaymentSummaryDto
     {
         public PaymentMethod PaymentMethod { get; set; }
@@ -338,5 +360,8 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
         public DateTime PaymentDate { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        // ========== NEW: Remark field for credit payment ==========
+        public string? Remark { get; set; }
     }
 }

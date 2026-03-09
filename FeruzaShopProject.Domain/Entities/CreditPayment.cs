@@ -20,6 +20,9 @@ namespace FeruzaShopProject.Domain.Entities
 
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
+        [StringLength(500)]
+        public string? Remark { get; set; }
+
         // Navigation properties
         public Transaction Transaction { get; set; }
     }

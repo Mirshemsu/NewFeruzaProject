@@ -48,6 +48,9 @@ namespace FeruzaShopProject.Domain.Entities
         public bool IsPartialPayment { get; set; } = false; // For tracking partial credit payments
         public bool IsCreditPayment { get; set; } = false; // To identify if this is from credit payment
         public Guid? OriginalTransactionId { get; set; } // Reference to original credit transaction
+
+        [StringLength(500)]
+        public string? Remark { get; set; } // Notes about this daily sale
         // Navigation properties
         public Branch Branch { get; set; }
         public Product Product { get; set; }

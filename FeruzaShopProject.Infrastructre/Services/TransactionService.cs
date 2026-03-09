@@ -117,6 +117,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 salesTransaction.CustomerId = customerId;
                 salesTransaction.PainterId = painterId;
 
+                // ========== SET REMARK FIELD ==========
+                salesTransaction.Remark = dto.Remark;
+
                 // If we created new customer/painter, we need to get their IDs after saving
                 if (newCustomer != null || newPainter != null)
                 {
@@ -165,7 +168,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     result.PaidAmount = await CalculatePaidAmountAsync(salesTransaction.Id);
                 }
 
-                _logger.LogInformation("Successfully created sales transaction {TransactionId}", salesTransaction.Id);
+                _logger.LogInformation("Successfully created sales transaction {TransactionId} with remark: {Remark}",
+                    salesTransaction.Id, dto.Remark);
                 return ApiResponse<TransactionResponseDto>.Success(result, "Transaction created successfully");
             }
             catch (Exception ex)
@@ -343,6 +347,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.CommissionRate.HasValue) existingTransaction.CommissionRate = dto.CommissionRate.Value;
                 if (dto.CommissionPaid.HasValue) existingTransaction.CommissionPaid = dto.CommissionPaid.Value;
 
+                // ========== UPDATE REMARK FIELD ==========
+                if (dto.Remark != null) existingTransaction.Remark = dto.Remark;
+
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
                 existingTransaction.Validate();
 
@@ -448,6 +455,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error updating transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<bool>> DeleteTransactionAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -536,6 +544,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<bool>.Fail($"Error deleting transaction: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
@@ -569,7 +578,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     PaymentDate = dto.PaymentDate,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    // ========== SET REMARK FIELD FOR CREDIT PAYMENT ==========
+                    Remark = dto.Remark
                 };
 
                 await _context.CreditPayments.AddAsync(creditPayment);
@@ -596,7 +607,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     IsCreditPayment = true, // Mark as credit payment
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    // ========== SET REMARK FIELD FOR DAILY SALES ==========
+                    Remark = dto.Remark
                 };
                 await _context.DailySales.AddAsync(dailySales);
 
@@ -618,7 +631,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                 var result = _mapper.Map<TransactionResponseDto>(creditTransaction);
                 result.PaidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
 
-                _logger.LogInformation("Credit payment of {Amount} processed for transaction: {TransactionId}", dto.Amount, dto.TransactionId);
+                _logger.LogInformation("Credit payment of {Amount} processed for transaction: {TransactionId} with remark: {Remark}",
+                    dto.Amount, dto.TransactionId, dto.Remark);
                 return ApiResponse<TransactionResponseDto>.Success(result, "Credit payment processed successfully");
             }
             catch (Exception ex)
@@ -668,7 +682,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         CustomerPhoneNumber = transaction.Customer?.PhoneNumber ?? "Unknown",
                         BranchId = transaction.BranchId,
                         BranchName = transaction.Branch.Name,
-                        LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id)
+                        LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id),
+                        // ========== SET REMARK FIELD ==========
+                        Remark = transaction.Remark
                     };
                     result.Add(history);
                 }
@@ -725,7 +741,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                             CustomerPhoneNumber = transaction.Customer?.PhoneNumber ?? "Unknown",
                             BranchId = transaction.BranchId,
                             BranchName = transaction.Branch.Name,
-                            LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id)
+                            LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id),
+                            // ========== SET REMARK FIELD ==========
+                            Remark = transaction.Remark
                         };
                         result.Add(history);
                     }
@@ -772,7 +790,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                                   ds.Product != null ? ds.Product.ItemCode : null,
                         CustomerName = ds.Customer != null ? ds.Customer.Name : null,
                         PainterName = ds.Painter != null ? ds.Painter.Name : null,
-                        TransactionDate = ds.Transaction != null ? ds.Transaction.TransactionDate : ds.SaleDate
+                        TransactionDate = ds.Transaction != null ? ds.Transaction.TransactionDate : ds.SaleDate,
+                        // ========== INCLUDE REMARK ==========
+                        Remark = ds.Remark ?? ds.Transaction.Remark
                     })
                     .ToListAsync();
 
@@ -850,7 +870,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         PainterId = x.Sale.PainterId,
                         PainterName = x.PainterName,
                         IsPartialPayment = x.Sale.IsPartialPayment,
-                        IsCreditPayment = x.Sale.IsCreditPayment
+                        IsCreditPayment = x.Sale.IsCreditPayment,
+                        // ========== SET REMARK FIELD ==========
+                        Remark = x.Remark
                     }).ToList(),
                     PaymentSummaries = dailySales
                         .GroupBy(x => x.Sale.PaymentMethod)
@@ -878,6 +900,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<DailySalesReportDto>.Fail($"Error generating report: {ex.Message}");
             }
         }
+
         public async Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null)
         {
             try
@@ -976,7 +999,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         CustomerName = transaction.Customer?.Name ?? "Unknown",
                         CustomerPhoneNumber = transaction.Customer?.PhoneNumber ?? "Unknown",
                         BranchId = transaction.BranchId,
-                        BranchName = transaction.Branch.Name
+                        BranchName = transaction.Branch.Name,
+                        // ========== SET REMARK FIELD ==========
+                        Remark = transaction.Remark
                     };
                     summary.RecentTransactions.Add(history);
                 }
@@ -1524,7 +1549,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         Amount = p.Amount,
                         PaymentMethod = p.PaymentMethod,
                         PaymentDate = p.PaymentDate,
-                        CreatedAt = p.CreatedAt
+                        CreatedAt = p.CreatedAt,
+                        // ========== SET REMARK FIELD ==========
+                        Remark = p.Remark
                     }).ToList(),
                     DailySalesPayments = dailySalesPayments.Select(ds => new DailySalesItemDto
                     {
@@ -1548,7 +1575,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         PainterId = ds.PainterId,
                         PainterName = ds.Painter?.Name,
                         IsPartialPayment = ds.IsPartialPayment,
-                        IsCreditPayment = ds.IsCreditPayment
+                        IsCreditPayment = ds.IsCreditPayment,
+                        // ========== SET REMARK FIELD ==========
+                        Remark = ds.Remark ?? transaction.Remark
                     }).ToList(),
                     TotalPaidAmount = payments.Sum(p => p.Amount),
                     RemainingAmount = CalculateTotalAmount(transaction) - payments.Sum(p => p.Amount),
@@ -1719,7 +1748,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     IsCreditPayment = isCreditPayment,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    // ========== SET REMARK FIELD ==========
+                    Remark = transaction.Remark
                 };
                 await _context.DailySales.AddAsync(dailySales);
             }

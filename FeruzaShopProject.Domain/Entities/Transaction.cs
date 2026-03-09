@@ -42,6 +42,9 @@ namespace FeruzaShopProject.Domain.Entities
 
         public bool CommissionPaid { get; set; }
 
+        [StringLength(500)]
+        public string? Remark { get; set; }  // Nullable string for notes
+
         // Navigation properties
         public Branch Branch { get; set; }
         public Product Product { get; set; }

@@ -4513,6 +4513,12 @@
           "commissionRate": {
             "type": "number",
             "format": "double"
+          },
+          "remark": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4783,6 +4789,10 @@
             "format": "date-time",
             "nullable": true
           },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
           "customerId": {
             "type": "string",
             "format": "uuid"
@@ -5035,6 +5045,10 @@
           },
           "isCreditPayment": {
             "type": "boolean"
+          },
+          "remark": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5577,6 +5591,12 @@
           "paymentDate": {
             "type": "string",
             "format": "date-time"
+          },
+          "remark": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7187,6 +7207,10 @@
           "commissionPaid": {
             "type": "boolean"
           },
+          "remark": {
+            "type": "string",
+            "nullable": true
+          },
           "branchName": {
             "type": "string",
             "nullable": true
@@ -7691,6 +7715,12 @@
           },
           "commissionPaid": {
             "type": "boolean",
+            "nullable": true
+          },
+          "remark": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
             "nullable": true
           }
         },
