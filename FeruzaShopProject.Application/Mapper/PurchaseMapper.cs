@@ -12,7 +12,7 @@ namespace FeruzaShopProject.Application.Mapper
         {
             // ========== STEP 1: CREATE PURCHASE ORDER (SALES) ==========
             CreateMap<CreatePurchaseOrderDto, PurchaseOrder>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => PurchaseOrderStatus.PendingAdminAcceptance))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => PurchaseOrderStatus.PendingFinanceVerification))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -22,24 +22,17 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
-            CreateMap<CreatePurchaseOrderItemDto, PurchaseOrderItem>()
+            CreateMap<CreatePurchaseItemDto, PurchaseOrderItem>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.MapFrom(src => src.QuantityRequested))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
                 .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
+                .ForMember(dest => dest.SupplierName, opt => opt.Ignore())
+                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
@@ -51,92 +44,7 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore());
 
-            // ========== STEP 2: ADMIN ACCEPTS QUANTITIES ==========
-            CreateMap<AcceptPurchaseQuantitiesDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
-
-            CreateMap<AcceptQuantityItemDto, PurchaseOrderItem>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId))
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.MapFrom(src => src.QuantityAccepted))
-                .ForMember(dest => dest.AcceptedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
-
-            // ========== STEP 3: SALES REGISTERS RECEIVED QUANTITIES ==========
-            CreateMap<RegisterReceivedQuantitiesDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
-
-            CreateMap<RegisterQuantityItemDto, PurchaseOrderItem>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityRegistered))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.MapFrom(_ => 0))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
-
-            // ========== STEP 4: FINANCE VERIFICATION ==========
+            // ========== STEP 2: FINANCE VERIFICATION ==========
             CreateMap<FinanceVerificationDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
@@ -154,22 +62,15 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId))
                 .ForMember(dest => dest.BuyingPrice, opt => opt.MapFrom(src => src.BuyingPrice))
                 .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.SellingPrice))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
                 .ForMember(dest => dest.FinanceVerified, opt => opt.MapFrom(src => src.IsVerified))
                 .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.MapFrom(src => src.IsVerified ? DateTime.UtcNow : (DateTime?)null))
-                .ForMember(dest => dest.PriceSetAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.PriceEditCount, opt => opt.MapFrom(_ => 1))
+                .ForMember(dest => dest.PriceSetAt, opt => opt.MapFrom(src => src.IsVerified ? DateTime.UtcNow : (DateTime?)null))
+                .ForMember(dest => dest.PriceEditCount, opt => opt.MapFrom(src => src.IsVerified ? 1 : 0))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
+                .ForMember(dest => dest.Quantity, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
                 .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
@@ -179,8 +80,8 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore());
 
-            // ========== STEP 5: ADMIN FINAL APPROVAL (PARTIAL) ==========
-            CreateMap<FinalApprovePurchaseOrderDto, PurchaseOrder>()
+            // ========== STEP 3: MANAGER APPROVAL ==========
+            CreateMap<ManagerApprovalDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
@@ -193,10 +94,10 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
-            // ========== NEW: SALES EDIT OPERATIONS ==========
+            // ========== SALES EDIT OPERATIONS ==========
 
             /// <summary>
-            /// Sales can edit their purchase order before admin acceptance
+            /// Sales can edit their purchase order before finance verification
             /// </summary>
             CreateMap<EditPurchaseOrderBySalesDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
@@ -211,25 +112,18 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
-            CreateMap<EditPurchaseOrderItemBySalesDto, PurchaseOrderItem>()
+            CreateMap<EditPurchaseItemDto, PurchaseOrderItem>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId.HasValue ? src.ItemId.Value : Guid.NewGuid()))
                 .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
-                .ForMember(dest => dest.QuantityRequested, opt => opt.MapFrom(src => src.QuantityRequested))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.ItemId.HasValue ? (DateTime?)null : DateTime.UtcNow))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
                 .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
+                .ForMember(dest => dest.SupplierName, opt => opt.Ignore())
+                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
@@ -240,10 +134,13 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore());
 
+
+            // ========== FINANCE EDIT OPERATIONS ==========
+
             /// <summary>
-            /// Sales can edit registered quantities before finance verification
+            /// Finance can edit prices before manager approval
             /// </summary>
-            CreateMap<EditRegisteredQuantitiesBySalesDto, PurchaseOrder>()
+            CreateMap<EditPricesByFinanceDto, PurchaseOrder>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.BranchId, opt => opt.Ignore())
@@ -256,79 +153,25 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
-            CreateMap<EditRegisteredQuantityItemDto, PurchaseOrderItem>()
+            CreateMap<EditPriceItemDto, PurchaseOrderItem>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityRegistered))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.MapFrom(_ => 1)) // Fixed: Use constant value, not from DTO
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(dest => dest.BuyingPrice, opt => opt.MapFrom(src => src.BuyingPrice))
+                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.SellingPrice))
+                .ForMember(dest => dest.PriceSetAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(dest => dest.PriceEditCount, opt => opt.MapFrom(_ => 1)) // Fixed: Use constant value, not from DTO
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
+                .ForMember(dest => dest.Quantity, opt => opt.Ignore())
+                .ForMember(dest => dest.SupplierName, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
                 .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
                 .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
-
-            // ========== NEW: ADMIN EDIT OPERATIONS ==========
-
-            /// <summary>
-            /// Admin can edit any purchase order at any stage
-            /// </summary>
-            CreateMap<EditPurchaseOrderByAdminDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PurchaseOrderId))
-                .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.BranchId))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
-
-            CreateMap<AdminEditPurchaseOrderItemDto, PurchaseOrderItem>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ItemId.HasValue ? src.ItemId.Value : Guid.NewGuid()))
-                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
-                .ForMember(dest => dest.QuantityRequested, opt => opt.MapFrom(src => src.QuantityRequested))
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.MapFrom(src => src.QuantityAccepted))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityRegistered))
-                .ForMember(dest => dest.BuyingPrice, opt => opt.MapFrom(src => src.BuyingPrice))
-                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.SellingPrice))
-                .ForMember(dest => dest.FinanceVerified, opt => opt.MapFrom(src => src.FinanceVerified))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.ItemId.HasValue ? (DateTime?)null : DateTime.UtcNow))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
-                .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore());
 
@@ -359,20 +202,6 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.Items, opt => opt.Ignore())
                 .ForMember(dest => dest.History, opt => opt.Ignore());
 
-            // ========== UPDATE PURCHASE ORDER (Legacy) ==========
-            CreateMap<UpdatePurchaseOrderDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
-
             // ========== RESPONSE MAPPINGS ==========
             CreateMap<PurchaseOrder, PurchaseOrderDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -380,159 +209,49 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src =>
                     src.Branch != null ? src.Branch.Name : string.Empty))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
-                .ForMember(dest => dest.CreatorName, opt => opt.MapFrom(src =>
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src =>
                     src.Creator != null ? src.Creator.Name : string.Empty))
-
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
                 .ForMember(dest => dest.TotalItems, opt => opt.MapFrom(src => src.TotalItems))
-                .ForMember(dest => dest.AcceptedItems, opt => opt.MapFrom(src => src.AcceptedItems))
-                .ForMember(dest => dest.RegisteredItems, opt => opt.MapFrom(src => src.RegisteredItems))
-                .ForMember(dest => dest.FinanceVerifiedItems, opt => opt.MapFrom(src => src.FinanceVerifiedItems))
-                .ForMember(dest => dest.ApprovedItems, opt => opt.MapFrom(src => src.ApprovedItems))
-                .ForMember(dest => dest.TotalBuyingCost, opt => opt.MapFrom(src =>
+                .ForMember(dest => dest.VerifiedItems, opt => opt.MapFrom(src =>
+                    src.Items != null ? src.Items.Count(i => i.FinanceVerified == true) : 0))
+                .ForMember(dest => dest.ApprovedItems, opt => opt.MapFrom(src =>
+                    src.Items != null ? src.Items.Count(i => i.ApprovedAt.HasValue) : 0))
+                .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src =>
                     src.Items != null && src.Items.Any()
-                        ? src.Items.Where(i => i.BuyingPrice.HasValue && i.QuantityRegistered.HasValue)
-                                  .Sum(i => i.BuyingPrice.Value * i.QuantityRegistered.Value)
-                        : (decimal?)null))
-                .ForMember(dest => dest.TotalSellingValue, opt => opt.MapFrom(src =>
-                    src.Items != null && src.Items.Any()
-                        ? src.Items.Where(i => i.UnitPrice.HasValue && i.QuantityRegistered.HasValue)
-                                  .Sum(i => i.UnitPrice.Value * i.QuantityRegistered.Value)
-                        : (decimal?)null))
-                .ForMember(dest => dest.TotalProfit, opt => opt.MapFrom(src =>
-                    src.Items != null && src.Items.Any()
-                        ? (src.Items.Where(i => i.UnitPrice.HasValue && i.BuyingPrice.HasValue && i.QuantityRegistered.HasValue)
-                                  .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.QuantityRegistered.Value))
-                        : (decimal?)null))
-                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+                        ? src.Items.Where(i => i.BuyingPrice.HasValue)
+                                  .Sum(i => i.BuyingPrice.Value * i.Quantity)
+                        : 0m));
 
             CreateMap<PurchaseOrderItem, PurchaseOrderItemDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src =>
                     src.Product != null ? src.Product.Name : string.Empty))
-                .ForMember(dest => dest.QuantityRequested, opt => opt.MapFrom(src => src.QuantityRequested))
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.MapFrom(src => src.QuantityAccepted))
-                .ForMember(dest => dest.AcceptedAt, opt => opt.MapFrom(src => src.AcceptedAt))
-                .ForMember(dest => dest.AcceptedBy, opt => opt.MapFrom(src =>
-                    src.AcceptedBy.HasValue ? src.AcceptedBy.Value.ToString() : null))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityRegistered))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(src => src.RegisteredAt))
-                .ForMember(dest => dest.RegisteredBy, opt => opt.MapFrom(src =>
-                    src.RegisteredBy.HasValue ? src.RegisteredBy.Value.ToString() : null))
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.MapFrom(src => src.RegistrationEditCount))
-                .ForMember(dest => dest.FinanceVerified, opt => opt.MapFrom(src => src.FinanceVerified))
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.MapFrom(src => src.FinanceVerifiedAt))
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.MapFrom(src =>
-                    src.FinanceVerifiedBy.HasValue ? src.FinanceVerifiedBy.Value.ToString() : null))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.BuyingPrice, opt => opt.MapFrom(src => src.BuyingPrice))
                 .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice))
-                .ForMember(dest => dest.PriceEditCount, opt => opt.MapFrom(src => src.PriceEditCount))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName))
+                .ForMember(dest => dest.FinanceVerified, opt => opt.MapFrom(src => src.FinanceVerified))
+                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.MapFrom(src => src.FinanceVerifiedAt))
                 .ForMember(dest => dest.ApprovedAt, opt => opt.MapFrom(src => src.ApprovedAt))
-                .ForMember(dest => dest.ApprovedBy, opt => opt.MapFrom(src =>
-                    src.ApprovedBy.HasValue ? src.ApprovedBy.Value.ToString() : null))
-                .ForMember(dest => dest.TotalCost, opt => opt.MapFrom(src =>
-                    src.BuyingPrice.HasValue && src.QuantityRegistered.HasValue
-                        ? src.BuyingPrice.Value * src.QuantityRegistered.Value
-                        : (decimal?)null))
-                .ForMember(dest => dest.TotalRevenue, opt => opt.MapFrom(src =>
-                    src.UnitPrice.HasValue && src.QuantityRegistered.HasValue
-                        ? src.UnitPrice.Value * src.QuantityRegistered.Value
-                        : (decimal?)null))
-                .ForMember(dest => dest.ProfitMargin, opt => opt.MapFrom(src => src.ProfitMargin))
-                .ForMember(dest => dest.IsAccepted, opt => opt.MapFrom(src => src.IsAccepted))
-                .ForMember(dest => dest.IsRegistered, opt => opt.MapFrom(src => src.IsRegistered))
                 .ForMember(dest => dest.IsFinanceVerified, opt => opt.MapFrom(src => src.IsFinanceVerified))
                 .ForMember(dest => dest.IsApproved, opt => opt.MapFrom(src => src.IsApproved))
-                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.SupplierName)); ;
+                .ForMember(dest => dest.ProfitMargin, opt => opt.MapFrom(src => src.ProfitMargin));
 
-            // ========== BACKWARD COMPATIBILITY MAPPINGS ==========
-            CreateMap<ReceivePurchaseOrderDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
+            // ========== REJECT RESPONSE MAPPING ==========
+            CreateMap<PurchaseOrder, RejectResponseDto>()
+                .ForMember(dest => dest.PurchaseOrderId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.NewStatus, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.RejectedItems, opt => opt.Ignore()) // This will be set manually
+                .ForMember(dest => dest.Message, opt => opt.Ignore());      // This will be set manually
 
-            CreateMap<ReceivePurchaseOrderItemDto, PurchaseOrderItem>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityReceived))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
-
-            CreateMap<ApprovePurchaseOrderDto, PurchaseOrder>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Creator, opt => opt.Ignore())
-                .ForMember(dest => dest.Items, opt => opt.Ignore())
-                .ForMember(dest => dest.History, opt => opt.Ignore());
-
-            CreateMap<ApprovePurchaseOrderItemDto, PurchaseOrderItem>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.QuantityRegistered, opt => opt.MapFrom(src => src.QuantityApproved))
-                .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.PurchaseOrderId, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityRequested, opt => opt.Ignore())
-                .ForMember(dest => dest.QuantityAccepted, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.UnitPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.BuyingPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.AcceptedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegisteredBy, opt => opt.Ignore())
-                .ForMember(dest => dest.RegistrationEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.LastRegistrationEditAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.FinanceVerifiedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceSetBy, opt => opt.Ignore())
-                .ForMember(dest => dest.PriceEditCount, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.PurchaseOrder, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+            // ========== LEGACY MAPPINGS FOR BACKWARD COMPATIBILITY ==========
+            // Map old property names to new ones for backward compatibility
+            CreateMap<PurchaseOrder, object>().ReverseMap();
         }
     }
 }

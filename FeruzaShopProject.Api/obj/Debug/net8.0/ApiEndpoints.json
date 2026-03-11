@@ -944,32 +944,6 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "Update",
-    "RelativePath": "api/Purchases",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.UpdatePurchaseOrderDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
     "Method": "GetAll",
     "RelativePath": "api/Purchases",
     "HttpMethod": "GET",
@@ -1030,115 +1004,6 @@
       {
         "Name": "itemId",
         "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "AcceptAll",
-    "RelativePath": "api/Purchases/accept-all/{purchaseOrderId}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "purchaseOrderId",
-        "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "AcceptQuantities",
-    "RelativePath": "api/Purchases/accept-quantities",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.AcceptPurchaseQuantitiesDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "DeleteByAdmin",
-    "RelativePath": "api/Purchases/admin-delete/{purchaseOrderId}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "purchaseOrderId",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
-      {
-        "Name": "reason",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "EditByAdmin",
-    "RelativePath": "api/Purchases/admin-edit",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.EditPurchaseOrderByAdminDto",
         "IsRequired": true
       }
     ],
@@ -1353,119 +1218,15 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "EditAcceptedQuantitiesByAdmin",
-    "RelativePath": "api/Purchases/edit-accepted-quantities",
+    "Method": "EditPricesByFinance",
+    "RelativePath": "api/Purchases/finance-edit-prices",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.EditAcceptedQuantitiesByAdminDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "EditPricesByAdmin",
-    "RelativePath": "api/Purchases/edit-prices",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.EditPricesByAdminDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "EditRegisteredQuantitiesBySales",
-    "RelativePath": "api/Purchases/edit-registered-quantities",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.EditRegisteredQuantitiesBySalesDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "EditRegisteredQuantitiesByAdmin",
-    "RelativePath": "api/Purchases/edit-registered-quantities-admin",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.EditRegisteredQuantitiesByAdminDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "FinalApproval",
-    "RelativePath": "api/Purchases/final-approval",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.FinalApprovePurchaseOrderDto",
+        "Type": "FeruzaShopProject.Domain.DTOs.EditPricesByFinanceDto",
         "IsRequired": true
       }
     ],
@@ -1509,15 +1270,15 @@
   },
   {
     "ContainingType": "ShopMgtSys.Api.Controllers.PurchasesController",
-    "Method": "RegisterReceived",
-    "RelativePath": "api/Purchases/register-received",
+    "Method": "ManagerApproval",
+    "RelativePath": "api/Purchases/manager-approval",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "FeruzaShopProject.Domain.DTOs.RegisterReceivedQuantitiesDto",
+        "Type": "FeruzaShopProject.Domain.DTOs.ManagerApprovalDto",
         "IsRequired": true
       }
     ],
@@ -1549,7 +1310,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.RejectResponseDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1580,7 +1341,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.PurchaseOrderDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "FeruzaShopProject.Domain.Shared.ApiResponse\u00601[[FeruzaShopProject.Domain.DTOs.RejectResponseDto, FeruzaShopProject.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

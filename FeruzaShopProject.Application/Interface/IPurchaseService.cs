@@ -11,68 +11,42 @@ namespace FeruzaShopProject.Application.Interface
 {
     public interface IPurchaseService
     {
-        // ========== 5-STEP PURCHASE WORKFLOW ==========
+        // ========== 3-STEP PURCHASE WORKFLOW ==========
 
-        // Step 1: Sales creates purchase order
+        // Step 1: Sales creates purchase order (quantities only)
         Task<ApiResponse<PurchaseOrderDto>> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto);
 
-        // Step 2: Admin accepts quantities
-        Task<ApiResponse<PurchaseOrderDto>> AcceptQuantitiesByAdminAsync(AcceptPurchaseQuantitiesDto dto);
-
-        // Step 3: Sales registers received quantities (can be done multiple times)
-        Task<ApiResponse<PurchaseOrderDto>> RegisterReceivedQuantitiesAsync(RegisterReceivedQuantitiesDto dto);
-
-        // Step 4: Finance verification (partial processing supported)
+        // Step 2: Finance verifies and sets prices
         Task<ApiResponse<PurchaseOrderDto>> FinanceVerificationAsync(FinanceVerificationDto dto);
 
-        // Step 5: Admin final approval (partial approval supported)
-        Task<ApiResponse<PurchaseOrderDto>> FinalApprovalByAdminAsync(FinalApprovePurchaseOrderDto dto);
+        // Step 3: Manager final approval
+        Task<ApiResponse<PurchaseOrderDto>> ManagerApprovalAsync(ManagerApprovalDto dto);
 
 
         // ========== SALES EDIT/DELETE OPERATIONS ==========
 
         /// <summary>
-        /// Sales can edit their purchase order only when status is PendingAdminAcceptance
+        /// Sales can edit their purchase order only when status is PendingFinanceVerification
         /// </summary>
         Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderBySalesAsync(EditPurchaseOrderBySalesDto dto);
 
         /// <summary>
-        /// Sales can delete (cancel) their own purchase order only when status is PendingAdminAcceptance
+        /// Sales can delete (cancel) their own purchase order only when status is PendingFinanceVerification
         /// </summary>
         Task<ApiResponse<bool>> DeletePurchaseOrderBySalesAsync(Guid purchaseOrderId, string? reason = null);
 
         /// <summary>
-        /// Sales can edit registered quantities before finance verification
+        /// Sales can delete a specific item from their purchase order (only in PendingFinanceVerification status)
         /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditRegisteredQuantitiesBySalesAsync(EditRegisteredQuantitiesBySalesDto dto);
+        Task<ApiResponse<PurchaseOrderDto>> DeleteItemFromPurchaseOrderBySalesAsync(Guid purchaseOrderId, Guid itemId);
 
 
-        // ========== ADMIN EDIT/DELETE OPERATIONS ==========
+        // ========== FINANCE EDIT OPERATIONS ==========
 
         /// <summary>
-        /// Admin can edit any purchase order at any stage (except FullyApproved)
+        /// Finance can edit prices before manager approval
         /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderByAdminAsync(EditPurchaseOrderByAdminDto dto);
-
-        /// <summary>
-        /// Admin can edit only accepted quantities
-        /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditAcceptedQuantitiesByAdminAsync(EditAcceptedQuantitiesByAdminDto dto);
-
-        /// <summary>
-        /// Admin can edit only registered quantities
-        /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditRegisteredQuantitiesByAdminAsync(EditRegisteredQuantitiesByAdminDto dto);
-
-        /// <summary>
-        /// Admin can edit prices at any time before final approval
-        /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditPricesByAdminAsync(EditPricesByAdminDto dto);
-
-        /// <summary>
-        /// Admin can delete any purchase order (except FullyApproved)
-        /// </summary>
-        Task<ApiResponse<bool>> DeletePurchaseOrderByAdminAsync(Guid purchaseOrderId, string reason);
+        Task<ApiResponse<PurchaseOrderDto>> EditPricesByFinanceAsync(EditPricesByFinanceDto dto);
 
 
         // ========== REJECT/CANCEL OPERATIONS ==========
@@ -80,16 +54,12 @@ namespace FeruzaShopProject.Application.Interface
         /// <summary>
         /// Reject purchase order (can reject specific items if needed)
         /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto);
+        Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto);
 
         /// <summary>
         /// Cancel purchase order
         /// </summary>
         Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto);
-
-
-        // ========== UPDATE PURCHASE ORDER (Legacy) ==========
-        Task<ApiResponse<PurchaseOrderDto>> UpdatePurchaseOrderAsync(UpdatePurchaseOrderDto dto);
 
 
         // ========== QUERY METHODS ==========
@@ -125,11 +95,6 @@ namespace FeruzaShopProject.Application.Interface
         Task<ApiResponse<List<PurchaseOrderDto>>> GetPurchaseOrdersByDateRangeAsync(DateTime fromDate, DateTime toDate, Guid? branchId = null);
 
         /// <summary>
-        /// Sales can delete a specific item from their purchase order (only in PendingAdminAcceptance status)
-        /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> DeleteItemFromPurchaseOrderBySalesAsync(Guid purchaseOrderId, Guid itemId);
-
-        /// <summary>
         /// Get purchase order statistics
         /// </summary>
         Task<ApiResponse<PurchaseOrderStatsDto>> GetPurchaseOrderStatsAsync(Guid? branchId = null);
@@ -143,14 +108,9 @@ namespace FeruzaShopProject.Application.Interface
         // ========== HELPER/CONVENIENCE METHODS ==========
 
         /// <summary>
-        /// Convenience method to accept all quantities (accept requested quantities)
-        /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> AcceptAllByAdminAsync(Guid purchaseOrderId);
-
-        /// <summary>
         /// Convenience method for quick reject
         /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> RejectPurchaseOrderAsync(Guid purchaseOrderId, string reason);
+        Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(Guid purchaseOrderId, string reason);
 
         /// <summary>
         /// Convenience method for quick cancel

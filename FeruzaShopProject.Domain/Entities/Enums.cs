@@ -38,16 +38,11 @@ namespace FeruzaShopProject.Domain.Entities
 
     public enum PurchaseOrderStatus
     {
-        PendingAdminAcceptance,    // Created by Sales
-        AcceptedByAdmin,           // Admin accepted quantities
-        PartiallyRegistered,       // Sales registered some items
-        CompletelyRegistered,      // All items received
-        PartiallyFinanceProcessed, // Some items have prices
-        FullyFinanceProcessed,     // All items have prices
-        PartiallyApproved,         // Some items in stock
-        FullyApproved,             // All items in stock
-        Rejected,
-        Cancelled
+        PendingFinanceVerification,  // Sales registered, waiting for finance
+        PendingManagerApproval,      // Finance verified, waiting for manager
+        Approved,                    // Fully approved by manager
+        Rejected,                    // Rejected at any stage
+        Cancelled                    // Cancelled before completion
     }
     public enum DailyClosingStatus
     {

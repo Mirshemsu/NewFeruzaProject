@@ -47,9 +47,11 @@ namespace ShopMgtSys.Api.Controllers
             return null;
         }
 
-        // ========== 5-STEP PURCHASE WORKFLOW ENDPOINTS ==========
+        // ========== 3-STEP PURCHASE WORKFLOW ENDPOINTS ==========
 
-        // STEP 1: Sales creates purchase order
+        /// <summary>
+        /// STEP 1: Sales creates purchase order with quantities only
+        /// </summary>
         [HttpPost]
         [Authorize(Roles = "Sales")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> Create([FromBody] CreatePurchaseOrderDto dto)
@@ -72,67 +74,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
-        // STEP 2: Admin accepts/reduces quantities
-        [HttpPost("accept-quantities")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> AcceptQuantities([FromBody] AcceptPurchaseQuantitiesDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Admin accepting quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.AcceptQuantitiesByAdminAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error accepting quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while accepting quantities"));
-            }
-        }
-
-        // STEP 3: Sales registers received quantities (can be done multiple times)
-        [HttpPost("register-received")]
-        [Authorize(Roles = "Sales")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> RegisterReceived([FromBody] RegisterReceivedQuantitiesDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Sales registering received quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.RegisterReceivedQuantitiesAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error registering received quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while registering received quantities"));
-            }
-        }
-
-        // STEP 4: Finance verification (partial supported)
+        /// <summary>
+        /// STEP 2: Finance verifies quantities and sets prices
+        /// </summary>
         [HttpPost("finance-verification")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> FinanceVerification([FromBody] FinanceVerificationDto dto)
@@ -162,14 +106,16 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
-        // STEP 5: Admin final approval (partial supported)
-        [HttpPost("final-approval")]
+        /// <summary>
+        /// STEP 3: Manager approves all verified items
+        /// </summary>
+        [HttpPost("manager-approval")]
         [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> FinalApproval([FromBody] FinalApprovePurchaseOrderDto dto)
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> ManagerApproval([FromBody] ManagerApprovalDto dto)
         {
             try
             {
-                _logger.LogInformation("Admin final approval for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                _logger.LogInformation("Manager approval for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
 
                 var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
                 if (!purchaseOrder.IsCompletedSuccessfully)
@@ -182,20 +128,20 @@ namespace ShopMgtSys.Api.Controllers
                 if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
                     return Forbid();
 
-                var result = await _purchaseService.FinalApprovalByAdminAsync(dto);
+                var result = await _purchaseService.ManagerApprovalAsync(dto);
                 return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in final approval for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred during final approval"));
+                _logger.LogError(ex, "Error in manager approval for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred during manager approval"));
             }
         }
 
         // ========== SALES EDIT/DELETE OPERATIONS ==========
 
         /// <summary>
-        /// Sales can edit their purchase order only when status is PendingAdminAcceptance
+        /// Sales can edit their purchase order only when status is PendingFinanceVerification
         /// </summary>
         [HttpPut("sales-edit")]
         [Authorize(Roles = "Sales")]
@@ -227,7 +173,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         /// <summary>
-        /// Sales can delete their own purchase order only when status is PendingAdminAcceptance
+        /// Sales can delete their own purchase order only when status is PendingFinanceVerification
         /// </summary>
         [HttpDelete("sales-delete/{purchaseOrderId:guid}")]
         [Authorize(Roles = "Sales")]
@@ -259,318 +205,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         /// <summary>
-        /// Sales can edit registered quantities before finance verification
-        /// </summary>
-        [HttpPut("edit-registered-quantities")]
-        [Authorize(Roles = "Sales")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditRegisteredQuantitiesBySales([FromBody] EditRegisteredQuantitiesBySalesDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Sales editing registered quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.EditRegisteredQuantitiesBySalesAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error editing registered quantities by sales: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing registered quantities"));
-            }
-        }
-
-        // ========== ADMIN EDIT/DELETE OPERATIONS ==========
-
-        /// <summary>
-        /// Admin can edit any purchase order at any stage (except FullyApproved)
-        /// </summary>
-        [HttpPut("admin-edit")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditByAdmin([FromBody] EditPurchaseOrderByAdminDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Admin editing purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.EditPurchaseOrderByAdminAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error editing purchase order by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing purchase order"));
-            }
-        }
-
-        /// <summary>
-        /// Admin can edit only accepted quantities
-        /// </summary>
-        [HttpPut("edit-accepted-quantities")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditAcceptedQuantitiesByAdmin([FromBody] EditAcceptedQuantitiesByAdminDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Admin editing accepted quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.EditAcceptedQuantitiesByAdminAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error editing accepted quantities by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing accepted quantities"));
-            }
-        }
-
-        /// <summary>
-        /// Admin can edit only registered quantities
-        /// </summary>
-        [HttpPut("edit-registered-quantities-admin")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditRegisteredQuantitiesByAdmin([FromBody] EditRegisteredQuantitiesByAdminDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Admin editing registered quantities for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.EditRegisteredQuantitiesByAdminAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error editing registered quantities by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing registered quantities"));
-            }
-        }
-
-        /// <summary>
-        /// Admin can edit prices at any time before final approval
-        /// </summary>
-        [HttpPut("edit-prices")]
-        [Authorize(Roles = "Manager,Finance")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditPricesByAdmin([FromBody] EditPricesByAdminDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Admin editing prices for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.EditPricesByAdminAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error editing prices by admin: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing prices"));
-            }
-        }
-
-        /// <summary>
-        /// Admin can delete any purchase order (except FullyApproved)
-        /// </summary>
-        [HttpDelete("admin-delete/{purchaseOrderId:guid}")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<bool>>> DeleteByAdmin(Guid purchaseOrderId, [FromQuery] string reason)
-        {
-            try
-            {
-                _logger.LogInformation("Admin deleting purchase order: {PurchaseOrderId}", purchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", purchaseOrderId);
-                    return NotFound(ApiResponse<bool>.Fail("Purchase order not found"));
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.DeletePurchaseOrderByAdminAsync(purchaseOrderId, reason);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting purchase order by admin: {PurchaseOrderId}", purchaseOrderId);
-                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while deleting purchase order"));
-            }
-        }
-
-        // ========== ADDITIONAL OPERATIONS ==========
-
-        [HttpPost("reject")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> Reject([FromBody] RejectPurchaseOrderDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Rejecting purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.RejectPurchaseOrderAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while rejecting purchase order"));
-            }
-        }
-
-        [HttpPost("reject-simple/{purchaseOrderId:guid}")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> RejectSimple(Guid purchaseOrderId, [FromQuery] string reason)
-        {
-            try
-            {
-                _logger.LogInformation("Rejecting purchase order: {PurchaseOrderId}", purchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", purchaseOrderId);
-                    return NotFound(purchaseOrder);
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.RejectPurchaseOrderAsync(purchaseOrderId, reason);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting purchase order: {PurchaseOrderId}", purchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while rejecting purchase order"));
-            }
-        }
-
-        [HttpPost("cancel")]
-        [Authorize(Roles = "Sales,Manager")]
-        public async Task<ActionResult<ApiResponse<bool>>> Cancel([FromBody] CancelPurchaseOrderDto dto)
-        {
-            try
-            {
-                _logger.LogInformation("Canceling purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
-                    return NotFound(ApiResponse<bool>.Fail("Purchase order not found"));
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.CancelPurchaseOrderAsync(dto);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error canceling purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while canceling purchase order"));
-            }
-        }
-
-        [HttpPost("cancel-simple/{purchaseOrderId:guid}")]
-        [Authorize(Roles = "Sales,Manager")]
-        public async Task<ActionResult<ApiResponse<bool>>> CancelSimple(Guid purchaseOrderId, [FromQuery] string? reason = null)
-        {
-            try
-            {
-                _logger.LogInformation("Canceling purchase order: {PurchaseOrderId}", purchaseOrderId);
-
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
-                if (!purchaseOrder.IsCompletedSuccessfully)
-                {
-                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", purchaseOrderId);
-                    return NotFound(ApiResponse<bool>.Fail("Purchase order not found"));
-                }
-
-                // Check branch access
-                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
-                    return Forbid();
-
-                var result = await _purchaseService.CancelPurchaseOrderAsync(purchaseOrderId, reason);
-                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error canceling purchase order: {PurchaseOrderId}", purchaseOrderId);
-                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while canceling purchase order"));
-            }
-        }
-        /// <summary>
-        /// Sales can delete a specific item from their purchase order (only in PendingAdminAcceptance status)
+        /// Sales can delete a specific item from their purchase order (only in PendingFinanceVerification status)
         /// </summary>
         [HttpDelete("{purchaseOrderId:guid}/items/{itemId:guid}")]
         [Authorize(Roles = "Sales")]
@@ -601,18 +236,23 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
-        [HttpPut]
-        [Authorize(Roles = "Sales")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> Update([FromBody] UpdatePurchaseOrderDto dto)
+        // ========== FINANCE EDIT OPERATIONS ==========
+
+        /// <summary>
+        /// Finance can edit prices before manager approval
+        /// </summary>
+        [HttpPut("finance-edit-prices")]
+        [Authorize(Roles = "Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditPricesByFinance([FromBody] EditPricesByFinanceDto dto)
         {
             try
             {
-                _logger.LogInformation("Updating purchase order: {Id}", dto.Id);
+                _logger.LogInformation("Finance editing prices for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
 
-                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.Id);
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
                 if (!purchaseOrder.IsCompletedSuccessfully)
                 {
-                    _logger.LogWarning("Purchase order {Id} not found", dto.Id);
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
                     return NotFound(purchaseOrder);
                 }
 
@@ -620,25 +260,54 @@ namespace ShopMgtSys.Api.Controllers
                 if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
                     return Forbid();
 
-                var result = await _purchaseService.UpdatePurchaseOrderAsync(dto);
+                var result = await _purchaseService.EditPricesByFinanceAsync(dto);
                 return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating purchase order: {Id}", dto.Id);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while updating purchase order"));
+                _logger.LogError(ex, "Error editing prices by finance: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing prices"));
             }
         }
 
-        // ========== CONVENIENCE/HELPER ENDPOINTS ==========
+        // ========== REJECT/CANCEL OPERATIONS ==========
 
-        [HttpPost("accept-all/{purchaseOrderId:guid}")]
-        [Authorize(Roles = "Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> AcceptAll(Guid purchaseOrderId)
+        [HttpPost("reject")]
+        [Authorize(Roles = "Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<RejectResponseDto>>> Reject([FromBody] RejectPurchaseOrderDto dto)
         {
             try
             {
-                _logger.LogInformation("Admin accepting all quantities for purchase order: {PurchaseOrderId}", purchaseOrderId);
+                _logger.LogInformation("Rejecting purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
+                if (!purchaseOrder.IsCompletedSuccessfully)
+                {
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
+                    return NotFound(purchaseOrder);
+                }
+
+                // Check branch access
+                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
+                    return Forbid();
+
+                var result = await _purchaseService.RejectPurchaseOrderAsync(dto);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<RejectResponseDto>.Fail("An error occurred while rejecting purchase order"));
+            }
+        }
+
+        [HttpPost("reject-simple/{purchaseOrderId:guid}")]
+        [Authorize(Roles = "Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<RejectResponseDto>>> RejectSimple(Guid purchaseOrderId, [FromQuery] string reason)
+        {
+            try
+            {
+                _logger.LogInformation("Rejecting purchase order: {PurchaseOrderId}", purchaseOrderId);
 
                 var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
                 if (!purchaseOrder.IsCompletedSuccessfully)
@@ -651,42 +320,78 @@ namespace ShopMgtSys.Api.Controllers
                 if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
                     return Forbid();
 
-                var result = await _purchaseService.AcceptAllByAdminAsync(purchaseOrderId);
+                var result = await _purchaseService.RejectPurchaseOrderAsync(purchaseOrderId, reason);
                 return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error accepting all quantities for purchase order: {PurchaseOrderId}", purchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while accepting all quantities"));
+                _logger.LogError(ex, "Error rejecting purchase order: {PurchaseOrderId}", purchaseOrderId);
+                return StatusCode(500, ApiResponse<RejectResponseDto>.Fail("An error occurred while rejecting purchase order"));
             }
         }
 
-        [HttpGet("can-edit/{purchaseOrderId:guid}")]
-        [Authorize(Roles = "Sales,Manager")]
-        public async Task<ActionResult<ApiResponse<bool>>> CanEdit(Guid purchaseOrderId)
+        [HttpPost("cancel")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<bool>>> Cancel([FromBody] CancelPurchaseOrderDto dto)
         {
             try
             {
-                var userIdClaim = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-                if (!Guid.TryParse(userIdClaim, out var userId))
+                _logger.LogInformation("Canceling purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
+                if (!purchaseOrder.IsCompletedSuccessfully)
                 {
-                    return Unauthorized(ApiResponse<bool>.Fail("Invalid user"));
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
+                    return NotFound(ApiResponse<bool>.Fail("Purchase order not found"));
                 }
 
-                var result = await _purchaseService.CanUserEditAsync(purchaseOrderId, userId);
-                return Ok(result);
+                // Check branch access
+                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
+                    return Forbid();
+
+                var result = await _purchaseService.CancelPurchaseOrderAsync(dto);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking edit permission for purchase order: {PurchaseOrderId}", purchaseOrderId);
-                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while checking edit permission"));
+                _logger.LogError(ex, "Error canceling purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while canceling purchase order"));
+            }
+        }
+
+        [HttpPost("cancel-simple/{purchaseOrderId:guid}")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<bool>>> CancelSimple(Guid purchaseOrderId, [FromQuery] string? reason = null)
+        {
+            try
+            {
+                _logger.LogInformation("Canceling purchase order: {PurchaseOrderId}", purchaseOrderId);
+
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(purchaseOrderId);
+                if (!purchaseOrder.IsCompletedSuccessfully)
+                {
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", purchaseOrderId);
+                    return NotFound(ApiResponse<bool>.Fail("Purchase order not found"));
+                }
+
+                // Check branch access
+                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
+                    return Forbid();
+
+                var result = await _purchaseService.CancelPurchaseOrderAsync(purchaseOrderId, reason);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error canceling purchase order: {PurchaseOrderId}", purchaseOrderId);
+                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while canceling purchase order"));
             }
         }
 
         // ========== QUERY ENDPOINTS ==========
 
         [HttpGet("{id:guid}")]
-        [Authorize(Roles = "Sales,Manager,Finance")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> GetById(Guid id)
         {
             try
@@ -709,7 +414,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Sales,Manager,Finance")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetAll()
         {
             try
@@ -730,7 +435,7 @@ namespace ShopMgtSys.Api.Controllers
                     }
                 }
 
-                // For Manager/Finance, return all purchase orders
+                // For Finance/Manager, return all purchase orders
                 var allResult = await _purchaseService.GetAllPurchaseOrdersAsync();
                 return Ok(allResult);
             }
@@ -742,7 +447,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet("status/{status}")]
-        [Authorize(Roles = "Sales,Manager,Finance")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByStatus(PurchaseOrderStatus status)
         {
             try
@@ -756,13 +461,13 @@ namespace ShopMgtSys.Api.Controllers
                         var branchOrders = await _purchaseService.GetPurchaseOrdersByBranchAsync(branchId.Value);
                         if (branchOrders.IsCompletedSuccessfully)
                         {
-                            var filtered = branchOrders.Data.Where(po => po.Status == status.ToString()).ToList();
+                            var filtered = branchOrders.Data.Where(po => po.Status == status).ToList();
                             return Ok(ApiResponse<List<PurchaseOrderDto>>.Success(filtered));
                         }
                     }
                 }
 
-                // For Manager/Finance, filter by status
+                // For Finance/Manager, filter by status
                 var result = await _purchaseService.GetPurchaseOrdersByStatusAsync(status);
                 return Ok(result);
             }
@@ -774,7 +479,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet("branch/{branchId:guid}")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByBranch(Guid branchId)
         {
             try
@@ -794,7 +499,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet("creator/{createdBy:guid}")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByCreator(Guid createdBy)
         {
             try
@@ -822,7 +527,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet("date-range")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByDateRange(
             [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate,
@@ -850,9 +555,8 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
-       
         [HttpGet("stats")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderStatsDto>>> GetStats([FromQuery] Guid? branchId = null)
         {
             try
@@ -878,7 +582,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         [HttpGet("dashboard")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDashboardDto>>> GetDashboard([FromQuery] Guid? branchId = null)
         {
             try
@@ -900,6 +604,30 @@ namespace ShopMgtSys.Api.Controllers
             {
                 _logger.LogError(ex, "Error getting purchase order dashboard");
                 return StatusCode(500, ApiResponse<PurchaseOrderDashboardDto>.Fail("An error occurred while retrieving purchase order dashboard"));
+            }
+        }
+
+        // ========== HELPER/CONVENIENCE ENDPOINTS ==========
+
+        [HttpGet("can-edit/{purchaseOrderId:guid}")]
+        [Authorize(Roles = "Sales,Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<bool>>> CanEdit(Guid purchaseOrderId)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized(ApiResponse<bool>.Fail("Invalid user"));
+                }
+
+                var result = await _purchaseService.CanUserEditAsync(purchaseOrderId, userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking edit permission for purchase order: {PurchaseOrderId}", purchaseOrderId);
+                return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while checking edit permission"));
             }
         }
     }
