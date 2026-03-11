@@ -40,6 +40,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
 
         public decimal CommissionRate { get; set; }
+        public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
 
         // ========== NEW: Remark field ==========
         [StringLength(500)]

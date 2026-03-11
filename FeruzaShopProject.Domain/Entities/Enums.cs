@@ -49,4 +49,11 @@ namespace FeruzaShopProject.Domain.Entities
         Rejected,
         Cancelled
     }
+    public enum DailyClosingStatus
+    {
+        Pending,        // Sales closed, waiting for finance approval
+        Approved,       // Finance approved
+        Rejected,       // Finance rejected (needs reopening)
+        Adjusted        // Finance made adjustments
+    }
 }

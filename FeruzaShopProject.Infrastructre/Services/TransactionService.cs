@@ -59,6 +59,22 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (product == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Invalid or inactive product");
 
+                // ========== CHECK IF DATE IS CLOSED ==========
+                var transactionDate = dto.TransactionDate.Date;
+
+                // Check if this date is already closed and approved
+                var isDateClosed = await _context.DailyClosings
+                    .AnyAsync(dc => dc.BranchId == dto.BranchId &&
+                                   dc.ClosingDate.Date == transactionDate &&
+                                   dc.IsActive &&
+                                   dc.Status == DailyClosingStatus.Approved);
+
+                if (isDateClosed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot create transaction for {transactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                }
+
                 // Handle Customer (create if not exists)
                 Guid? customerId = dto.CustomerId;
                 Customer newCustomer = null;
@@ -319,6 +335,19 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (existingTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Transaction not found");
 
+                // ========== CHECK IF DATE IS CLOSED ==========
+                var isDateClosed = await _context.DailyClosings
+                    .AnyAsync(dc => dc.BranchId == existingTransaction.BranchId &&
+                                   dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
+                                   dc.IsActive &&
+                                   dc.Status == DailyClosingStatus.Approved);
+
+                if (isDateClosed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                }
+
                 // Check if transaction can be updated (e.g., not fully paid credit transaction)
                 if (existingTransaction.PaymentMethod == PaymentMethod.Credit)
                 {
@@ -468,6 +497,19 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (existingTransaction == null)
                     return ApiResponse<bool>.Fail("Transaction not found");
 
+                // ========== CHECK IF DATE IS CLOSED ==========
+                var isDateClosed = await _context.DailyClosings
+                    .AnyAsync(dc => dc.BranchId == existingTransaction.BranchId &&
+                                   dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
+                                   dc.IsActive &&
+                                   dc.Status == DailyClosingStatus.Approved);
+
+                if (isDateClosed)
+                {
+                    return ApiResponse<bool>.Fail(
+                        $"Cannot delete transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                }
+
                 // Check if transaction can be deleted (e.g., not already processed)
                 if (existingTransaction.PaymentMethod == PaymentMethod.Credit && await CalculatePaidAmountAsync(id) > 0)
                 {
@@ -556,6 +598,21 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 if (creditTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Credit transaction not found");
+
+                // ========== CHECK IF DATE IS CLOSED ==========
+                // For credit payments, we check if the payment date is closed
+                var paymentDate = dto.PaymentDate.Date;
+                var isDateClosed = await _context.DailyClosings
+                    .AnyAsync(dc => dc.BranchId == creditTransaction.BranchId &&
+                                   dc.ClosingDate.Date == paymentDate &&
+                                   dc.IsActive &&
+                                   dc.Status == DailyClosingStatus.Approved);
+
+                if (isDateClosed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                }
 
                 var previousPaidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
                 var totalAmount = CalculateTotalAmount(creditTransaction);

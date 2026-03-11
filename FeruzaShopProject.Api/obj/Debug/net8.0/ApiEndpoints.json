@@ -387,6 +387,122 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "ApproveClosing",
+    "RelativePath": "api/DailyClosing/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.ApproveDailyClosingDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "GetBranchClosings",
+    "RelativePath": "api/DailyClosing/branch/{branchId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "fromDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "toDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "CloseDailySales",
+    "RelativePath": "api/DailyClosing/close",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.CloseDailySalesDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "IsDateClosed",
+    "RelativePath": "api/DailyClosing/is-closed/{branchId}/{date}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateTime",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "ReopenDailySales",
+    "RelativePath": "api/DailyClosing/reopen",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "FeruzaShopProject.Domain.DTOs.ReopenDailySalesDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "FeruzaShopProject.Api.Controllers.DailyClosingController",
+    "Method": "GetClosingStatus",
+    "RelativePath": "api/DailyClosing/status/{branchId}/{date}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "branchId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "date",
+        "Type": "System.DateTime",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "FeruzaShopProject.API.Controllers.ProductExchangesController",
     "Method": "CreateExchange",
     "RelativePath": "api/ProductExchanges",

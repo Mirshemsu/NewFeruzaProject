@@ -22,6 +22,7 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseHistory> PurchaseHistory { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        public DbSet<DailyClosing> DailyClosings { get; set; }
 
         public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options) { }
 
@@ -82,6 +83,23 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.Property(p => p.Unit)
                     .HasConversion<string>()
                     .HasMaxLength(20);
+            });
+            modelBuilder.Entity<DailyClosing>(entity =>
+            {
+                entity.HasOne(dc => dc.Closer)
+                    .WithMany()
+                    .HasForeignKey(dc => dc.ClosedBy)
+                    .OnDelete(DeleteBehavior.Restrict); // NO CASCADE
+
+                entity.HasOne(dc => dc.Approver)
+                    .WithMany()
+                    .HasForeignKey(dc => dc.ApprovedBy)
+                    .OnDelete(DeleteBehavior.Restrict); // NO CASCADE
+
+                entity.HasOne(dc => dc.Branch)
+                    .WithMany()
+                    .HasForeignKey(dc => dc.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict); // NO CASCADE
             });
 
             modelBuilder.Entity<ProductExchange>(entity =>

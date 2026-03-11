@@ -80,6 +80,7 @@ builder.Services.AddAutoMapper(typeof(CustomerMapper));
 builder.Services.AddAutoMapper(typeof(PainterMapper));
 builder.Services.AddAutoMapper(typeof(PurchaseMapper));
 builder.Services.AddAutoMapper(typeof(ProductExchangeMapper));
+builder.Services.AddAutoMapper(typeof(DailyClosingMapper));
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -91,6 +92,7 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 builder.Services.AddScoped<IProductExchangeService, ProductExchangeService>();
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IDailyClosingService, DailyClosingService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
