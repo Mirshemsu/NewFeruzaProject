@@ -46,9 +46,10 @@ namespace FeruzaShopProject.Domain.Entities
     }
     public enum DailyClosingStatus
     {
-        Pending,        // Sales closed, waiting for finance approval
-        Approved,       // Finance approved
-        Rejected,       // Finance rejected (needs reopening)
-        Adjusted        // Finance made adjustments
+        Pending,    // Sales are still working - transactions and transfers allowed
+        Closed,     // Sales has closed the day - no more transactions, transfers still allowed
+        Approved,   // Finance approved - DATE IS LOCKED, no more changes
+        Rejected,   // Finance rejected (needs reopening)
+        Adjusted    // Finance made adjustments
     }
 }

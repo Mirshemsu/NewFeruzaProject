@@ -41,6 +41,7 @@ namespace FeruzaShopProject.Domain.Entities
         public decimal CommissionRate { get; set; }
 
         public bool CommissionPaid { get; set; }
+        public decimal TotalAmount => UnitPrice * Quantity;
 
         [StringLength(500)]
         public string? Remark { get; set; }  // Nullable string for notes

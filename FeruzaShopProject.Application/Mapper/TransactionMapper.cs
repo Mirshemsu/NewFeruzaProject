@@ -15,48 +15,56 @@ namespace FeruzaShopProject.Application.Mapper
         {
             // CreateTransactionDto -> Transaction
             CreateMap<CreateTransactionDto, Transaction>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.TransactionDate, opt => opt.MapFrom(src => DateTime.UtcNow))
-                .ForMember(dest => dest.CommissionPaid, opt => opt.MapFrom(src => false))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
-                .ForMember(dest => dest.CustomerId, opt => opt.Ignore()) // Handled in service
-                .ForMember(dest => dest.PainterId, opt => opt.Ignore())  // Handled in service
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore())
-                .ForMember(dest => dest.Customer, opt => opt.Ignore())
-                .ForMember(dest => dest.Painter, opt => opt.Ignore());
+                            .ForMember(dest => dest.Id, opt => opt.Ignore())
+                            .ForMember(dest => dest.TransactionDate, opt => opt.MapFrom(src => src.TransactionDate)) // USE DTO DATE
+                            .ForMember(dest => dest.ItemCode, opt => opt.MapFrom(src => src.ItemCode))
+                            .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice))
+                            .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                            .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
+                            .ForMember(dest => dest.CommissionRate, opt => opt.MapFrom(src => src.CommissionRate))
+                            .ForMember(dest => dest.CommissionPaid, opt => opt.MapFrom(src => false))
+                            .ForMember(dest => dest.Remark, opt => opt.MapFrom(src => src.Remark))
+                            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+                            .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+                            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
+                            // Ignore navigation properties and IDs handled in service
+                            .ForMember(dest => dest.CustomerId, opt => opt.Ignore())
+                            .ForMember(dest => dest.PainterId, opt => opt.Ignore())
+                            .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.BranchId))
+                            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
+                            .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                            .ForMember(dest => dest.Product, opt => opt.Ignore())
+                            .ForMember(dest => dest.Customer, opt => opt.Ignore())
+                            .ForMember(dest => dest.Painter, opt => opt.Ignore())
+                            .ForMember(dest => dest.DailySales, opt => opt.Ignore())
+                            .ForMember(dest => dest.StockMovements, opt => opt.Ignore())
+                            .ForMember(dest => dest.CreditPayments, opt => opt.Ignore())
+                            .ForMember(dest => dest.Exchanges, opt => opt.Ignore());
 
             // UpdateTransactionDto -> Transaction
             CreateMap<UpdateTransactionDto, Transaction>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.TransactionDate, opt => opt.Ignore())
-                .ForMember(dest => dest.BranchId, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductId, opt => opt.Ignore())
-                .ForMember(dest => dest.ItemCode, opt => opt.Ignore())
-                .ForMember(dest => dest.Branch, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore())
-                .ForMember(dest => dest.Customer, opt => opt.Ignore())
-                .ForMember(dest => dest.Painter, opt => opt.Ignore())
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+               .ForMember(dest => dest.Id, opt => opt.Ignore())
+               .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+               .ForMember(dest => dest.Remark, opt => opt.MapFrom(src => src.Remark))
+               .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
-            // Transaction -> TransactionResponseDto
             CreateMap<Transaction, TransactionResponseDto>()
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch.Name))
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Product.Category.Name))
-                .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Product.Unit.ToString()))
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : null))
-                .ForMember(dest => dest.CustomerPhoneNumber, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : null))
-                .ForMember(dest => dest.PainterName, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.Name : null))
-                .ForMember(dest => dest.PainterPhoneNumber, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.PhoneNumber : null))
-                .ForMember(dest => dest.PaidAmount, opt => opt.Ignore()) // Calculated in service
-                .ForMember(dest => dest.IsPartialPayment, opt => opt.Ignore()) // Set from DailySales
-                .ForMember(dest => dest.TotalAmount, opt => opt.Ignore()) // Calculated in DTO
-                .ForMember(dest => dest.CommissionAmount, opt => opt.Ignore()) // Calculated in DTO
-                .ForMember(dest => dest.RemainingAmount, opt => opt.Ignore()) // Calculated in DTO
-                .ForMember(dest => dest.IsFullyPaid, opt => opt.Ignore()); // Calculated in DTO
+                  .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch != null ? src.Branch.Name : null))
+                  .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : null))
+                  .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Product != null && src.Product.Category != null ? src.Product.Category.Name : null))
+                  .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Product != null ? src.Product.Unit.ToString() : null))
+                  .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : null))
+                  .ForMember(dest => dest.CustomerPhoneNumber, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : null))
+                  .ForMember(dest => dest.PainterName, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.Name : null))
+                  .ForMember(dest => dest.PainterPhoneNumber, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.PhoneNumber : null))
+                  .ForMember(dest => dest.IsCredit, opt => opt.MapFrom(src => src.PaymentMethod == PaymentMethod.Credit))
+                  .ForMember(dest => dest.TotalAmount, opt => opt.Ignore()) // Calculated in service
+                  .ForMember(dest => dest.CommissionAmount, opt => opt.Ignore()) // Calculated in service
+                  .ForMember(dest => dest.PaidAmount, opt => opt.Ignore()) // Calculated in service
+                  .ForMember(dest => dest.RemainingAmount, opt => opt.Ignore()) // Calculated in service
+                  .ForMember(dest => dest.IsFullyPaid, opt => opt.Ignore()) // Calculated in service
+                  .ForMember(dest => dest.IsPartialPayment, opt => opt.Ignore()) // Set in service
+                  .ForMember(dest => dest.IsCreditPayment, opt => opt.Ignore()); // Set in service
 
             // DailySales -> TransactionResponseDto (for listing partial payments)
             CreateMap<DailySales, TransactionResponseDto>()

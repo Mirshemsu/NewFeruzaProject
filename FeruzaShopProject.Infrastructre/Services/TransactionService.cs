@@ -59,20 +59,26 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (product == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Invalid or inactive product");
 
-                // ========== CHECK IF DATE IS CLOSED ==========
+                // ========== CHECK IF DATE IS CLOSED OR APPROVED ==========
                 var transactionDate = dto.TransactionDate.Date;
 
-                // Check if this date is already closed and approved
-                var isDateClosed = await _context.DailyClosings
-                    .AnyAsync(dc => dc.BranchId == dto.BranchId &&
-                                   dc.ClosingDate.Date == transactionDate &&
-                                   dc.IsActive &&
-                                   dc.Status == DailyClosingStatus.Approved);
+                var dateStatus = await _context.DailyClosings
+                    .Where(dc => dc.BranchId == dto.BranchId &&
+                                dc.ClosingDate.Date == transactionDate &&
+                                dc.IsActive)
+                    .Select(dc => dc.Status)
+                    .FirstOrDefaultAsync();
 
-                if (isDateClosed)
+                if (dateStatus == DailyClosingStatus.Approved)
                 {
                     return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot create transaction for {transactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                        $"Cannot create transaction for {transactionDate:yyyy-MM-dd}. This date is already approved and locked.");
+                }
+
+                if (dateStatus == DailyClosingStatus.Closed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot create transaction for {transactionDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
                 // Handle Customer (create if not exists)
@@ -91,8 +97,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         newCustomer = new Customer
                         {
+                            Id = Guid.NewGuid(),
                             Name = dto.CustomerName.Trim(),
-                            PhoneNumber = dto.CustomerPhoneNumber.Trim()
+                            PhoneNumber = dto.CustomerPhoneNumber.Trim(),
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
                         };
                         await _context.Customers.AddAsync(newCustomer);
                     }
@@ -114,8 +123,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         newPainter = new Painter
                         {
+                            Id = Guid.NewGuid(),
                             Name = dto.PainterName.Trim(),
-                            PhoneNumber = dto.PainterPhoneNumber.Trim()
+                            PhoneNumber = dto.PainterPhoneNumber.Trim(),
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
                         };
                         await _context.Painters.AddAsync(newPainter);
                     }
@@ -132,11 +144,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                 var salesTransaction = _mapper.Map<Transaction>(dto);
                 salesTransaction.CustomerId = customerId;
                 salesTransaction.PainterId = painterId;
-
-                // ========== SET REMARK FIELD ==========
                 salesTransaction.Remark = dto.Remark;
 
-                // If we created new customer/painter, we need to get their IDs after saving
+                // Ensure TransactionDate is set correctly (mapper already maps it, but double-check)
+                salesTransaction.TransactionDate = dto.TransactionDate;
+
+                // If we created new customer/painter, we need to save them first to get IDs
                 if (newCustomer != null || newPainter != null)
                 {
                     await _context.SaveChangesAsync();
@@ -158,7 +171,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 // Create daily sales ONLY for non-credit transactions
-                // Credit transactions will create daily sales when payment is made
                 if (dto.PaymentMethod != PaymentMethod.Credit)
                 {
                     await CreateDailySalesAsync(salesTransaction, false);
@@ -171,21 +183,47 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
+                if (dto.PaymentMethod != PaymentMethod.Credit)
+                {
+                    await UpdateDailyClosingAmountsAsync(
+                        salesTransaction.BranchId,
+                        salesTransaction.TransactionDate.Date,
+                        salesTransaction.PaymentMethod,
+                        salesTransaction.TotalAmount,
+                        true); // true = addition
+                }
+
                 await dbTransaction.CommitAsync();
 
                 // Load related data for response
                 await LoadTransactionNavigationProperties(salesTransaction);
 
+                // Map to response DTO
                 var result = _mapper.Map<TransactionResponseDto>(salesTransaction);
+
+                // ========== CALCULATE DERIVED VALUES ==========
+                result.TotalAmount = salesTransaction.UnitPrice * salesTransaction.Quantity;
+                result.CommissionAmount = salesTransaction.Quantity * salesTransaction.CommissionRate;
 
                 // Calculate paid amount for credit transactions
                 if (salesTransaction.PaymentMethod == PaymentMethod.Credit)
                 {
                     result.PaidAmount = await CalculatePaidAmountAsync(salesTransaction.Id);
+                    result.PaidAmount = await CalculatePaidAmountAsync(salesTransaction.Id);
+                    result.IsPartialPayment = result.PaidAmount < result.TotalAmount;
+                }
+                else
+                {
+                    result.PaidAmount = result.TotalAmount;
+                 
+                    result.IsPartialPayment = false;
                 }
 
-                _logger.LogInformation("Successfully created sales transaction {TransactionId} with remark: {Remark}",
-                    salesTransaction.Id, dto.Remark);
+                _logger.LogInformation("Successfully created sales transaction {TransactionId} for date {Date} with remark: {Remark}",
+                    salesTransaction.Id, salesTransaction.TransactionDate.ToString("yyyy-MM-dd"), dto.Remark);
+
                 return ApiResponse<TransactionResponseDto>.Success(result, "Transaction created successfully");
             }
             catch (Exception ex)
@@ -204,7 +242,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<TransactionResponseDto>.Fail($"Error creating transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> GetTransactionByIdAsync(Guid id)
         {
             try
@@ -335,17 +372,24 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (existingTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Transaction not found");
 
-                // ========== CHECK IF DATE IS CLOSED ==========
-                var isDateClosed = await _context.DailyClosings
-                    .AnyAsync(dc => dc.BranchId == existingTransaction.BranchId &&
-                                   dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
-                                   dc.IsActive &&
-                                   dc.Status == DailyClosingStatus.Approved);
+                // ========== CHECK IF DATE IS CLOSED OR APPROVED ==========
+                var dateStatus = await _context.DailyClosings
+                    .Where(dc => dc.BranchId == existingTransaction.BranchId &&
+                                dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
+                                dc.IsActive)
+                    .Select(dc => dc.Status)
+                    .FirstOrDefaultAsync();
 
-                if (isDateClosed)
+                if (dateStatus == DailyClosingStatus.Approved)
                 {
                     return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already approved and locked.");
+                }
+
+                if (dateStatus == DailyClosingStatus.Closed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
                 // Check if transaction can be updated (e.g., not fully paid credit transaction)
@@ -366,6 +410,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 var oldPainterId = existingTransaction.PainterId;
                 var oldCommissionRate = existingTransaction.CommissionRate;
                 var oldCommissionPaid = existingTransaction.CommissionPaid;
+                var oldTotalAmount = existingTransaction.TotalAmount;
 
                 // Update properties
                 if (dto.CustomerId.HasValue) existingTransaction.CustomerId = dto.CustomerId;
@@ -381,6 +426,8 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
                 existingTransaction.Validate();
+
+                var newTotalAmount = existingTransaction.TotalAmount;
 
                 // Handle stock updates if quantity changed
                 if (dto.Quantity.HasValue && dto.Quantity.Value != oldQuantity)
@@ -462,6 +509,30 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
+                // Remove old amount
+                if (oldPaymentMethod != PaymentMethod.Credit)
+                {
+                    await UpdateDailyClosingAmountsAsync(
+                        existingTransaction.BranchId,
+                        existingTransaction.TransactionDate.Date,
+                        oldPaymentMethod,
+                        oldTotalAmount,
+                        false); // false = removal
+                }
+
+                // Add new amount
+                if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
+                {
+                    await UpdateDailyClosingAmountsAsync(
+                        existingTransaction.BranchId,
+                        existingTransaction.TransactionDate.Date,
+                        existingTransaction.PaymentMethod,
+                        newTotalAmount,
+                        true); // true = addition
+                }
+
                 await transaction.CommitAsync();
 
                 // Reload related data
@@ -492,22 +563,32 @@ namespace FeruzaShopProject.Infrastructre.Services
             {
                 var existingTransaction = await _context.Transactions
                     .Include(t => t.Product)
+                    .Include(t => t.StockMovements)  // Include StockMovements
+                    .Include(t => t.DailySales)      // Include DailySales
+                    .Include(t => t.CreditPayments)  // Include CreditPayments
                     .FirstOrDefaultAsync(t => t.Id == id);
 
                 if (existingTransaction == null)
                     return ApiResponse<bool>.Fail("Transaction not found");
 
-                // ========== CHECK IF DATE IS CLOSED ==========
-                var isDateClosed = await _context.DailyClosings
-                    .AnyAsync(dc => dc.BranchId == existingTransaction.BranchId &&
-                                   dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
-                                   dc.IsActive &&
-                                   dc.Status == DailyClosingStatus.Approved);
+                // ========== CHECK IF DATE IS CLOSED OR APPROVED ==========
+                var dateStatus = await _context.DailyClosings
+                    .Where(dc => dc.BranchId == existingTransaction.BranchId &&
+                                dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
+                                dc.IsActive)
+                    .Select(dc => dc.Status)
+                    .FirstOrDefaultAsync();
 
-                if (isDateClosed)
+                if (dateStatus == DailyClosingStatus.Approved)
                 {
                     return ApiResponse<bool>.Fail(
-                        $"Cannot delete transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                        $"Cannot delete transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already approved and locked.");
+                }
+
+                if (dateStatus == DailyClosingStatus.Closed)
+                {
+                    return ApiResponse<bool>.Fail(
+                        $"Cannot delete transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
                 // Check if transaction can be deleted (e.g., not already processed)
@@ -515,6 +596,35 @@ namespace FeruzaShopProject.Infrastructre.Services
                 {
                     return ApiResponse<bool>.Fail("Cannot delete credit transaction with payments");
                 }
+
+                // ========== DELETE RELATED RECORDS FIRST ==========
+
+                // 1. Delete StockMovements
+                if (existingTransaction.StockMovements != null && existingTransaction.StockMovements.Any())
+                {
+                    _context.StockMovements.RemoveRange(existingTransaction.StockMovements);
+                    _logger.LogInformation("Deleted {Count} StockMovements for transaction {TransactionId}",
+                        existingTransaction.StockMovements.Count, id);
+                }
+
+                // 2. Delete DailySales entries
+                if (existingTransaction.DailySales != null && existingTransaction.DailySales.Any())
+                {
+                    _context.DailySales.RemoveRange(existingTransaction.DailySales);
+                    _logger.LogInformation("Deleted {Count} DailySales entries for transaction {TransactionId}",
+                        existingTransaction.DailySales.Count, id);
+                }
+
+                // 3. Delete CreditPayments
+                if (existingTransaction.CreditPayments != null && existingTransaction.CreditPayments.Any())
+                {
+                    _context.CreditPayments.RemoveRange(existingTransaction.CreditPayments);
+                    _logger.LogInformation("Deleted {Count} CreditPayments for transaction {TransactionId}",
+                        existingTransaction.CreditPayments.Count, id);
+                }
+
+                // Save changes for deleted related records
+                await _context.SaveChangesAsync();
 
                 // Restore stock for non-credit transactions
                 if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
@@ -529,7 +639,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         stock.Quantity += existingTransaction.Quantity;
                         stock.UpdatedAt = DateTime.UtcNow;
 
-                        // Create stock movement for deletion
+                        // Create stock movement for deletion (optional, for audit)
                         var stockMovement = new StockMovement
                         {
                             Id = Guid.NewGuid(),
@@ -550,30 +660,21 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
-                // Delete associated DailySales entries
-                var dailySales = await _context.DailySales
-                    .Where(ds => ds.TransactionId == id)
-                    .ToListAsync();
-
-                if (dailySales.Any())
-                {
-                    _context.DailySales.RemoveRange(dailySales);
-                    _logger.LogInformation("Deleted {Count} DailySales entries for transaction {TransactionId}",
-                        dailySales.Count, id);
-                }
-
-                // Delete associated CreditPayments
-                var creditPayments = await _context.CreditPayments
-                    .Where(cp => cp.TransactionId == id)
-                    .ToListAsync();
-
-                if (creditPayments.Any())
-                {
-                    _context.CreditPayments.RemoveRange(creditPayments);
-                }
-
+                // Finally, delete the transaction itself
                 _context.Transactions.Remove(existingTransaction);
                 await _context.SaveChangesAsync();
+
+                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
+                if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
+                {
+                    await UpdateDailyClosingAmountsAsync(
+                        existingTransaction.BranchId,
+                        existingTransaction.TransactionDate.Date,
+                        existingTransaction.PaymentMethod,
+                        existingTransaction.TotalAmount,
+                        false); // false = removal
+                }
+
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Successfully deleted transaction: {TransactionId}", id);
@@ -586,7 +687,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<bool>.Fail($"Error deleting transaction: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto)
         {
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
@@ -599,19 +699,26 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (creditTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Credit transaction not found");
 
-                // ========== CHECK IF DATE IS CLOSED ==========
-                // For credit payments, we check if the payment date is closed
+                // ========== CHECK IF PAYMENT DATE IS CLOSED OR APPROVED ==========
                 var paymentDate = dto.PaymentDate.Date;
-                var isDateClosed = await _context.DailyClosings
-                    .AnyAsync(dc => dc.BranchId == creditTransaction.BranchId &&
-                                   dc.ClosingDate.Date == paymentDate &&
-                                   dc.IsActive &&
-                                   dc.Status == DailyClosingStatus.Approved);
 
-                if (isDateClosed)
+                var dateStatus = await _context.DailyClosings
+                    .Where(dc => dc.BranchId == creditTransaction.BranchId &&
+                                dc.ClosingDate.Date == paymentDate &&
+                                dc.IsActive)
+                    .Select(dc => dc.Status)
+                    .FirstOrDefaultAsync();
+
+                if (dateStatus == DailyClosingStatus.Approved)
                 {
                     return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already closed and approved by finance.");
+                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already approved and locked.");
+                }
+
+                if (dateStatus == DailyClosingStatus.Closed)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail(
+                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
                 var previousPaidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
@@ -681,6 +788,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // ========== UPDATE DAILY CLOSING AMOUNTS FOR THE PAYMENT ==========
+                if (dto.PaymentMethod != PaymentMethod.Credit)
+                {
+                    await UpdateDailyClosingAmountsAsync(
+                        creditTransaction.BranchId,
+                        paymentDate,
+                        dto.PaymentMethod,
+                        dto.Amount,
+                        true); // true = addition
+                }
+
                 await dbTransaction.CommitAsync();
 
                 // Reload and return updated transaction
@@ -1652,6 +1771,90 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         #region Helper Methods
 
+        // ========== UPDATED HELPER METHOD FOR DAILY CLOSING AMOUNT UPDATES ==========
+        private async Task UpdateDailyClosingAmountsAsync(Guid branchId, DateTime date, PaymentMethod paymentMethod, decimal amount, bool isAddition)
+        {
+            try
+            {
+                var dailyClosing = await _context.DailyClosings
+                    .FirstOrDefaultAsync(dc => dc.BranchId == branchId &&
+                                              dc.ClosingDate.Date == date.Date &&
+                                              dc.IsActive);
+
+                // Don't update if date is Approved (locked)
+                if (dailyClosing != null && dailyClosing.Status == DailyClosingStatus.Approved)
+                {
+                    _logger.LogWarning("Attempted to update approved date {Date} for branch {BranchId}", date, branchId);
+                    return;
+                }
+
+                // Don't update if date is Closed (unless it's the same day and we're still working)
+                if (dailyClosing != null && dailyClosing.Status == DailyClosingStatus.Closed && date.Date < DateTime.UtcNow.Date)
+                {
+                    _logger.LogWarning("Attempted to update closed past date {Date} for branch {BranchId}", date, branchId);
+                    return;
+                }
+
+                if (dailyClosing == null)
+                {
+                    // Create new daily closing if it doesn't exist - status = Pending
+                    var user = await _context.Users.FindAsync(await GetCurrentUserIdAsync());
+
+                    dailyClosing = new DailyClosing
+                    {
+                        Id = Guid.NewGuid(),
+                        BranchId = branchId,
+                        ClosingDate = date.Date,
+                        Status = DailyClosingStatus.Pending,
+                        TotalTransactions = 0,
+                        TotalSalesAmount = 0,
+                        TotalCashAmount = 0,
+                        TotalBankAmount = 0,
+                        TotalCreditAmount = 0,
+                        ClosedBy = await GetCurrentUserIdAsync(),
+                        Closer = user,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    await _context.DailyClosings.AddAsync(dailyClosing);
+                }
+
+                decimal adjustment = isAddition ? amount : -amount;
+
+                switch (paymentMethod)
+                {
+                    case PaymentMethod.Cash:
+                        dailyClosing.TotalCashAmount += adjustment;
+                        break;
+                    case PaymentMethod.Bank:
+                        dailyClosing.TotalBankAmount += adjustment;
+                        break;
+                    case PaymentMethod.Credit:
+                        dailyClosing.TotalCreditAmount += adjustment;
+                        break;
+                }
+
+                if (isAddition)
+                {
+                    dailyClosing.TotalSalesAmount += amount;
+                    dailyClosing.TotalTransactions += 1;
+                }
+                else
+                {
+                    dailyClosing.TotalSalesAmount -= amount;
+                    dailyClosing.TotalTransactions -= 1;
+                }
+
+                dailyClosing.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating daily closing amounts");
+                // Don't throw - we don't want to fail the main transaction
+            }
+        }
+
         private async Task LoadTransactionNavigationProperties(Transaction transaction)
         {
             await _context.Entry(transaction)
@@ -1880,6 +2083,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error authorizing user");
                 return (false, Guid.Empty, Role.Sales);
             }
+        }
+
+        private async Task<Guid> GetCurrentUserIdAsync()
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("sub")?.Value
+                ?? _httpContextAccessor.HttpContext?.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException("Invalid user");
+
+            return userId;
         }
 
         #endregion

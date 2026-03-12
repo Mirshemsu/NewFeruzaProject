@@ -31,15 +31,26 @@ namespace FeruzaShopProject.Domain.Entities
         public string? Remarks { get; set; }
 
         // Summary fields
-        public decimal TotalSalesAmount { get; set; }
-        public decimal TotalCashAmount { get; set; }
-        public decimal TotalBankAmount { get; set; }
-        public decimal TotalCreditAmount { get; set; }
         public int TotalTransactions { get; set; }
+        public decimal TotalSalesAmount { get; set; }
+
+        // ========== DYNAMIC AMOUNT COLUMNS ==========
+        public decimal TotalCashAmount { get; set; }  // Current cash amount (updated by transactions and transfers)
+        public decimal TotalBankAmount { get; set; }  // Current bank amount (updated by transactions and transfers)
+        public decimal TotalCreditAmount { get; set; } // Credit amount (static)
+
+        // Bank transaction tracking (for audit)
+        [StringLength(100)]
+        public string? CashBankTransactionId { get; set; } // When cash is deposited to bank
+
+        [StringLength(100)]
+        public string? BankTransferTransactionId { get; set; } // When bank transfers occur
 
         // Navigation properties
         public Branch Branch { get; set; }
         public User Closer { get; set; }
         public User Approver { get; set; }
     }
+
+  
 }
