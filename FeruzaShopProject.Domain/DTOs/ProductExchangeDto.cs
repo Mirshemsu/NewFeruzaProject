@@ -27,6 +27,10 @@ namespace FeruzaShopProject.Domain.DTOs
         public bool IsAdditionalPayment { get; set; }
         public bool IsReturnOnly { get; set; } // True when no new product
         public decimal? Amount { get; set; }
+        public bool IsCreditTransaction { get; set; }
+        public string StockUpdateMessage => IsCreditTransaction
+            ? "No stock changes (credit transaction)"
+            : "Stock updated";
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }

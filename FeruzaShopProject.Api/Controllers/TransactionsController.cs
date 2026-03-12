@@ -196,7 +196,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Delete transaction
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager,Sales")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteTransaction(Guid id)
         {
             try
@@ -282,7 +282,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Generate daily sales report
         /// </summary>
         [HttpGet("reports/daily")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager,Sales")]
         public async Task<ActionResult<ApiResponse<DailySalesReportDto>>> GenerateDailySalesReport(
             [FromQuery] DateTime date,
             [FromQuery] Guid? branchId = null,
