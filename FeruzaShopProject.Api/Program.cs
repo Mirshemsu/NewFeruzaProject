@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using ShopMgtSys.Infrastructure.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,7 +77,7 @@ builder.Services.AddAutoMapper(typeof(TransactionMapper));
 builder.Services.AddAutoMapper(typeof(DailySalesMapper));
 builder.Services.AddAutoMapper(typeof(CustomerMapper));
 builder.Services.AddAutoMapper(typeof(PainterMapper));
-builder.Services.AddAutoMapper(typeof(PurchaseMapper));
+builder.Services.AddAutoMapper(typeof(PurchaseOrderMapper));
 builder.Services.AddAutoMapper(typeof(ProductExchangeMapper));
 builder.Services.AddAutoMapper(typeof(DailyClosingMapper));
 

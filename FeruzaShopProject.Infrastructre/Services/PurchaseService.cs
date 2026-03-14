@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ShopMgtSys.Infrastructure.Services
+namespace FeruzaShopProject.Infrastructre.Services
 {
     public class PurchaseService : IPurchaseService
     {
@@ -33,7 +33,8 @@ namespace ShopMgtSys.Infrastructure.Services
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         }
 
-        // ========== HELPER METHODS ==========
+        #region Helper Methods
+
         private async Task<Guid> GetCurrentUserIdAsync()
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
@@ -58,81 +59,26 @@ namespace ShopMgtSys.Infrastructure.Services
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
             });
-            await _context.SaveChangesAsync();
         }
 
         private async Task<decimal> GetDefaultMarkupPercentageAsync()
         {
-            // You can store this in a configuration table or app settings
+            // This could come from settings table
             return 30m; // 30% default markup
         }
 
-        private async Task UpdateStockAndCreateMovementAsync(
-            Guid productId,
-            Guid branchId,
-            Guid purchaseOrderId,
-            int quantity,
-            decimal buyingPrice,
-            decimal sellingPrice,
-            Guid userId)
-        {
-            try
-            {
-                var stock = await _context.Stocks
-                    .FirstOrDefaultAsync(s => s.ProductId == productId && s.BranchId == branchId);
+        #endregion
 
-                decimal previousQuantity = 0;
+        #region Step 1: Sales Creates Purchase Order
 
-                if (stock == null)
-                {
-                    stock = new Stock
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = productId,
-                        BranchId = branchId,
-                        Quantity = quantity,
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    _context.Stocks.Add(stock);
-                }
-                else
-                {
-                    previousQuantity = stock.Quantity;
-                    stock.Quantity += quantity;
-                    stock.UpdatedAt = DateTime.UtcNow;
-                }
-
-                var stockMovement = new StockMovement
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = productId,
-                    BranchId = branchId,
-                    PurchaseOrderId = purchaseOrderId,
-                    MovementType = StockMovementType.Purchase,
-                    Quantity = quantity,
-                    PreviousQuantity = previousQuantity,
-                    NewQuantity = previousQuantity + quantity,
-                    Reason = $"Purchase Order #{purchaseOrderId} - Cost: ${buyingPrice}, Sell: ${sellingPrice}",
-                    MovementDate = DateTime.UtcNow,
-                    IsActive = true
-                };
-
-                _context.StockMovements.Add(stockMovement);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating stock and creating movement for Product {ProductId}", productId);
-                throw;
-            }
-        }
-
-        // ========== STEP 1: SALES CREATES PURCHASE ORDER ==========
         public async Task<ApiResponse<PurchaseOrderDto>> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var userId = await GetCurrentUserIdAsync();
+
+                // Validate branch
                 var branch = await _context.Branches.FindAsync(dto.BranchId);
                 if (branch == null || !branch.IsActive)
                 {
@@ -140,19 +86,19 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Invalid or inactive branch");
                 }
 
-                var createdBy = await GetCurrentUserIdAsync();
-
+                // Create purchase order
                 var purchaseOrder = new PurchaseOrder
                 {
                     Id = Guid.NewGuid(),
                     BranchId = dto.BranchId,
-                    CreatedBy = createdBy,
+                    CreatedBy = userId,
                     Status = PurchaseOrderStatus.PendingFinanceVerification,
-                    Items = new List<PurchaseOrderItem>(),
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    Items = new List<PurchaseOrderItem>()
                 };
 
+                // Validate and add items
                 foreach (var itemDto in dto.Items)
                 {
                     var product = await _context.Products.FindAsync(itemDto.ProductId);
@@ -175,17 +121,14 @@ namespace ShopMgtSys.Infrastructure.Services
                 }
 
                 _context.PurchaseOrders.Add(purchaseOrder);
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "Created", userId, $"Purchase order created with {purchaseOrder.Items.Count} items");
+
                 await _context.SaveChangesAsync();
-
-                await AddPurchaseHistoryAsync(purchaseOrder.Id, "Created", createdBy,
-                    $"Purchase order created with {purchaseOrder.Items.Count} items. Status: PendingFinanceVerification");
-
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Sales created purchase order {PurchaseOrderId} for branch {BranchId}",
-                    purchaseOrder.Id, dto.BranchId);
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order created successfully. Waiting for finance verification.");
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                _logger.LogInformation("Sales created purchase order {PurchaseOrderId} for branch {BranchId}", purchaseOrder.Id, dto.BranchId);
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Purchase order created successfully. Waiting for finance verification.");
             }
             catch (Exception ex)
             {
@@ -195,7 +138,10 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== STEP 2: FINANCE VERIFICATION ==========
+        #endregion
+
+        #region Step 2: Finance Verification
+
         public async Task<ApiResponse<PurchaseOrderDto>> FinanceVerificationAsync(FinanceVerificationDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -205,7 +151,6 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
-                        .ThenInclude(i => i.Product)
                     .Include(po => po.Branch)
                     .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
 
@@ -215,17 +160,17 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Only PendingFinanceVerification status allowed
+                // Verify status
                 if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
                 {
                     _logger.LogWarning("Purchase order not in PendingFinanceVerification status: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in PendingFinanceVerification status for finance verification");
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order must be in PendingFinanceVerification status. Current status: {purchaseOrder.Status}");
                 }
 
-                bool allItemsVerified = true;
-                bool anyItemsRejected = false;
-                var verifiedItems = new List<Guid>();
+                // Set invoice number
+                purchaseOrder.InvoiceNumber = dto.InvoiceNumber;
 
+                // Process each item
                 foreach (var itemDto in dto.Items)
                 {
                     var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId);
@@ -235,111 +180,45 @@ namespace ShopMgtSys.Infrastructure.Services
                         return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order item not found: {itemDto.ItemId}");
                     }
 
-                    if (item.IsApproved)
+                    // Set buying price
+                    item.BuyingPrice = itemDto.BuyingPrice;
+
+                    // Set selling price (auto-calculate if not provided)
+                    if (itemDto.SellingPrice.HasValue)
                     {
-                        _logger.LogWarning("Cannot modify approved item: {ItemId}", itemDto.ItemId);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Item is already approved and cannot be modified");
-                    }
-
-                    if (itemDto.IsVerified)
-                    {
-                        // Validate buying price
-                        if (itemDto.BuyingPrice <= 0)
-                        {
-                            _logger.LogWarning("Buying price must be greater than zero: {Price}", itemDto.BuyingPrice);
-                            return ApiResponse<PurchaseOrderDto>.Fail($"Buying price must be greater than zero for item: {itemDto.ItemId}");
-                        }
-
-                        item.BuyingPrice = itemDto.BuyingPrice;
-
-                        // Handle selling price
-                        if (itemDto.SellingPrice.HasValue)
-                        {
-                            if (itemDto.SellingPrice.Value <= 0)
-                            {
-                                _logger.LogWarning("Selling price must be greater than zero: {Price}", itemDto.SellingPrice.Value);
-                                return ApiResponse<PurchaseOrderDto>.Fail($"Selling price must be greater than zero for item: {itemDto.ItemId}");
-                            }
-
-                            if (itemDto.SellingPrice.Value <= itemDto.BuyingPrice)
-                            {
-                                _logger.LogWarning("Selling price must be higher than buying price: {Selling} <= {Buying}",
-                                    itemDto.SellingPrice.Value, itemDto.BuyingPrice);
-                                return ApiResponse<PurchaseOrderDto>.Fail($"Selling price must be higher than buying price for item: {itemDto.ItemId}");
-                            }
-
-                            item.UnitPrice = itemDto.SellingPrice.Value;
-                        }
-                        else
-                        {
-                            // Auto-calculate selling price with markup
-                            var defaultMarkupPercentage = await GetDefaultMarkupPercentageAsync();
-                            item.UnitPrice = itemDto.BuyingPrice * (1 + defaultMarkupPercentage / 100);
-                        }
-
-                        // Set supplier name
-                        if (!string.IsNullOrWhiteSpace(itemDto.SupplierName))
-                        {
-                            item.SupplierName = itemDto.SupplierName;
-                        }
-
-                        item.FinanceVerified = true;
-                        item.FinanceVerifiedAt = DateTime.UtcNow;
-                        item.FinanceVerifiedBy = userId;
-                        item.PriceSetAt = DateTime.UtcNow;
-                        item.PriceSetBy = userId;
-                        item.PriceEditCount = 0;
-                        item.UpdatedAt = DateTime.UtcNow;
-
-                        verifiedItems.Add(item.Id);
+                        item.UnitPrice = itemDto.SellingPrice.Value;
                     }
                     else
                     {
-                        // Item is rejected
-                        item.FinanceVerified = false;
-                        item.UpdatedAt = DateTime.UtcNow;
-                        anyItemsRejected = true;
-                        allItemsVerified = false;
+                        // Auto-calculate with default markup
+                        var markupPercentage = await GetDefaultMarkupPercentageAsync();
+                        item.UnitPrice = itemDto.BuyingPrice * (1 + markupPercentage / 100);
                     }
+
+                    // Set supplier name if provided
+                    if (!string.IsNullOrWhiteSpace(itemDto.SupplierName))
+                    {
+                        item.SupplierName = itemDto.SupplierName;
+                    }
+
+                    item.UpdatedAt = DateTime.UtcNow;
                 }
 
                 // Update purchase order status
-                if (allItemsVerified)
-                {
-                    // All items verified - move to PendingManagerApproval
-                    purchaseOrder.Status = PurchaseOrderStatus.PendingManagerApproval;
-                }
-                else if (anyItemsRejected && verifiedItems.Any())
-                {
-                    // Some items verified, some rejected - stay in PendingFinanceVerification
-                    purchaseOrder.Status = PurchaseOrderStatus.PendingFinanceVerification;
-                }
-                else if (!verifiedItems.Any())
-                {
-                    // All items rejected
-                    purchaseOrder.Status = PurchaseOrderStatus.Rejected;
-                }
-
+                purchaseOrder.Status = PurchaseOrderStatus.PendingManagerApproval;
+                purchaseOrder.FinanceVerifiedAt = DateTime.UtcNow;
+                purchaseOrder.FinanceVerifiedBy = userId;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "FinanceVerified", userId,
+                    $"Finance verified purchase order with invoice #{dto.InvoiceNumber}. Items: {purchaseOrder.Items.Count}");
+
                 await _context.SaveChangesAsync();
-
-                var verifiedCount = verifiedItems.Count;
-                var rejectedCount = dto.Items.Count - verifiedCount;
-
-                await AddPurchaseHistoryAsync(purchaseOrder.Id, "FinanceVerification", userId,
-                    $"Finance verification completed. Verified: {verifiedCount}, Rejected: {rejectedCount}. Status: {purchaseOrder.Status}");
-
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Finance completed verification for purchase order {PurchaseOrderId}", purchaseOrder.Id);
-
-                var message = verifiedCount > 0
-                    ? $"Finance verification completed. {verifiedCount} items verified, {rejectedCount} rejected."
-                    : "All items were rejected by finance.";
-
-                return ApiResponse<PurchaseOrderDto>.Success(result, message);
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                _logger.LogInformation("Finance verified purchase order {PurchaseOrderId}", purchaseOrder.Id);
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Purchase order verified successfully. Waiting for manager approval.");
             }
             catch (Exception ex)
             {
@@ -349,7 +228,10 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== STEP 3: MANAGER APPROVAL ==========
+        #endregion
+
+        #region Step 3: Manager Approval
+
         public async Task<ApiResponse<PurchaseOrderDto>> ManagerApprovalAsync(ManagerApprovalDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -359,7 +241,6 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
-                        .ThenInclude(i => i.Product)
                     .Include(po => po.Branch)
                     .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
 
@@ -369,135 +250,66 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Only PendingManagerApproval status allowed
+                // Verify status
                 if (purchaseOrder.Status != PurchaseOrderStatus.PendingManagerApproval)
                 {
                     _logger.LogWarning("Purchase order not in PendingManagerApproval status: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order must be in PendingManagerApproval status for manager approval");
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order must be in PendingManagerApproval status. Current status: {purchaseOrder.Status}");
                 }
 
-                // Determine which items to approve
-                var itemsToApprove = dto.ItemIds != null && dto.ItemIds.Any()
-                    ? purchaseOrder.Items.Where(i => dto.ItemIds.Contains(i.Id) && i.FinanceVerified == true && !i.IsApproved).ToList()
-                    : purchaseOrder.Items.Where(i => i.FinanceVerified == true && !i.IsApproved).ToList();
-
-                if (!itemsToApprove.Any())
+                // Check if all items have prices
+                if (purchaseOrder.Items.Any(i => !i.BuyingPrice.HasValue || !i.UnitPrice.HasValue))
                 {
-                    _logger.LogWarning("No items to approve for purchase order {PurchaseOrderId}", dto.PurchaseOrderId);
-
-                    // Check if all items are already approved
-                    if (purchaseOrder.Items.All(i => i.IsApproved || i.FinanceVerified == false))
-                    {
-                        // If all verified items are approved, mark as approved
-                        if (purchaseOrder.Items.Any(i => i.FinanceVerified == true))
-                        {
-                            purchaseOrder.Status = PurchaseOrderStatus.Approved;
-                            await _context.SaveChangesAsync();
-                            await transaction.CommitAsync();
-
-                            var orderResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                            return ApiResponse<PurchaseOrderDto>.Success(orderResult, "All items are already approved");
-                        }
-                    }
-
-                    return ApiResponse<PurchaseOrderDto>.Fail("No verified items found to approve");
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} has items without prices", purchaseOrder.Id);
+                    return ApiResponse<PurchaseOrderDto>.Fail("All items must have prices before approval");
                 }
 
-                // Check if any items are not fully priced
-                foreach (var item in itemsToApprove)
+                // Update status based on approval/rejection
+                if (dto.IsApproved)
                 {
-                    if (!item.BuyingPrice.HasValue || !item.UnitPrice.HasValue)
-                    {
-                        _logger.LogWarning("Item {ItemId} missing price information", item.Id);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Item {item.Product?.Name ?? item.Id.ToString()} is missing price information");
-                    }
-                }
+                    purchaseOrder.Status = PurchaseOrderStatus.Approved;
+                    purchaseOrder.ApprovedAt = DateTime.UtcNow;
+                    purchaseOrder.ApprovedBy = userId;
 
-                // Update stock and prices for approved items
-                foreach (var item in itemsToApprove)
+                    await AddPurchaseHistoryAsync(purchaseOrder.Id, "Approved", userId,
+                        $"Manager approved purchase order. Total value: {purchaseOrder.TotalBuyingCost:C2}");
+                }
+                else
                 {
-                    // Update product prices
-                    var product = await _context.Products.FindAsync(item.ProductId);
-                    if (product != null)
-                    {
-                        product.BuyingPrice = item.BuyingPrice.Value;
-                        product.UnitPrice = item.UnitPrice.Value;
-                        product.UpdatedAt = DateTime.UtcNow;
-                        _context.Products.Update(product);
-                    }
+                    purchaseOrder.Status = PurchaseOrderStatus.Rejected;
+                    purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
-                    // Update stock and create stock movement
-                    await UpdateStockAndCreateMovementAsync(
-                        item.ProductId,
-                        purchaseOrder.BranchId,
-                        purchaseOrder.Id,
-                        item.Quantity,
-                        item.BuyingPrice.Value,
-                        item.UnitPrice.Value,
-                        userId);
-
-                    item.ApprovedAt = DateTime.UtcNow;
-                    item.ApprovedBy = userId;
-                    item.UpdatedAt = DateTime.UtcNow;
+                    await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
+                        $"Manager rejected purchase order. Reason: {dto.Remarks ?? "Not specified"}");
                 }
-
-                // Check if all finance-verified items are now approved
-                var allVerifiedItemsApproved = purchaseOrder.Items
-                    .Where(i => i.FinanceVerified == true)
-                    .All(i => i.IsApproved);
-
-                // Update purchase order status
-                purchaseOrder.Status = allVerifiedItemsApproved
-                    ? PurchaseOrderStatus.Approved
-                    : PurchaseOrderStatus.PendingManagerApproval;
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
-
-                var approvedCount = itemsToApprove.Count;
-                var totalApproved = purchaseOrder.Items.Count(i => i.IsApproved);
-                var remainingToApprove = purchaseOrder.Items.Count(i => i.FinanceVerified == true && !i.IsApproved);
-                var rejectedItems = purchaseOrder.Items.Count(i => i.FinanceVerified == false);
-
-                var totalValue = purchaseOrder.Items
-                    .Where(i => i.IsApproved && i.BuyingPrice.HasValue)
-                    .Sum(i => i.BuyingPrice.Value * i.Quantity);
-
-                await AddPurchaseHistoryAsync(purchaseOrder.Id, "ManagerApproval", userId,
-                    $"Manager approved {approvedCount} items. Total approved: {totalApproved}. Total value: ${totalValue}");
-
                 await transaction.CommitAsync();
 
-                var finalResult = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Manager approved {ApprovedCount} items for purchase order {PurchaseOrderId}",
-                    approvedCount, purchaseOrder.Id);
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                var message = dto.IsApproved
+                    ? "Purchase order approved successfully"
+                    : "Purchase order rejected";
 
-                // Determine the correct message
-                string statusMessage;
-                if (purchaseOrder.Status == PurchaseOrderStatus.Approved)
-                {
-                    statusMessage = $"Purchase order fully approved. All {totalApproved} items added to inventory with updated prices.";
-                }
-                else
-                {
-                    statusMessage = $"{approvedCount} items approved. " +
-                                   $"Total approved: {totalApproved}, " +
-                                   $"Remaining to approve: {remainingToApprove}, " +
-                                   $"Rejected items: {rejectedItems}.";
-                }
+                _logger.LogInformation("Manager {Action} purchase order {PurchaseOrderId}",
+                    dto.IsApproved ? "approved" : "rejected", purchaseOrder.Id);
 
-                return ApiResponse<PurchaseOrderDto>.Success(finalResult, statusMessage);
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in manager approval: {PurchaseOrderId}", dto.PurchaseOrderId);
+                _logger.LogError(ex, "Error in manager approval: {@Dto}", dto);
                 await transaction.RollbackAsync();
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in manager approval");
             }
         }
 
-        // ========== SALES EDIT OPERATIONS ==========
+        #endregion
+
+        #region Sales Edit Operations
+
         public async Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderBySalesAsync(EditPurchaseOrderBySalesDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -515,7 +327,7 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Sales can only edit in PendingFinanceVerification status
+                // Verify sales can edit (only PendingFinanceVerification status)
                 if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
                 {
                     _logger.LogWarning("Sales cannot edit purchase order in status: {Status}", purchaseOrder.Status);
@@ -544,26 +356,23 @@ namespace ShopMgtSys.Infrastructure.Services
                 // Update items
                 if (dto.Items != null && dto.Items.Any())
                 {
-                    // Get IDs of items that should remain
-                    var requestedItemIds = dto.Items
-                        .Where(i => i.ItemId.HasValue)
-                        .Select(i => i.ItemId.Value)
-                        .ToHashSet();
+                    var newItems = new List<PurchaseOrderItem>();
+                    var requestedItemIds = dto.Items.Where(i => i.ItemId.HasValue).Select(i => i.ItemId.Value).ToHashSet();
 
-                    // Find items to remove (existing items not in the request)
-                    var itemsToRemove = purchaseOrder.Items
-                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
-                        .ToList();
-
-                    // Remove items
-                    if (itemsToRemove.Any())
+                    // Update existing items
+                    foreach (var itemDto in dto.Items.Where(i => i.ItemId.HasValue))
                     {
-                        _context.PurchaseOrderItems.RemoveRange(itemsToRemove);
-                        _logger.LogInformation("Removing {Count} items from purchase order", itemsToRemove.Count);
+                        var existingItem = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId.Value);
+                        if (existingItem != null)
+                        {
+                            existingItem.ProductId = itemDto.ProductId;
+                            existingItem.Quantity = itemDto.Quantity;
+                            existingItem.UpdatedAt = DateTime.UtcNow;
+                        }
                     }
 
-                    // Process each item from the DTO
-                    foreach (var itemDto in dto.Items)
+                    // Add new items
+                    foreach (var itemDto in dto.Items.Where(i => !i.ItemId.HasValue))
                     {
                         var product = await _context.Products.FindAsync(itemDto.ProductId);
                         if (product == null || !product.IsActive)
@@ -572,39 +381,31 @@ namespace ShopMgtSys.Infrastructure.Services
                             return ApiResponse<PurchaseOrderDto>.Fail($"Invalid or inactive product: {itemDto.ProductId}");
                         }
 
-                        if (itemDto.ItemId.HasValue)
+                        var newItem = new PurchaseOrderItem
                         {
-                            // Update existing item
-                            var existingItem = await _context.PurchaseOrderItems
-                                .FirstOrDefaultAsync(i => i.Id == itemDto.ItemId.Value && i.PurchaseOrderId == purchaseOrder.Id);
+                            Id = Guid.NewGuid(),
+                            PurchaseOrderId = purchaseOrder.Id,
+                            ProductId = itemDto.ProductId,
+                            Quantity = itemDto.Quantity,
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        purchaseOrder.Items.Add(newItem);
+                    }
 
-                            if (existingItem != null)
-                            {
-                                existingItem.ProductId = itemDto.ProductId;
-                                existingItem.Quantity = itemDto.Quantity;
-                                existingItem.UpdatedAt = DateTime.UtcNow;
-                                _context.PurchaseOrderItems.Update(existingItem);
-                            }
-                        }
-                        else
-                        {
-                            // Create new item
-                            var newItem = new PurchaseOrderItem
-                            {
-                                Id = Guid.NewGuid(),
-                                PurchaseOrderId = purchaseOrder.Id,
-                                ProductId = itemDto.ProductId,
-                                Quantity = itemDto.Quantity,
-                                CreatedAt = DateTime.UtcNow,
-                                IsActive = true
-                            };
-                            await _context.PurchaseOrderItems.AddAsync(newItem);
-                        }
+                    // Remove items not in the list
+                    var itemsToRemove = purchaseOrder.Items
+                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
+                        .ToList();
+
+                    foreach (var item in itemsToRemove)
+                    {
+                        item.IsActive = false;
+                        item.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
-                _context.PurchaseOrders.Update(purchaseOrder);
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedBySales", userId,
                     $"Sales edited purchase order. Items: {purchaseOrder.Items.Count(i => i.IsActive)}");
@@ -612,22 +413,9 @@ namespace ShopMgtSys.Infrastructure.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // Refresh the purchase order to get latest state
-                var updatedOrder = await _context.PurchaseOrders
-                    .Include(po => po.Items)
-                    .Include(po => po.Branch)
-                    .Include(po => po.Creator)
-                    .FirstOrDefaultAsync(po => po.Id == purchaseOrder.Id);
-
-                var result = _mapper.Map<PurchaseOrderDto>(updatedOrder);
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
                 _logger.LogInformation("Sales edited purchase order {PurchaseOrderId}", purchaseOrder.Id);
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order updated successfully");
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Concurrency error editing purchase order by sales: {@Dto}", dto);
-                return ApiResponse<PurchaseOrderDto>.Fail("The purchase order was modified by another user. Please refresh and try again.");
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Purchase order updated successfully");
             }
             catch (Exception ex)
             {
@@ -654,14 +442,14 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<bool>.Fail("Purchase order not found or inactive");
                 }
 
-                // Sales can only delete in PendingFinanceVerification status
+                // Verify status
                 if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
                 {
                     _logger.LogWarning("Sales cannot delete purchase order in status: {Status}", purchaseOrder.Status);
                     return ApiResponse<bool>.Fail("Purchase order can only be deleted when in PendingFinanceVerification status");
                 }
 
-                // Verify that the current user is the creator
+                // Verify user is creator
                 if (purchaseOrder.CreatedBy != userId)
                 {
                     _logger.LogWarning("User {UserId} is not the creator of purchase order {PurchaseOrderId}", userId, purchaseOrderId);
@@ -669,19 +457,20 @@ namespace ShopMgtSys.Infrastructure.Services
                 }
 
                 // Soft delete
-                purchaseOrder.Deactivate();
+                purchaseOrder.IsActive = false;
                 purchaseOrder.Status = PurchaseOrderStatus.Cancelled;
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 foreach (var item in purchaseOrder.Items)
                 {
-                    item.Deactivate();
+                    item.IsActive = false;
+                    item.UpdatedAt = DateTime.UtcNow;
                 }
-
-                await _context.SaveChangesAsync();
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "DeletedBySales", userId,
                     $"Sales deleted purchase order. Reason: {reason ?? "Not specified"}");
 
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Sales deleted purchase order {PurchaseOrderId}", purchaseOrderId);
@@ -704,7 +493,6 @@ namespace ShopMgtSys.Infrastructure.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
-                    .Include(po => po.History)
                     .FirstOrDefaultAsync(po => po.Id == purchaseOrderId && po.IsActive);
 
                 if (purchaseOrder == null)
@@ -713,29 +501,35 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Sales can only delete items in PendingFinanceVerification status
+                // Verify status
                 if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
                 {
                     _logger.LogWarning("Sales cannot delete items from purchase order in status: {Status}", purchaseOrder.Status);
                     return ApiResponse<PurchaseOrderDto>.Fail("Items can only be deleted when order is in PendingFinanceVerification status");
                 }
 
-                // Verify that the current user is the creator
+                // Verify user is creator
                 if (purchaseOrder.CreatedBy != userId)
                 {
                     _logger.LogWarning("User {UserId} is not the creator of purchase order {PurchaseOrderId}", userId, purchaseOrderId);
                     return ApiResponse<PurchaseOrderDto>.Fail("You can only delete items from purchase orders that you created");
                 }
 
-                // Find the item
-                var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemId);
+                var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemId && i.IsActive);
                 if (item == null)
                 {
                     _logger.LogWarning("Item not found: {ItemId}", itemId);
                     return ApiResponse<PurchaseOrderDto>.Fail("Item not found");
                 }
 
-                // Delete any purchase history records that reference this item
+                // Check if finance has already verified (shouldn't happen due to status check, but double-check)
+                if (item.BuyingPrice.HasValue || item.UnitPrice.HasValue)
+                {
+                    _logger.LogWarning("Cannot delete item that has prices set: {ItemId}", itemId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Cannot delete item that has already been processed by finance");
+                }
+
+                // Delete related history first
                 var itemHistory = await _context.PurchaseHistory
                     .Where(h => h.PurchaseOrderItemId == itemId)
                     .ToListAsync();
@@ -745,13 +539,16 @@ namespace ShopMgtSys.Infrastructure.Services
                     _context.PurchaseHistory.RemoveRange(itemHistory);
                 }
 
-                // Delete the item itself
+                // Delete the item
                 _context.PurchaseOrderItems.Remove(item);
                 purchaseOrder.Items.Remove(item);
 
-                // If no items left, delete the entire order and its history
-                if (!purchaseOrder.Items.Any())
+                // If no items left, cancel the whole order
+                if (!purchaseOrder.Items.Any(i => i.IsActive))
                 {
+                    purchaseOrder.IsActive = false;
+                    purchaseOrder.Status = PurchaseOrderStatus.Cancelled;
+
                     var orderHistory = await _context.PurchaseHistory
                         .Where(h => h.PurchaseOrderId == purchaseOrderId)
                         .ToListAsync();
@@ -760,39 +557,24 @@ namespace ShopMgtSys.Infrastructure.Services
                     {
                         _context.PurchaseHistory.RemoveRange(orderHistory);
                     }
-
-                    _context.PurchaseOrders.Remove(purchaseOrder);
                 }
-                else
-                {
-                    purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
-                    var history = new PurchaseHistory
-                    {
-                        Id = Guid.NewGuid(),
-                        PurchaseOrderId = purchaseOrder.Id,
-                        Action = "ItemDeleted",
-                        PerformedByUserId = userId,
-                        Details = $"Item {item.ProductId} permanently deleted from purchase order",
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    _context.PurchaseHistory.Add(history);
-                }
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
+
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "ItemDeletedBySales", userId,
+                    $"Sales deleted item from purchase order");
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                if (!purchaseOrder.Items.Any())
+                if (!purchaseOrder.Items.Any(i => i.IsActive))
                 {
-                    _logger.LogInformation("Purchase order {PurchaseOrderId} deleted as all items were removed", purchaseOrderId);
                     return ApiResponse<PurchaseOrderDto>.Success(null, "Purchase order deleted as all items were removed");
                 }
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Sales permanently deleted item {ItemId} from purchase order {PurchaseOrderId}", itemId, purchaseOrderId);
-
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Item permanently deleted from purchase order");
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                _logger.LogInformation("Sales deleted item {ItemId} from purchase order {PurchaseOrderId}", itemId, purchaseOrderId);
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Item deleted successfully");
             }
             catch (Exception ex)
             {
@@ -802,8 +584,11 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== FINANCE EDIT OPERATIONS ==========
-        public async Task<ApiResponse<PurchaseOrderDto>> EditPricesByFinanceAsync(EditPricesByFinanceDto dto)
+        #endregion
+
+        #region Finance Edit Operations
+
+        public async Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderByFinanceAsync(EditPurchaseOrderByFinanceDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -820,82 +605,78 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Finance can only edit prices in PendingFinanceVerification status
-                if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
+                // Verify finance can edit (before manager approval)
+                if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification &&
+                    purchaseOrder.Status != PurchaseOrderStatus.PendingManagerApproval)
                 {
-                    _logger.LogWarning("Finance cannot edit prices in status: {Status}", purchaseOrder.Status);
-                    return ApiResponse<PurchaseOrderDto>.Fail("Prices can only be edited when order is in PendingFinanceVerification status");
+                    _logger.LogWarning("Finance cannot edit purchase order in status: {Status}", purchaseOrder.Status);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order can only be edited when in PendingFinanceVerification or PendingManagerApproval status");
                 }
 
-                foreach (var itemDto in dto.Items)
+                // Update invoice number if provided
+                if (!string.IsNullOrWhiteSpace(dto.InvoiceNumber))
                 {
-                    var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId);
-                    if (item == null)
-                    {
-                        _logger.LogWarning("Purchase order item not found: {ItemId}", itemDto.ItemId);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order item not found: {itemDto.ItemId}");
-                    }
+                    purchaseOrder.InvoiceNumber = dto.InvoiceNumber;
+                }
 
-                    if (item.IsApproved)
+                // Update items if provided
+                if (dto.Items != null && dto.Items.Any())
+                {
+                    foreach (var itemDto in dto.Items)
                     {
-                        _logger.LogWarning("Cannot edit prices for approved item: {ItemId}", itemDto.ItemId);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Cannot edit prices for approved item: {itemDto.ItemId}");
-                    }
+                        var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId && i.IsActive);
+                        if (item == null)
+                        {
+                            _logger.LogWarning("Purchase order item not found: {ItemId}", itemDto.ItemId);
+                            return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order item not found: {itemDto.ItemId}");
+                        }
 
-                    if (itemDto.BuyingPrice <= 0)
-                    {
-                        _logger.LogWarning("Buying price must be greater than zero: {Price}", itemDto.BuyingPrice);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Buying price must be greater than zero for item: {itemDto.ItemId}");
-                    }
+                        // Update supplier name if provided
+                        if (!string.IsNullOrWhiteSpace(itemDto.SupplierName))
+                        {
+                            item.SupplierName = itemDto.SupplierName;
+                        }
 
-                    if (itemDto.SellingPrice.HasValue && itemDto.SellingPrice.Value <= itemDto.BuyingPrice)
-                    {
-                        _logger.LogWarning("Selling price must be higher than buying price: {Selling} <= {Buying}",
-                            itemDto.SellingPrice.Value, itemDto.BuyingPrice);
-                        return ApiResponse<PurchaseOrderDto>.Fail($"Selling price must be higher than buying price for item: {itemDto.ItemId}");
-                    }
+                        // Update buying price if provided
+                        if (itemDto.BuyingPrice.HasValue)
+                        {
+                            item.BuyingPrice = itemDto.BuyingPrice.Value;
+                        }
 
-                    // Update prices with edit tracking
-                    item.BuyingPrice = itemDto.BuyingPrice;
+                        // Update selling price if provided
+                        if (itemDto.SellingPrice.HasValue)
+                        {
+                            item.UnitPrice = itemDto.SellingPrice.Value;
+                        }
 
-                    if (itemDto.SellingPrice.HasValue)
-                    {
-                        item.UnitPrice = itemDto.SellingPrice.Value;
+                        item.UpdatedAt = DateTime.UtcNow;
                     }
-                    else
-                    {
-                        var defaultMarkupPercentage = await GetDefaultMarkupPercentageAsync();
-                        item.UnitPrice = itemDto.BuyingPrice * (1 + defaultMarkupPercentage / 100);
-                    }
-
-                    item.PriceSetAt = DateTime.UtcNow;
-                    item.PriceSetBy = userId;
-                    item.PriceEditCount += 1;
-                    item.UpdatedAt = DateTime.UtcNow;
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedByFinance", userId,
+                    $"Finance edited purchase order details");
+
                 await _context.SaveChangesAsync();
-
-                await AddPurchaseHistoryAsync(purchaseOrder.Id, "PricesEditedByFinance", userId,
-                    $"Finance edited prices for {dto.Items.Count} items");
-
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
-                _logger.LogInformation("Finance edited prices for purchase order {PurchaseOrderId}", purchaseOrder.Id);
-                return ApiResponse<PurchaseOrderDto>.Success(result, "Prices updated successfully");
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                _logger.LogInformation("Finance edited purchase order {PurchaseOrderId}", purchaseOrder.Id);
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Purchase order updated successfully by finance");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error editing prices by finance: {@Dto}", dto);
+                _logger.LogError(ex, "Error editing purchase order by finance: {@Dto}", dto);
                 await transaction.RollbackAsync();
-                return ApiResponse<PurchaseOrderDto>.Fail("Error editing prices");
+                return ApiResponse<PurchaseOrderDto>.Fail("Error editing purchase order");
             }
         }
 
-        // ========== REJECT OPERATIONS ==========
+        #endregion
+
+        #region Reject/Cancel Operations
+
         public async Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -904,7 +685,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 var userId = await GetCurrentUserIdAsync();
 
                 var purchaseOrder = await _context.PurchaseOrders
-                    .Include(po => po.Branch)
                     .Include(po => po.Items)
                     .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
 
@@ -914,88 +694,31 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<RejectResponseDto>.Fail("Purchase order not found or inactive");
                 }
 
-                // Cannot reject approved orders
+                // Cannot reject already approved orders
                 if (purchaseOrder.Status == PurchaseOrderStatus.Approved)
                 {
                     _logger.LogWarning("Cannot reject approved purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
                     return ApiResponse<RejectResponseDto>.Fail("Cannot reject an approved purchase order");
                 }
 
-                int rejectedCount = 0;
-
-                // If specific items are provided, reject only those items
-                if (dto.ItemIds != null && dto.ItemIds.Any())
-                {
-                    foreach (var itemId in dto.ItemIds)
-                    {
-                        var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemId);
-                        if (item != null && !item.IsApproved)
-                        {
-                            item.FinanceVerified = false;
-                            item.UpdatedAt = DateTime.UtcNow;
-                            rejectedCount++;
-
-                            await AddPurchaseHistoryAsync(
-                                purchaseOrder.Id,
-                                "ItemRejected",
-                                userId,
-                                $"Item rejected: {dto.Reason}",
-                                item.Id
-                            );
-                        }
-                    }
-
-                    // Update status based on remaining items
-                    var hasVerifiedItems = purchaseOrder.Items.Any(i => i.FinanceVerified == true);
-                    var hasUnverifiedItems = purchaseOrder.Items.Any(i => i.FinanceVerified == null);
-
-                    if (!hasVerifiedItems && !hasUnverifiedItems)
-                    {
-                        purchaseOrder.Status = PurchaseOrderStatus.Rejected;
-                    }
-                    else if (!hasVerifiedItems && hasUnverifiedItems)
-                    {
-                        purchaseOrder.Status = PurchaseOrderStatus.PendingFinanceVerification;
-                    }
-                }
-                else
-                {
-                    // Reject entire order
-                    foreach (var item in purchaseOrder.Items.Where(i => !i.IsApproved))
-                    {
-                        item.FinanceVerified = false;
-                        item.UpdatedAt = DateTime.UtcNow;
-                    }
-                    purchaseOrder.Status = PurchaseOrderStatus.Rejected;
-                    rejectedCount = purchaseOrder.Items.Count;
-                }
-
+                purchaseOrder.Status = PurchaseOrderStatus.Rejected;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
+                    $"Purchase order rejected. Reason: {dto.Reason}");
+
                 await _context.SaveChangesAsync();
-
-                // Add main rejection history if entire order rejected
-                if (dto.ItemIds == null || !dto.ItemIds.Any())
-                {
-                    await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
-                        $"Purchase order rejected: {dto.Reason}");
-                }
-
                 await transaction.CommitAsync();
 
-                var result = new RejectResponseDto
+                var response = new RejectResponseDto
                 {
                     PurchaseOrderId = purchaseOrder.Id,
                     NewStatus = purchaseOrder.Status,
-                    RejectedItems = rejectedCount,
-                    Message = dto.ItemIds != null && dto.ItemIds.Any()
-                        ? $"{rejectedCount} items rejected successfully"
-                        : "Purchase order rejected successfully"
+                    Message = $"Purchase order rejected. Reason: {dto.Reason}"
                 };
 
-                _logger.LogInformation("Purchase order {PurchaseOrderId} rejected. Items rejected: {RejectedCount}",
-                    purchaseOrder.Id, rejectedCount);
-                return ApiResponse<RejectResponseDto>.Success(result, result.Message);
+                _logger.LogInformation("Purchase order {PurchaseOrderId} rejected", purchaseOrder.Id);
+                return ApiResponse<RejectResponseDto>.Success(response, "Purchase order rejected successfully");
             }
             catch (Exception ex)
             {
@@ -1005,7 +728,6 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== CANCEL OPERATIONS ==========
         public async Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1023,26 +745,27 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<bool>.Fail("Purchase order not found or inactive");
                 }
 
-                // Can cancel only if not approved
-                if (purchaseOrder.Status == PurchaseOrderStatus.Approved)
+                // Can only cancel in PendingFinanceVerification status
+                if (purchaseOrder.Status != PurchaseOrderStatus.PendingFinanceVerification)
                 {
-                    _logger.LogWarning("Cannot cancel approved purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
-                    return ApiResponse<bool>.Fail("Cannot cancel an approved purchase order");
+                    _logger.LogWarning("Cannot cancel purchase order in status: {Status}", purchaseOrder.Status);
+                    return ApiResponse<bool>.Fail($"Cannot cancel purchase order in {purchaseOrder.Status} status");
                 }
 
+                purchaseOrder.IsActive = false;
                 purchaseOrder.Status = PurchaseOrderStatus.Cancelled;
-                purchaseOrder.Deactivate();
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 foreach (var item in purchaseOrder.Items)
                 {
-                    item.Deactivate();
+                    item.IsActive = false;
+                    item.UpdatedAt = DateTime.UtcNow;
                 }
-
-                await _context.SaveChangesAsync();
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "Cancelled", userId,
                     $"Purchase order cancelled. Reason: {dto.Reason ?? "Not specified"}");
 
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Cancelled purchase order {PurchaseOrderId}", dto.PurchaseOrderId);
@@ -1056,7 +779,10 @@ namespace ShopMgtSys.Infrastructure.Services
             }
         }
 
-        // ========== QUERY METHODS ==========
+        #endregion
+
+        #region Query Methods
+
         public async Task<ApiResponse<PurchaseOrderDto>> GetPurchaseOrderByIdAsync(Guid id)
         {
             try
@@ -1064,7 +790,10 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
+                    .Include(po => po.History).ThenInclude(h => h.PerformedByUser)
                     .FirstOrDefaultAsync(po => po.Id == id);
 
                 if (purchaseOrder == null)
@@ -1090,6 +819,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .OrderByDescending(po => po.CreatedAt)
                     .ToListAsync();
@@ -1111,6 +842,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.Status == status && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1133,6 +866,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.BranchId == branchId && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1155,6 +890,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 var purchaseOrders = await _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.CreatedBy == createdBy && po.IsActive)
                     .OrderByDescending(po => po.CreatedAt)
@@ -1177,6 +914,8 @@ namespace ShopMgtSys.Infrastructure.Services
                 var query = _context.PurchaseOrders
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
+                    .Include(po => po.FinanceVerifier)
+                    .Include(po => po.Approver)
                     .Include(po => po.Items).ThenInclude(pi => pi.Product)
                     .Where(po => po.CreatedAt.Date >= fromDate.Date && po.CreatedAt.Date <= toDate.Date);
 
@@ -1205,6 +944,7 @@ namespace ShopMgtSys.Infrastructure.Services
             {
                 var query = _context.PurchaseOrders
                     .Include(po => po.Items)
+                    .Where(po => po.IsActive)
                     .AsQueryable();
 
                 if (branchId.HasValue)
@@ -1212,81 +952,60 @@ namespace ShopMgtSys.Infrastructure.Services
                     query = query.Where(po => po.BranchId == branchId.Value);
                 }
 
-                var now = DateTime.UtcNow;
-                var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
-                var firstDayOfLastMonth = firstDayOfMonth.AddMonths(-1);
-
-                var totalBuyingCost = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.BuyingPrice.HasValue)
-                    .SumAsync(i => i.BuyingPrice.Value * i.Quantity);
-
-                var totalSellingValue = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.UnitPrice.HasValue)
-                    .SumAsync(i => i.UnitPrice.Value * i.Quantity);
+                // Get all data first, then calculate in memory
+                var purchaseOrders = await query.ToListAsync();
 
                 var stats = new PurchaseOrderStatsDto
                 {
-                    TotalPurchaseOrders = await query.CountAsync(),
+                    TotalPurchaseOrders = purchaseOrders.Count,
 
-                    PendingFinanceVerification = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.PendingFinanceVerification),
-                    PendingManagerApproval = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.PendingManagerApproval),
-                    Approved = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.Approved),
-                    Rejected = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.Rejected),
-                    Cancelled = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.Cancelled),
+                    PendingFinanceVerification = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.PendingFinanceVerification),
+                    PendingManagerApproval = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.PendingManagerApproval),
+                    Approved = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Approved),
+                    Rejected = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Rejected),
+                    Cancelled = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Cancelled),
 
-                    TotalBuyingCost = totalBuyingCost,
-                    TotalSellingValue = totalSellingValue,
+                    // Calculate totals in memory
+                    TotalBuyingCost = purchaseOrders.Sum(po => po.Items?
+                        .Where(i => i.BuyingPrice.HasValue)
+                        .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0),
 
-                    TotalItemsOrdered = await query
-                        .SelectMany(po => po.Items)
-                        .SumAsync(i => i.Quantity),
+                    TotalSellingValue = purchaseOrders.Sum(po => po.Items?
+                        .Where(i => i.UnitPrice.HasValue)
+                        .Sum(i => i.UnitPrice.Value * i.Quantity) ?? 0),
 
-                    TotalItemsVerified = await query
-                        .SelectMany(po => po.Items)
-                        .CountAsync(i => i.FinanceVerified == true),
+                    TotalItemsOrdered = purchaseOrders.Sum(po => po.Items?.Count ?? 0),
 
-                    TotalItemsApproved = await query
-                        .SelectMany(po => po.Items)
-                        .CountAsync(i => i.ApprovedAt.HasValue),
-
-                    OrdersThisMonth = await query
-                        .CountAsync(po => po.CreatedAt >= firstDayOfMonth),
-
-                    OrdersLastMonth = await query
-                        .CountAsync(po =>
-                            po.CreatedAt >= firstDayOfLastMonth &&
-                            po.CreatedAt < firstDayOfMonth)
+                    BranchId = branchId
                 };
-
-                // Calculate average profit margin
-                var itemsWithMargin = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.ProfitMargin.HasValue)
-                    .ToListAsync();
-
-                stats.AverageProfitMargin = itemsWithMargin.Any()
-                    ? itemsWithMargin.Average(i => i.ProfitMargin.Value)
-                    : 0;
-
-                // Calculate monthly growth
-                if (stats.OrdersLastMonth > 0)
-                {
-                    stats.MonthlyGrowthPercentage = ((decimal)stats.OrdersThisMonth - stats.OrdersLastMonth)
-                        / stats.OrdersLastMonth * 100;
-                }
 
                 if (branchId.HasValue)
                 {
-                    stats.BranchId = branchId;
-                    var branch = await _context.Branches.FindAsync(branchId);
+                    var branch = await _context.Branches.FindAsync(branchId.Value);
                     stats.BranchName = branch?.Name;
+                }
+
+                // Calculate average profit margin
+                var allItems = purchaseOrders.SelectMany(po => po.Items ?? new List<PurchaseOrderItem>())
+                    .Where(i => i.ProfitMargin.HasValue)
+                    .ToList();
+
+                stats.AverageProfitMargin = allItems.Any()
+                    ? allItems.Average(i => i.ProfitMargin.Value)
+                    : 0;
+
+                // Calculate monthly stats
+                var now = DateTime.UtcNow;
+                var firstDayThisMonth = new DateTime(now.Year, now.Month, 1);
+                var firstDayLastMonth = firstDayThisMonth.AddMonths(-1);
+
+                stats.OrdersThisMonth = purchaseOrders.Count(po => po.CreatedAt >= firstDayThisMonth);
+                stats.OrdersLastMonth = purchaseOrders.Count(po =>
+                    po.CreatedAt >= firstDayLastMonth && po.CreatedAt < firstDayThisMonth);
+
+                if (stats.OrdersLastMonth > 0)
+                {
+                    stats.MonthlyGrowthPercentage = ((decimal)(stats.OrdersThisMonth - stats.OrdersLastMonth) / stats.OrdersLastMonth) * 100;
                 }
 
                 return ApiResponse<PurchaseOrderStatsDto>.Success(stats);
@@ -1297,7 +1016,6 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderStatsDto>.Fail("Error retrieving purchase order statistics");
             }
         }
-
         public async Task<ApiResponse<PurchaseOrderDashboardDto>> GetPurchaseOrderDashboardAsync(Guid? branchId = null)
         {
             try
@@ -1306,6 +1024,7 @@ namespace ShopMgtSys.Infrastructure.Services
                     .Include(po => po.Branch)
                     .Include(po => po.Creator)
                     .Include(po => po.Items)
+                    .Where(po => po.IsActive)
                     .AsQueryable();
 
                 if (branchId.HasValue)
@@ -1313,163 +1032,165 @@ namespace ShopMgtSys.Infrastructure.Services
                     query = query.Where(po => po.BranchId == branchId.Value);
                 }
 
-                var dashboard = new PurchaseOrderDashboardDto
-                {
-                    TotalPending = await query.CountAsync(po =>
-                        po.Status == PurchaseOrderStatus.PendingFinanceVerification ||
-                        po.Status == PurchaseOrderStatus.PendingManagerApproval),
+                // Fetch all data first
+                var purchaseOrders = await query.ToListAsync();
 
-                    TotalCompleted = await query.CountAsync(po => po.Status == PurchaseOrderStatus.Approved),
-                    TotalRejected = await query.CountAsync(po => po.Status == PurchaseOrderStatus.Rejected),
-                    TotalCancelled = await query.CountAsync(po => po.Status == PurchaseOrderStatus.Cancelled),
+                var dashboard = new PurchaseOrderDashboardDto();
 
-                    OrdersByStatus = new Dictionary<string, int>(),
-                    OrdersByBranch = new Dictionary<string, int>(),
-                    ValueByBranch = new Dictionary<string, decimal>(),
-                    RecentOrders = new List<RecentPurchaseOrderDto>(),
-                    RecentActivity = new List<RecentPurchaseHistoryDto>(),
-                    MonthlyTrends = new List<MonthlyTrendDto>(),
-                    TopProducts = new List<TopProductDto>(),
-                    TopSuppliers = new List<TopSupplierDto>()
-                };
+                // Summary cards
+                dashboard.TotalPending = purchaseOrders.Count(po =>
+                    po.Status == PurchaseOrderStatus.PendingFinanceVerification ||
+                    po.Status == PurchaseOrderStatus.PendingManagerApproval);
+                dashboard.TotalCompleted = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Approved);
+                dashboard.TotalRejected = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Rejected);
+                dashboard.TotalCancelled = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Cancelled);
 
                 // Status breakdown
+                dashboard.OrdersByStatus = new Dictionary<string, int>();
                 foreach (PurchaseOrderStatus status in Enum.GetValues(typeof(PurchaseOrderStatus)))
                 {
-                    var count = await query.CountAsync(po => po.Status == status);
+                    var count = purchaseOrders.Count(po => po.Status == status);
                     dashboard.OrdersByStatus.Add(status.ToString(), count);
                 }
 
-                // Branch breakdown (if no branch filter)
+                // Branch breakdown (only if no branch filter)
                 if (!branchId.HasValue)
                 {
-                    var branchData = await query
-                        .GroupBy(po => po.Branch.Name)
+                    dashboard.OrdersByBranch = new Dictionary<string, int>();
+                    dashboard.ValueByBranch = new Dictionary<string, decimal>();
+
+                    var branchGroups = purchaseOrders
+                        .GroupBy(po => po.Branch?.Name ?? "Unknown")
                         .Select(g => new {
                             BranchName = g.Key,
                             Count = g.Count(),
-                            Value = g.Sum(po => po.Items.Sum(i => i.BuyingPrice.GetValueOrDefault() * i.Quantity))
+                            Value = g.Sum(po => po.Items?
+                                .Where(i => i.BuyingPrice.HasValue)
+                                .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0)
                         })
-                        .ToListAsync();
+                        .ToList();
 
-                    foreach (var item in branchData)
+                    foreach (var item in branchGroups)
                     {
                         dashboard.OrdersByBranch.Add(item.BranchName, item.Count);
                         dashboard.ValueByBranch.Add(item.BranchName, item.Value);
                     }
                 }
 
+                // Financial summary
+                dashboard.TotalPurchaseValue = purchaseOrders.Sum(po => po.Items?
+                    .Where(i => i.BuyingPrice.HasValue)
+                    .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0);
+
+                dashboard.TotalProfit = purchaseOrders.Sum(po => po.Items?
+                    .Where(i => i.BuyingPrice.HasValue && i.UnitPrice.HasValue)
+                    .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity) ?? 0);
+
+                var itemsWithMargin = purchaseOrders
+                    .SelectMany(po => po.Items ?? new List<PurchaseOrderItem>())
+                    .Where(i => i.ProfitMargin.HasValue)
+                    .ToList();
+
+                dashboard.AverageProfitMargin = itemsWithMargin.Any()
+                    ? itemsWithMargin.Average(i => i.ProfitMargin.Value)
+                    : 0;
+
                 // Recent orders
-                dashboard.RecentOrders = await query
+                dashboard.RecentOrders = purchaseOrders
                     .OrderByDescending(po => po.CreatedAt)
                     .Take(10)
                     .Select(po => new RecentPurchaseOrderDto
                     {
                         Id = po.Id,
                         OrderNumber = po.Id.ToString().Substring(0, 8),
-                        BranchName = po.Branch.Name,
+                        BranchName = po.Branch?.Name ?? "Unknown",
                         Status = po.Status.ToString(),
                         CreatedAt = po.CreatedAt,
-                        ItemCount = po.Items.Count,
-                        TotalValue = po.Items.Sum(i => i.BuyingPrice.GetValueOrDefault() * i.Quantity),
-                        CreatedByName = po.Creator.Name
+                        ItemCount = po.Items?.Count ?? 0,
+                        TotalValue = po.Items?
+                            .Where(i => i.BuyingPrice.HasValue)
+                            .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0,
+                        CreatedByName = po.Creator?.Name ?? "Unknown"
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 // Recent activity
-                dashboard.RecentActivity = await _context.PurchaseHistory
-                    .Include(ph => ph.PurchaseOrder)
-                    .Include(ph => ph.PerformedByUser)
-                    .Where(ph => !branchId.HasValue || ph.PurchaseOrder.BranchId == branchId.Value)
-                    .OrderByDescending(ph => ph.CreatedAt)
-                    .Take(20)
-                    .Select(ph => new RecentPurchaseHistoryDto
+                var historyQuery = _context.PurchaseHistory
+                    .Include(h => h.PurchaseOrder)
+                    .Include(h => h.PerformedByUser)
+                    .Where(h => !branchId.HasValue || h.PurchaseOrder.BranchId == branchId.Value)
+                    .OrderByDescending(h => h.CreatedAt)
+                    .Take(20);
+
+                dashboard.RecentActivity = await historyQuery
+                    .Select(h => new RecentPurchaseHistoryDto
                     {
-                        PurchaseOrderId = ph.PurchaseOrderId,
-                        OrderNumber = ph.PurchaseOrder.Id.ToString().Substring(0, 8),
-                        Action = ph.Action,
-                        PerformedBy = ph.PerformedByUser.Name,
-                        CreatedAt = ph.CreatedAt,
-                        Details = ph.Details
+                        PurchaseOrderId = h.PurchaseOrderId,
+                        OrderNumber = h.PurchaseOrder.Id.ToString().Substring(0, 8),
+                        Action = h.Action,
+                        PerformedBy = h.PerformedByUser.Name,
+                        CreatedAt = h.CreatedAt,
+                        Details = h.Details
                     })
                     .ToListAsync();
 
-                // Monthly trends (last 6 months)
+                // Monthly trends
                 var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
-                var monthlyData = await query
+                var monthlyGroups = purchaseOrders
                     .Where(po => po.CreatedAt >= sixMonthsAgo)
                     .GroupBy(po => new { po.CreatedAt.Year, po.CreatedAt.Month })
                     .Select(g => new MonthlyTrendDto
                     {
-                        Month = $"{new DateTime(g.Key.Year, g.Key.Month, 1):MMM yyyy}",
+                        Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"),
                         OrderCount = g.Count(),
-                        TotalValue = g.SelectMany(po => po.Items)
-                                     .Where(i => i.BuyingPrice.HasValue)
-                                     .Sum(i => i.BuyingPrice.Value * i.Quantity),
-                        TotalProfit = g.SelectMany(po => po.Items)
-                                      .Where(i => i.UnitPrice.HasValue && i.BuyingPrice.HasValue)
-                                      .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity)
+                        TotalValue = g.Sum(po => po.Items?
+                            .Where(i => i.BuyingPrice.HasValue)
+                            .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0),
+                        TotalProfit = g.Sum(po => po.Items?
+                            .Where(i => i.BuyingPrice.HasValue && i.UnitPrice.HasValue)
+                            .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity) ?? 0)
                     })
-                    .OrderBy(m => m.Month)
-                    .ToListAsync();
+                    .OrderBy(m => DateTime.ParseExact(m.Month, "MMM yyyy", System.Globalization.CultureInfo.InvariantCulture))
+                    .ToList();
 
-                dashboard.MonthlyTrends = monthlyData;
+                dashboard.MonthlyTrends = monthlyGroups;
 
                 // Top products
-                dashboard.TopProducts = await query
-                    .SelectMany(po => po.Items)
+                var allItems = purchaseOrders
+                    .SelectMany(po => po.Items ?? new List<PurchaseOrderItem>())
+                    .Where(i => i.Product != null)
                     .GroupBy(i => new { i.ProductId, i.Product.Name })
                     .Select(g => new TopProductDto
                     {
                         ProductId = g.Key.ProductId,
                         ProductName = g.Key.Name,
                         QuantityOrdered = g.Sum(i => i.Quantity),
-                        QuantityApproved = g.Count(i => i.ApprovedAt.HasValue),
-                        TotalValue = g.Where(i => i.BuyingPrice.HasValue)
-                                     .Sum(i => i.BuyingPrice.Value * i.Quantity),
-                        TotalProfit = g.Where(i => i.UnitPrice.HasValue && i.BuyingPrice.HasValue)
-                                      .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity)
+                        TotalValue = g.Sum(i => i.BuyingPrice.GetValueOrDefault() * i.Quantity),
+                        TotalProfit = g.Sum(i => (i.UnitPrice.GetValueOrDefault() - i.BuyingPrice.GetValueOrDefault()) * i.Quantity)
                     })
                     .OrderByDescending(p => p.TotalValue)
                     .Take(10)
-                    .ToListAsync();
+                    .ToList();
+
+                dashboard.TopProducts = allItems;
 
                 // Top suppliers
-                dashboard.TopSuppliers = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.SupplierName != null)
+                var supplierGroups = purchaseOrders
+                    .SelectMany(po => po.Items ?? new List<PurchaseOrderItem>())
+                    .Where(i => !string.IsNullOrWhiteSpace(i.SupplierName))
                     .GroupBy(i => i.SupplierName)
                     .Select(g => new TopSupplierDto
                     {
                         SupplierName = g.Key,
                         OrderCount = g.Select(i => i.PurchaseOrderId).Distinct().Count(),
                         ItemCount = g.Sum(i => i.Quantity),
-                        TotalValue = g.Where(i => i.BuyingPrice.HasValue)
-                                     .Sum(i => i.BuyingPrice.Value * i.Quantity)
+                        TotalValue = g.Sum(i => i.BuyingPrice.GetValueOrDefault() * i.Quantity)
                     })
                     .OrderByDescending(s => s.TotalValue)
                     .Take(10)
-                    .ToListAsync();
+                    .ToList();
 
-                // Financial summary
-                dashboard.TotalPurchaseValue = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.BuyingPrice.HasValue)
-                    .SumAsync(i => i.BuyingPrice.Value * i.Quantity);
-
-                dashboard.TotalProfit = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.UnitPrice.HasValue && i.BuyingPrice.HasValue)
-                    .SumAsync(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity);
-
-                var itemsWithMargin = await query
-                    .SelectMany(po => po.Items)
-                    .Where(i => i.ProfitMargin.HasValue)
-                    .ToListAsync();
-
-                dashboard.AverageProfitMargin = itemsWithMargin.Any()
-                    ? itemsWithMargin.Average(i => i.ProfitMargin.Value)
-                    : 0;
+                dashboard.TopSuppliers = supplierGroups;
 
                 return ApiResponse<PurchaseOrderDashboardDto>.Success(dashboard);
             }
@@ -1479,8 +1200,10 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<PurchaseOrderDashboardDto>.Fail("Error retrieving purchase order dashboard");
             }
         }
+        #endregion
 
-        // ========== HELPER/CONVENIENCE METHODS ==========
+        #region Helper/Convenience Methods
+
         public async Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(Guid purchaseOrderId, string reason)
         {
             var dto = new RejectPurchaseOrderDto
@@ -1515,22 +1238,18 @@ namespace ShopMgtSys.Infrastructure.Services
                     return ApiResponse<bool>.Success(false, "Purchase order not found");
                 }
 
-                // Check if user is finance (based on role claim - implement as needed)
-                var isFinance = _httpContextAccessor.HttpContext?.User.IsInRole("Finance") ?? false;
-
-                // Check if user is manager (based on role claim - implement as needed)
-                var isManager = _httpContextAccessor.HttpContext?.User.IsInRole("Manager") ?? false;
-
-                // Finance can edit in PendingFinanceVerification status
-                if (isFinance && purchaseOrder.Status == PurchaseOrderStatus.PendingFinanceVerification)
+                // Admin can always edit (except approved)
+                var isAdmin = true; // Check user role from claims
+                if (isAdmin && purchaseOrder.Status != PurchaseOrderStatus.Approved)
                 {
-                    return ApiResponse<bool>.Success(true, "Finance can edit");
+                    return ApiResponse<bool>.Success(true, "Admin can edit");
                 }
 
-                // Manager can edit in PendingManagerApproval status
-                if (isManager && purchaseOrder.Status == PurchaseOrderStatus.PendingManagerApproval)
+                // Finance can edit if not approved
+                var isFinance = true; // Check user role from claims
+                if (isFinance && purchaseOrder.Status != PurchaseOrderStatus.Approved)
                 {
-                    return ApiResponse<bool>.Success(true, "Manager can edit");
+                    return ApiResponse<bool>.Success(true, "Finance can edit");
                 }
 
                 // Sales can only edit their own orders in PendingFinanceVerification
@@ -1548,5 +1267,7 @@ namespace ShopMgtSys.Infrastructure.Services
                 return ApiResponse<bool>.Fail("Error checking edit permission");
             }
         }
+
+        #endregion
     }
 }

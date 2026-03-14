@@ -282,7 +282,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Generate daily sales report
         /// </summary>
         [HttpGet("reports/daily")]
-        [Authorize(Roles = "Manager,Sales")]
+        [Authorize(Roles = "Manager,Sales,Finance")]
         public async Task<ActionResult<ApiResponse<DailySalesReportDto>>> GenerateDailySalesReport(
             [FromQuery] DateTime date,
             [FromQuery] Guid? branchId = null,

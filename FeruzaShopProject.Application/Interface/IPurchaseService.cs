@@ -46,8 +46,7 @@ namespace FeruzaShopProject.Application.Interface
         /// <summary>
         /// Finance can edit prices before manager approval
         /// </summary>
-        Task<ApiResponse<PurchaseOrderDto>> EditPricesByFinanceAsync(EditPricesByFinanceDto dto);
-
+        Task<ApiResponse<PurchaseOrderDto>> EditPurchaseOrderByFinanceAsync(EditPurchaseOrderByFinanceDto dto);
 
         // ========== REJECT/CANCEL OPERATIONS ==========
 

@@ -75,7 +75,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         /// <summary>
-        /// STEP 2: Finance verifies quantities and sets prices
+        /// STEP 2: Finance verifies and sets prices + invoice number
         /// </summary>
         [HttpPost("finance-verification")]
         [Authorize(Roles = "Finance,Manager")]
@@ -107,7 +107,7 @@ namespace ShopMgtSys.Api.Controllers
         }
 
         /// <summary>
-        /// STEP 3: Manager approves all verified items
+        /// STEP 3: Manager approves entire purchase order
         /// </summary>
         [HttpPost("manager-approval")]
         [Authorize(Roles = "Manager")]
@@ -239,15 +239,16 @@ namespace ShopMgtSys.Api.Controllers
         // ========== FINANCE EDIT OPERATIONS ==========
 
         /// <summary>
-        /// Finance can edit prices before manager approval
+        /// Finance can edit purchase order details (invoice number, supplier names, prices)
+        /// Only allowed when status is PendingFinanceVerification or PendingManagerApproval
         /// </summary>
-        [HttpPut("finance-edit-prices")]
+        [HttpPut("finance-edit")]
         [Authorize(Roles = "Finance,Manager")]
-        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditPricesByFinance([FromBody] EditPricesByFinanceDto dto)
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> EditByFinance([FromBody] EditPurchaseOrderByFinanceDto dto)
         {
             try
             {
-                _logger.LogInformation("Finance editing prices for purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                _logger.LogInformation("Finance editing purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
 
                 var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
                 if (!purchaseOrder.IsCompletedSuccessfully)
@@ -260,18 +261,21 @@ namespace ShopMgtSys.Api.Controllers
                 if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
                     return Forbid();
 
-                var result = await _purchaseService.EditPricesByFinanceAsync(dto);
+                var result = await _purchaseService.EditPurchaseOrderByFinanceAsync(dto);
                 return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error editing prices by finance: {PurchaseOrderId}", dto.PurchaseOrderId);
-                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing prices"));
+                _logger.LogError(ex, "Error editing purchase order by finance: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while editing purchase order"));
             }
         }
 
         // ========== REJECT/CANCEL OPERATIONS ==========
 
+        /// <summary>
+        /// Reject purchase order with reason
+        /// </summary>
         [HttpPost("reject")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<RejectResponseDto>>> Reject([FromBody] RejectPurchaseOrderDto dto)
@@ -301,6 +305,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Convenience endpoint to reject with simple parameters
+        /// </summary>
         [HttpPost("reject-simple/{purchaseOrderId:guid}")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<RejectResponseDto>>> RejectSimple(Guid purchaseOrderId, [FromQuery] string reason)
@@ -330,6 +337,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Cancel purchase order
+        /// </summary>
         [HttpPost("cancel")]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<bool>>> Cancel([FromBody] CancelPurchaseOrderDto dto)
@@ -359,6 +369,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Convenience endpoint to cancel with simple parameters
+        /// </summary>
         [HttpPost("cancel-simple/{purchaseOrderId:guid}")]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<bool>>> CancelSimple(Guid purchaseOrderId, [FromQuery] string? reason = null)
@@ -390,6 +403,9 @@ namespace ShopMgtSys.Api.Controllers
 
         // ========== QUERY ENDPOINTS ==========
 
+        /// <summary>
+        /// Get purchase order by ID
+        /// </summary>
         [HttpGet("{id:guid}")]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> GetById(Guid id)
@@ -413,6 +429,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get all purchase orders (filtered by role)
+        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetAll()
@@ -446,6 +465,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase orders by status
+        /// </summary>
         [HttpGet("status/{status}")]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByStatus(PurchaseOrderStatus status)
@@ -478,6 +500,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase orders by branch
+        /// </summary>
         [HttpGet("branch/{branchId:guid}")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByBranch(Guid branchId)
@@ -498,6 +523,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase orders by creator
+        /// </summary>
         [HttpGet("creator/{createdBy:guid}")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByCreator(Guid createdBy)
@@ -526,6 +554,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase orders by date range
+        /// </summary>
         [HttpGet("date-range")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<List<PurchaseOrderDto>>>> GetByDateRange(
@@ -555,6 +586,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase order statistics
+        /// </summary>
         [HttpGet("stats")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderStatsDto>>> GetStats([FromQuery] Guid? branchId = null)
@@ -581,6 +615,9 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Get purchase order dashboard
+        /// </summary>
         [HttpGet("dashboard")]
         [Authorize(Roles = "Finance,Manager")]
         public async Task<ActionResult<ApiResponse<PurchaseOrderDashboardDto>>> GetDashboard([FromQuery] Guid? branchId = null)
@@ -609,6 +646,9 @@ namespace ShopMgtSys.Api.Controllers
 
         // ========== HELPER/CONVENIENCE ENDPOINTS ==========
 
+        /// <summary>
+        /// Check if current user can edit a purchase order
+        /// </summary>
         [HttpGet("can-edit/{purchaseOrderId:guid}")]
         [Authorize(Roles = "Sales,Finance,Manager")]
         public async Task<ActionResult<ApiResponse<bool>>> CanEdit(Guid purchaseOrderId)

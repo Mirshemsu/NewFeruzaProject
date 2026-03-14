@@ -32,6 +32,11 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid PurchaseOrderId { get; set; }
 
+        // ========== INVOICE NUMBER ==========
+        [Required]
+        [StringLength(50)]
+        public string InvoiceNumber { get; set; }
+
         [Required]
         [MinLength(1, ErrorMessage = "At least one item must be processed")]
         public List<FinanceVerificationItemDto> Items { get; set; }
@@ -49,18 +54,18 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal? SellingPrice { get; set; } // Optional - if not provided, auto-calculated
 
         public string? SupplierName { get; set; }
-
-        [Required]
-        public bool IsVerified { get; set; } // True = verified, False = reject this item
     }
 
-    // STEP 3: Manager approves
+    // STEP 3: Manager approves entire purchase
     public class ManagerApprovalDto
     {
         [Required]
         public Guid PurchaseOrderId { get; set; }
 
-        public List<Guid>? ItemIds { get; set; } // If null, approve all verified items
+        public bool IsApproved { get; set; }
+
+        [StringLength(500)]
+        public string? Remarks { get; set; }
     }
 
     // For editing by sales before finance verification
@@ -86,25 +91,30 @@ namespace FeruzaShopProject.Domain.DTOs
         public int Quantity { get; set; }
     }
 
-    // For finance to edit prices
-    public class EditPricesByFinanceDto
+    // For finance to edit prices (before final verification)
+    public class EditPurchaseOrderByFinanceDto
     {
         [Required]
         public Guid PurchaseOrderId { get; set; }
 
-        [Required]
-        public List<EditPriceItemDto> Items { get; set; }
+        // Purchase-level edits
+        public string? InvoiceNumber { get; set; }
+
+        // Item-level edits
+        public List<EditFinanceItemDto>? Items { get; set; }
     }
 
-    public class EditPriceItemDto
+    public class EditFinanceItemDto
     {
         [Required]
         public Guid ItemId { get; set; }
 
-        [Required]
-        [Range(0.01, double.MaxValue)]
-        public decimal BuyingPrice { get; set; }
+        public string? SupplierName { get; set; }
 
+        [Range(0.01, double.MaxValue)]
+        public decimal? BuyingPrice { get; set; }
+
+        [Range(0.01, double.MaxValue)]
         public decimal? SellingPrice { get; set; }
     }
 
@@ -113,8 +123,6 @@ namespace FeruzaShopProject.Domain.DTOs
     {
         [Required]
         public Guid PurchaseOrderId { get; set; }
-
-        public List<Guid>? ItemIds { get; set; } // If null, reject entire order
 
         [Required]
         public string Reason { get; set; }
@@ -138,15 +146,28 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid CreatedBy { get; set; }
         public string CreatedByName { get; set; }
         public PurchaseOrderStatus Status { get; set; }
+
+        // ========== INVOICE NUMBER ==========
+        public string? InvoiceNumber { get; set; }
+
+        // ========== APPROVAL TRACKING ==========
+        public DateTime? FinanceVerifiedAt { get; set; }
+        public string? FinanceVerifiedBy { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public string? ApprovedBy { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public List<PurchaseOrderItemDto> Items { get; set; }
+
+        // Calculated properties
         public int TotalItems => Items?.Count ?? 0;
-        public int VerifiedItems => Items?.Count(i => i.IsFinanceVerified) ?? 0;
-        public int ApprovedItems => Items?.Count(i => i.IsApproved) ?? 0;
         public decimal TotalValue => Items?
-        .Where(i => i.BuyingPrice.HasValue)
-        .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0;
+            .Where(i => i.BuyingPrice.HasValue)
+            .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0;
+        public decimal TotalProfit => Items?
+            .Where(i => i.BuyingPrice.HasValue && i.UnitPrice.HasValue)
+            .Sum(i => (i.UnitPrice.Value - i.BuyingPrice.Value) * i.Quantity) ?? 0;
     }
 
     public class PurchaseOrderItemDto
@@ -158,11 +179,6 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal? BuyingPrice { get; set; }
         public decimal? UnitPrice { get; set; }
         public string? SupplierName { get; set; }
-        public bool? FinanceVerified { get; set; }
-        public DateTime? FinanceVerifiedAt { get; set; }
-        public DateTime? ApprovedAt { get; set; }
-        public bool IsFinanceVerified => FinanceVerified == true;
-        public bool IsApproved => ApprovedAt.HasValue;
         public decimal? ProfitMargin { get; set; }
     }
 
@@ -170,9 +186,9 @@ namespace FeruzaShopProject.Domain.DTOs
     {
         public Guid PurchaseOrderId { get; set; }
         public PurchaseOrderStatus NewStatus { get; set; }
-        public int RejectedItems { get; set; }
         public string Message { get; set; }
     }
+
     public class PurchaseOrderStatsDto
     {
         // Total counts
@@ -193,8 +209,6 @@ namespace FeruzaShopProject.Domain.DTOs
 
         // Item statistics
         public int TotalItemsOrdered { get; set; }
-        public int TotalItemsVerified { get; set; }
-        public int TotalItemsApproved { get; set; }
 
         // Time-based statistics
         public int OrdersThisMonth { get; set; }
@@ -205,6 +219,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid? BranchId { get; set; }
         public string BranchName { get; set; }
     }
+
     public class PurchaseOrderDashboardDto
     {
         // Summary cards
@@ -276,7 +291,6 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int QuantityOrdered { get; set; }
-        public int QuantityApproved { get; set; }
         public decimal TotalValue { get; set; }
         public decimal TotalProfit { get; set; }
     }
