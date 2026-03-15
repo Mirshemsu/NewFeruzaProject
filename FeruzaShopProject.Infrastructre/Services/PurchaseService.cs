@@ -241,6 +241,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var purchaseOrder = await _context.PurchaseOrders
                     .Include(po => po.Items)
+                    .ThenInclude(i => i.Product)
                     .Include(po => po.Branch)
                     .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
 
@@ -271,8 +272,21 @@ namespace FeruzaShopProject.Infrastructre.Services
                     purchaseOrder.ApprovedAt = DateTime.UtcNow;
                     purchaseOrder.ApprovedBy = userId;
 
+                    // ========== UPDATE STOCK FOR EACH ITEM ==========
+                    foreach (var item in purchaseOrder.Items)
+                    {
+                        await UpdateStockFromPurchaseAsync(
+                            item.ProductId,
+                            purchaseOrder.BranchId,
+                            item.Quantity,
+                            item.BuyingPrice.Value,
+                            item.UnitPrice.Value,
+                            userId,
+                            purchaseOrder.Id);
+                    }
+
                     await AddPurchaseHistoryAsync(purchaseOrder.Id, "Approved", userId,
-                        $"Manager approved purchase order. Total value: {purchaseOrder.TotalBuyingCost:C2}");
+                        $"Manager approved purchase order. Total value: {purchaseOrder.TotalBuyingCost:C2}. Stock updated for {purchaseOrder.Items.Count} items.");
                 }
                 else
                 {
@@ -290,11 +304,13 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
                 var message = dto.IsApproved
-                    ? "Purchase order approved successfully"
+                    ? "Purchase order approved successfully and stock updated"
                     : "Purchase order rejected";
 
-                _logger.LogInformation("Manager {Action} purchase order {PurchaseOrderId}",
-                    dto.IsApproved ? "approved" : "rejected", purchaseOrder.Id);
+                _logger.LogInformation("Manager {Action} purchase order {PurchaseOrderId}{StockMsg}",
+                    dto.IsApproved ? "approved" : "rejected",
+                    purchaseOrder.Id,
+                    dto.IsApproved ? " and stock updated" : "");
 
                 return ApiResponse<PurchaseOrderDto>.Success(result.Data, message);
             }
@@ -305,7 +321,87 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in manager approval");
             }
         }
+        private async Task UpdateStockFromPurchaseAsync(
+    Guid productId,
+    Guid branchId,
+    int quantity,
+    decimal buyingPrice,
+    decimal sellingPrice,
+    Guid userId,
+    Guid purchaseOrderId)
+        {
+            try
+            {
+                // Find existing stock or create new
+                var stock = await _context.Stocks
+                    .FirstOrDefaultAsync(s => s.ProductId == productId && s.BranchId == branchId);
 
+                decimal previousQuantity = 0;
+
+                if (stock == null)
+                {
+                    // Create new stock record
+                    stock = new Stock
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = productId,
+                        BranchId = branchId,
+                        Quantity = quantity,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    await _context.Stocks.AddAsync(stock);
+                    _logger.LogInformation("Created new stock record for Product {ProductId} in Branch {BranchId}", productId, branchId);
+                }
+                else
+                {
+                    // Update existing stock
+                    previousQuantity = stock.Quantity;
+                    stock.Quantity += quantity;
+                    stock.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // Update product prices (optional - you might want to update the product's default prices)
+                var product = await _context.Products.FindAsync(productId);
+                if (product != null)
+                {
+                    // You might want to update average buying price or keep latest
+                    product.BuyingPrice = buyingPrice; // or calculate average
+                    product.UnitPrice = sellingPrice;
+                    product.UpdatedAt = DateTime.UtcNow;
+                    _context.Products.Update(product);
+                }
+
+                // Create stock movement record for audit
+                var stockMovement = new StockMovement
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    BranchId = branchId,
+                    TransactionId = null, // No sales transaction for purchase
+                    PurchaseOrderId = purchaseOrderId,
+                    MovementType = StockMovementType.Purchase,
+                    Quantity = quantity,
+                    PreviousQuantity = previousQuantity,
+                    NewQuantity = previousQuantity + quantity,
+                    MovementDate = DateTime.UtcNow,
+                    Reason = $"Purchase Order #{purchaseOrderId} - Added {quantity} units (Cost: {buyingPrice:C}, Sell: {sellingPrice:C})",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+
+                await _context.StockMovements.AddAsync(stockMovement);
+
+                _logger.LogInformation(
+                    "Stock updated for Product {ProductId} in Branch {BranchId}: +{Quantity} units. New total: {NewQuantity}",
+                    productId, branchId, quantity, previousQuantity + quantity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating stock from purchase for Product {ProductId}", productId);
+                throw; // Re-throw to rollback the transaction
+            }
+        }
         #endregion
 
         #region Sales Edit Operations
@@ -356,23 +452,25 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Update items
                 if (dto.Items != null && dto.Items.Any())
                 {
-                    var newItems = new List<PurchaseOrderItem>();
-                    var requestedItemIds = dto.Items.Where(i => i.ItemId.HasValue).Select(i => i.ItemId.Value).ToHashSet();
+                    // Get IDs of items that should remain
+                    var requestedItemIds = dto.Items
+                        .Where(i => i.ItemId.HasValue)
+                        .Select(i => i.ItemId.Value)
+                        .ToHashSet();
 
-                    // Update existing items
-                    foreach (var itemDto in dto.Items.Where(i => i.ItemId.HasValue))
+                    // ========== FIX: Find items to remove FIRST and delete them from context ==========
+                    var itemsToRemove = purchaseOrder.Items
+                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
+                        .ToList();
+
+                    if (itemsToRemove.Any())
                     {
-                        var existingItem = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId.Value);
-                        if (existingItem != null)
-                        {
-                            existingItem.ProductId = itemDto.ProductId;
-                            existingItem.Quantity = itemDto.Quantity;
-                            existingItem.UpdatedAt = DateTime.UtcNow;
-                        }
+                        _context.PurchaseOrderItems.RemoveRange(itemsToRemove);
+                        _logger.LogInformation("Removing {Count} items from purchase order", itemsToRemove.Count);
                     }
 
-                    // Add new items
-                    foreach (var itemDto in dto.Items.Where(i => !i.ItemId.HasValue))
+                    // Process each item from the DTO
+                    foreach (var itemDto in dto.Items)
                     {
                         var product = await _context.Products.FindAsync(itemDto.ProductId);
                         if (product == null || !product.IsActive)
@@ -381,31 +479,40 @@ namespace FeruzaShopProject.Infrastructre.Services
                             return ApiResponse<PurchaseOrderDto>.Fail($"Invalid or inactive product: {itemDto.ProductId}");
                         }
 
-                        var newItem = new PurchaseOrderItem
+                        if (itemDto.ItemId.HasValue)
                         {
-                            Id = Guid.NewGuid(),
-                            PurchaseOrderId = purchaseOrder.Id,
-                            ProductId = itemDto.ProductId,
-                            Quantity = itemDto.Quantity,
-                            CreatedAt = DateTime.UtcNow,
-                            IsActive = true
-                        };
-                        purchaseOrder.Items.Add(newItem);
-                    }
+                            // ========== FIX: Find existing item directly from context ==========
+                            var existingItem = await _context.PurchaseOrderItems
+                                .FirstOrDefaultAsync(i => i.Id == itemDto.ItemId.Value &&
+                                                          i.PurchaseOrderId == purchaseOrder.Id);
 
-                    // Remove items not in the list
-                    var itemsToRemove = purchaseOrder.Items
-                        .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
-                        .ToList();
-
-                    foreach (var item in itemsToRemove)
-                    {
-                        item.IsActive = false;
-                        item.UpdatedAt = DateTime.UtcNow;
+                            if (existingItem != null)
+                            {
+                                existingItem.ProductId = itemDto.ProductId;
+                                existingItem.Quantity = itemDto.Quantity;
+                                existingItem.UpdatedAt = DateTime.UtcNow;
+                                _context.PurchaseOrderItems.Update(existingItem);
+                            }
+                        }
+                        else
+                        {
+                            // Create new item
+                            var newItem = new PurchaseOrderItem
+                            {
+                                Id = Guid.NewGuid(),
+                                PurchaseOrderId = purchaseOrder.Id,
+                                ProductId = itemDto.ProductId,
+                                Quantity = itemDto.Quantity,
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true
+                            };
+                            await _context.PurchaseOrderItems.AddAsync(newItem);
+                        }
                     }
                 }
 
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
+                _context.PurchaseOrders.Update(purchaseOrder);
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "EditedBySales", userId,
                     $"Sales edited purchase order. Items: {purchaseOrder.Items.Count(i => i.IsActive)}");
@@ -413,9 +520,22 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                // Refresh the purchase order to get latest state
+                var updatedOrder = await _context.PurchaseOrders
+                    .Include(po => po.Items)
+                    .Include(po => po.Branch)
+                    .Include(po => po.Creator)
+                    .FirstOrDefaultAsync(po => po.Id == purchaseOrder.Id);
+
+                var result = _mapper.Map<PurchaseOrderDto>(updatedOrder);
                 _logger.LogInformation("Sales edited purchase order {PurchaseOrderId}", purchaseOrder.Id);
-                return ApiResponse<PurchaseOrderDto>.Success(result.Data, "Purchase order updated successfully");
+                return ApiResponse<PurchaseOrderDto>.Success(result, "Purchase order updated successfully");
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Concurrency error editing purchase order by sales: {@Dto}", dto);
+                return ApiResponse<PurchaseOrderDto>.Fail("The purchase order was modified by another user. Please refresh and try again.");
             }
             catch (Exception ex)
             {
@@ -424,7 +544,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing purchase order");
             }
         }
-
         public async Task<ApiResponse<bool>> DeletePurchaseOrderBySalesAsync(Guid purchaseOrderId, string? reason = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
