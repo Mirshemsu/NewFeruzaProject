@@ -22,7 +22,6 @@ namespace FeruzaShopProject.Domain.Entities
         public List<StockMovement> StockMovements { get; private set; } = new();
         public List<Transaction> Transactions { get; private set; } = new();
         public List<DailySales> DailySales { get; private set; } = new();
-        public List<BankAccount> BankAccounts { get; private set; } = new();
         public List<BranchUser> Users { get; private set; } = new();
         
     }

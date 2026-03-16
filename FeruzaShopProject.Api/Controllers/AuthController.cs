@@ -2,7 +2,6 @@
 using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Shared;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -23,28 +22,25 @@ namespace FeruzaShopProject.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             var response = await _authService.LoginAsync(request);
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             var response = await _authService.RegisterAsync(request);
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
 
@@ -54,30 +50,26 @@ namespace FeruzaShopProject.Api.Controllers
         {
             var response = await _authService.LogoutAsync();
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
 
-        [HttpPost("forget")]
+        [HttpPost("deactivate")]
         [Authorize(Roles = "Manager,Finance")]
-        public async Task<IActionResult> Forget([FromBody] ForgetRequest request)
+        public async Task<IActionResult> DeactivateUser([FromBody] DeactivateUserRequest request)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserId))
-            {
                 return Unauthorized(ApiResponse<string>.Fail("Current user ID not found in token"));
-            }
-            var response = await _authService.ForgetAsync(request, currentUserId);
+
+            var response = await _authService.DeactivateUserAsync(request, currentUserId);
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
 
@@ -87,14 +79,12 @@ namespace FeruzaShopProject.Api.Controllers
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserId))
-            {
                 return Unauthorized(ApiResponse<List<UserResponseDto>>.Fail("Current user ID not found in token"));
-            }
+
             var response = await _authService.ListUserAsync(role, branchId, currentUserId);
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
 
@@ -103,20 +93,81 @@ namespace FeruzaShopProject.Api.Controllers
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(currentUserId))
-            {
                 return Unauthorized(ApiResponse<string>.Fail("Current user ID not found in token"));
-            }
+
             var response = await _authService.ResetPasswordAsync(request, currentUserId);
             if (!response.IsCompletedSuccessfully)
-            {
                 return BadRequest(response);
-            }
+
             return Ok(response);
         }
+
+        #region Profile Management
+
+        /// <summary>
+        /// Get current user's profile
+        /// </summary>
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(ApiResponse<UserProfileDto>.Fail("Current user ID not found in token"));
+
+            var response = await _authService.GetProfileAsync(currentUserId);
+            if (!response.IsCompletedSuccessfully)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Update current user's profile
+        /// </summary>
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(ApiResponse<string>.Fail("Current user ID not found in token"));
+
+            var response = await _authService.UpdateProfileAsync(request, currentUserId);
+            if (!response.IsCompletedSuccessfully)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Change current user's password (requires current password)
+        /// </summary>
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(ApiResponse<string>.Fail("Current user ID not found in token"));
+
+            var response = await _authService.ChangePasswordAsync(request, currentUserId);
+            if (!response.IsCompletedSuccessfully)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
+        #endregion
     }
 }

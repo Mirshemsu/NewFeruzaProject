@@ -8,7 +8,6 @@ namespace FeruzaShopProject.Infrastructre.Data
     public class ShopDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     {
         public DbSet<Branch> Branches { get; set; }
-        public DbSet<BankAccount> BankAccounts { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Stock> Stocks { get; set; }
@@ -422,19 +421,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(p => p.PhoneNumber).IsUnique();
             });
 
-            // ========== BANK ACCOUNT CONFIGURATION ==========
-            modelBuilder.Entity<BankAccount>(entity =>
-            {
-                entity.HasKey(ba => ba.Id);
-                entity.Property(ba => ba.AccountNumber).HasMaxLength(50).IsRequired();
-                entity.Property(ba => ba.BankName).HasMaxLength(100).IsRequired();
-                entity.Property(ba => ba.AccountOwner).HasMaxLength(200).IsRequired();
-
-                entity.HasOne(ba => ba.Branch)
-                    .WithMany(b => b.BankAccounts)
-                    .HasForeignKey(ba => ba.BranchId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
+        
 
             // ========== BRANCH USER CONFIGURATION ==========
             modelBuilder.Entity<BranchUser>(entity =>

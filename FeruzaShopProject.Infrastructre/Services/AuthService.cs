@@ -45,14 +45,14 @@ namespace FeruzaShopProject.Infrastructre.Services
             var user = await _userManager.FindByNameAsync(request.Username);
             if (user == null)
             {
-                _logger.LogWarning($"User {request.Username} not found or inactive");
-                return ApiResponse<LoginResponse>.Fail("Invalid username or user is inactive");
+                _logger.LogWarning($"User {request.Username} not found");
+                return ApiResponse<LoginResponse>.Fail("Invalid username or password");
             }
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
             if (!result.Succeeded)
             {
                 _logger.LogWarning($"Invalid password for user {request.Username}");
-                return ApiResponse<LoginResponse>.Fail("Invalid password");
+                return ApiResponse<LoginResponse>.Fail("Invalid username or password");
             }
             var token = await GenerateJwtToken(user);
             var response = new LoginResponse
@@ -84,6 +84,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogWarning("BranchId must be null for Manager or Finance roles");
                 return ApiResponse<string>.Fail("BranchId must be null for Manager or Finance roles");
             }
+
             User user = request.Role == Role.Sales
                 ? new BranchUser
                 {
@@ -92,20 +93,24 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Name = request.Name,
                     ContactInfo = request.ContactInfo,
                     Role = request.Role,
+                  
                 }
-                : new GlobalUser
+                : new User
                 {
                     UserName = request.Username,
                     Name = request.Name,
                     ContactInfo = request.ContactInfo,
                     Role = request.Role,
+                  
                 };
+
             var createResult = await _userManager.CreateAsync(user, request.Password);
             if (!createResult.Succeeded)
             {
                 _logger.LogWarning($"User creation failed for {request.Username}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 return ApiResponse<string>.Fail(createResult.Errors.Select(e => e.Description));
             }
+
             try
             {
                 var roleName = request.Role.ToString();
@@ -114,6 +119,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
                     _logger.LogInformation($"Created role: {roleName}");
                 }
+
                 var addToRoleResult = await _userManager.AddToRoleAsync(user, roleName);
                 if (!addToRoleResult.Succeeded)
                 {
@@ -121,6 +127,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     _logger.LogWarning($"Failed to add role {roleName} to user {request.Username}: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
                     return ApiResponse<string>.Fail(addToRoleResult.Errors.Select(e => e.Description));
                 }
+
                 _logger.LogInformation($"User {request.Username} registered successfully with role {roleName}");
                 return ApiResponse<string>.Success(user.Id.ToString(), "User registered successfully");
             }
@@ -140,70 +147,79 @@ namespace FeruzaShopProject.Infrastructre.Services
             return ApiResponse<string>.Success(null, "Logout successful");
         }
 
-        public async Task<ApiResponse<string>> ForgetAsync(Guid userId, string currentUserId)
+        public async Task<ApiResponse<string>> DeactivateUserAsync(DeactivateUserRequest request, string currentUserId)
         {
-            _logger.LogInformation($"Attempting to deactivate user {userId} by {currentUserId}");
+            _logger.LogInformation($"Attempting to deactivate user {request.UserId} by {currentUserId}");
+
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
             if (currentUser == null)
             {
-                _logger.LogWarning($"Current user {currentUserId} not found or inactive");
-                return ApiResponse<string>.Fail("Current user not found or inactive");
+                _logger.LogWarning($"Current user {currentUserId} not found");
+                return ApiResponse<string>.Fail("Current user not found");
             }
+
             var currentUserRoles = await _userManager.GetRolesAsync(currentUser);
             if (!currentUserRoles.Contains(Role.Manager.ToString()) && !currentUserRoles.Contains(Role.Finance.ToString()))
             {
                 _logger.LogWarning($"User {currentUserId} lacks permission to deactivate users");
                 return ApiResponse<string>.Fail("Only Manager or Finance roles can deactivate users");
             }
-            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
             if (user == null)
             {
-                _logger.LogWarning($"User {userId} not found or already inactive");
-                return ApiResponse<string>.Fail("User not found or already inactive");
+                _logger.LogWarning($"User {request.UserId} not found");
+                return ApiResponse<string>.Fail("User not found");
             }
+
             if (user.Id == Guid.Parse(currentUserId))
             {
                 _logger.LogWarning($"User {currentUserId} cannot deactivate themselves");
                 return ApiResponse<string>.Fail("Cannot deactivate yourself");
             }
-            var activeManagers = await _userManager.GetUsersInRoleAsync(Role.Manager.ToString());
-            var activeFinance = await _userManager.GetUsersInRoleAsync(Role.Finance.ToString());
-            if ((user.Role == Role.Manager && activeManagers.Count() <= 1) ||
-                (user.Role == Role.Finance && activeFinance.Count() <= 1))
+
+            // Since you don't have IsActive property, you might want to:
+            // Option 1: Add IsActive property to User entity
+            // Option 2: Remove user (hard delete) - BE CAREFUL with this!
+            // Option 3: Lock user out using LockoutEndDate
+
+            // Using Lockout as a way to "deactivate" (temporary solution)
+            var lockoutResult = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+            if (!lockoutResult.Succeeded)
             {
-                _logger.LogWarning($"Cannot deactivate user {userId}: Last active {user.Role}");
-                return ApiResponse<string>.Fail($"Cannot deactivate the last active {user.Role}");
+                _logger.LogWarning($"Failed to deactivate user {request.UserId}");
+                return ApiResponse<string>.Fail("Failed to deactivate user");
             }
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                _logger.LogWarning($"Failed to deactivate user {userId}: {string.Join(", ", updateResult.Errors.Select(e => e.Description))}");
-                return ApiResponse<string>.Fail(updateResult.Errors.Select(e => e.Description));
-            }
-            _logger.LogInformation($"User {userId} deactivated successfully by {currentUserId}");
-            return ApiResponse<string>.Success(userId.ToString(), "User deactivated successfully");
+
+            _logger.LogInformation($"User {request.UserId} deactivated successfully by {currentUserId}");
+            return ApiResponse<string>.Success(request.UserId.ToString(), "User deactivated successfully");
         }
 
         public async Task<ApiResponse<List<UserResponseDto>>> ListUserAsync(string? role = null, Guid? branchId = null, string currentUserId = null)
         {
             _logger.LogInformation($"Listing users requested by {currentUserId}, Role filter: {role}, BranchId filter: {branchId}");
+
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
             if (currentUser == null)
             {
-                _logger.LogWarning($"Current user {currentUserId} not found or inactive");
-                return ApiResponse<List<UserResponseDto>>.Fail("Current user not found or inactive");
+                _logger.LogWarning($"Current user {currentUserId} not found");
+                return ApiResponse<List<UserResponseDto>>.Fail("Current user not found");
             }
+
             var currentUserRoles = await _userManager.GetRolesAsync(currentUser);
             if (!currentUserRoles.Contains(Role.Manager.ToString()) && !currentUserRoles.Contains(Role.Finance.ToString()))
             {
                 _logger.LogWarning($"User {currentUserId} lacks permission to list users");
                 return ApiResponse<List<UserResponseDto>>.Fail("Only Manager or Finance roles can list users");
             }
+
             var query = _userManager.Users.AsQueryable();
+
             if (!string.IsNullOrEmpty(role) && Enum.TryParse<Role>(role, true, out var parsedRole))
             {
                 query = query.Where(u => u.Role == parsedRole);
             }
+
             if (branchId.HasValue)
             {
                 query = query.OfType<BranchUser>()
@@ -217,9 +233,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                 Username = u.UserName,
                 Name = u.Name,
                 ContactInfo = u.ContactInfo,
-                Role = u.Role,
-                BranchId = u is BranchUser bu ? bu.BranchId : null,
+                Role = u.Role,            
+                BranchId = u is BranchUser bu ? bu.BranchId : null
             }).ToList();
+
             _logger.LogInformation($"Listed {userDtos.Count} users for {currentUserId}");
             return ApiResponse<List<UserResponseDto>>.Success(userDtos, "Users retrieved successfully");
         }
@@ -227,30 +244,36 @@ namespace FeruzaShopProject.Infrastructre.Services
         public async Task<ApiResponse<string>> ResetPasswordAsync(ResetPasswordRequest request, string currentUserId)
         {
             _logger.LogInformation($"Password reset requested for user {request.UserId} by {currentUserId}");
+
             var currentUser = await _userManager.FindByIdAsync(currentUserId);
             if (currentUser == null)
             {
-                _logger.LogWarning($"Current user {currentUserId} not found or inactive");
-                return ApiResponse<string>.Fail("Current user not found or inactive");
+                _logger.LogWarning($"Current user {currentUserId} not found");
+                return ApiResponse<string>.Fail("Current user not found");
             }
+
             var targetUser = await _userManager.FindByIdAsync(request.UserId.ToString());
             if (targetUser == null)
             {
-                _logger.LogWarning($"Target user {request.UserId} not found or inactive");
-                return ApiResponse<string>.Fail("Target user not found or inactive");
+                _logger.LogWarning($"Target user {request.UserId} not found");
+                return ApiResponse<string>.Fail("Target user not found");
             }
+
             var currentUserRoles = await _userManager.GetRolesAsync(currentUser);
             bool isSelfReset = currentUser.Id == request.UserId;
+
             if (!isSelfReset && !currentUserRoles.Contains(Role.Manager.ToString()) && !currentUserRoles.Contains(Role.Finance.ToString()))
             {
                 _logger.LogWarning($"User {currentUserId} lacks permission to reset password for {request.UserId}");
                 return ApiResponse<string>.Fail("Only Manager or Finance roles can reset passwords for other users");
             }
+
             if (isSelfReset && string.IsNullOrEmpty(request.CurrentPassword))
             {
                 _logger.LogWarning($"Current password required for self-reset by {currentUserId}");
                 return ApiResponse<string>.Fail("Current password is required for self-reset");
             }
+
             if (isSelfReset)
             {
                 var checkPassword = await _userManager.CheckPasswordAsync(currentUser, request.CurrentPassword);
@@ -260,89 +283,148 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<string>.Fail("Invalid current password");
                 }
             }
+
             var token = await _userManager.GeneratePasswordResetTokenAsync(targetUser);
             var resetResult = await _userManager.ResetPasswordAsync(targetUser, token, request.NewPassword);
+
             if (!resetResult.Succeeded)
             {
                 _logger.LogWarning($"Password reset failed for user {request.UserId}: {string.Join(", ", resetResult.Errors.Select(e => e.Description))}");
                 return ApiResponse<string>.Fail(resetResult.Errors.Select(e => e.Description));
             }
+
             _logger.LogInformation($"Password reset successful for user {request.UserId} by {currentUserId}");
             return ApiResponse<string>.Success(targetUser.Id.ToString(), "Password reset successfully");
         }
-        public async Task<ApiResponse<string>> ForgetAsync(ForgetRequest request, string currentUserId)
+
+        // NEW: Get User Profile
+        public async Task<ApiResponse<UserProfileDto>> GetProfileAsync(string currentUserId)
         {
-            _logger.LogInformation($"Attempting to deactivate user {request.UserId} by {currentUserId}");
-            var currentUser = await _userManager.FindByIdAsync(currentUserId);
-            if (currentUser == null)
-            {
-                _logger.LogWarning($"Current user {currentUserId} not found or inactive");
-                return ApiResponse<string>.Fail("Current user not found or inactive");
-            }
-            var currentUserRoles = await _userManager.GetRolesAsync(currentUser);
-            if (!currentUserRoles.Contains(Role.Manager.ToString()) && !currentUserRoles.Contains(Role.Finance.ToString()))
-            {
-                _logger.LogWarning($"User {currentUserId} lacks permission to deactivate users");
-                return ApiResponse<string>.Fail("Only Manager or Finance roles can deactivate users");
-            }
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            _logger.LogInformation($"Fetching profile for user: {currentUserId}");
+
+            var user = await _userManager.FindByIdAsync(currentUserId);
             if (user == null)
             {
-                _logger.LogWarning($"User {request.UserId} not found or already inactive");
-                return ApiResponse<string>.Fail("User not found or already inactive");
+                _logger.LogWarning($"User {currentUserId} not found");
+                return ApiResponse<UserProfileDto>.Fail("User not found");
             }
-            if (user.Id == Guid.Parse(currentUserId))
+
+            var profile = new UserProfileDto
             {
-                _logger.LogWarning($"User {currentUserId} cannot deactivate themselves");
-                return ApiResponse<string>.Fail("Cannot deactivate yourself");
-            }
-            var activeManagers = await _userManager.GetUsersInRoleAsync(Role.Manager.ToString());
-            var activeFinance = await _userManager.GetUsersInRoleAsync(Role.Finance.ToString());
-            if ((user.Role == Role.Manager && activeManagers.Count() <= 1) ||
-                (user.Role == Role.Finance && activeFinance.Count() <= 1))
+                Id = user.Id,
+                UserName = user.UserName,
+                Name = user.Name,
+                ContactInfo = user.ContactInfo,
+                Role = user.Role,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                BranchId = user is BranchUser branchUser ? branchUser.BranchId : null
+            };
+
+            _logger.LogInformation($"Profile fetched successfully for user: {currentUserId}");
+            return ApiResponse<UserProfileDto>.Success(profile, "Profile retrieved successfully");
+        }
+
+        // NEW: Update User Profile
+        public async Task<ApiResponse<string>> UpdateProfileAsync(UpdateProfileRequest request, string currentUserId)
+        {
+            _logger.LogInformation($"Updating profile for user: {currentUserId}");
+
+            var user = await _userManager.FindByIdAsync(currentUserId);
+            if (user == null)
             {
-                _logger.LogWarning($"Cannot deactivate user {request.UserId}: Last active {user.Role}");
-                return ApiResponse<string>.Fail($"Cannot deactivate the last active {user.Role}");
+                _logger.LogWarning($"User {currentUserId} not found");
+                return ApiResponse<string>.Fail("User not found");
             }
+
+            // Update allowed fields
+            if (!string.IsNullOrWhiteSpace(request.Name))
+                user.Name = request.Name;
+
+            if (!string.IsNullOrWhiteSpace(request.ContactInfo))
+                user.ContactInfo = request.ContactInfo;
+
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+                user.PhoneNumber = request.PhoneNumber;
+
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                _logger.LogWarning($"Failed to deactivate user {request.UserId}: {string.Join(", ", updateResult.Errors.Select(e => e.Description))}");
+                _logger.LogWarning($"Profile update failed for user {currentUserId}: {string.Join(", ", updateResult.Errors.Select(e => e.Description))}");
                 return ApiResponse<string>.Fail(updateResult.Errors.Select(e => e.Description));
             }
-            _logger.LogInformation($"User {request.UserId} deactivated successfully by {currentUserId}");
-            return ApiResponse<string>.Success(request.UserId.ToString(), "User deactivated successfully");
+
+            _logger.LogInformation($"Profile updated successfully for user: {currentUserId}");
+            return ApiResponse<string>.Success(currentUserId, "Profile updated successfully");
         }
+
+        // NEW: Change Password
+        public async Task<ApiResponse<string>> ChangePasswordAsync(ChangePasswordRequest request, string currentUserId)
+        {
+            _logger.LogInformation($"Password change requested for user: {currentUserId}");
+
+            // Validate request
+            if (request.NewPassword != request.ConfirmNewPassword)
+            {
+                return ApiResponse<string>.Fail("New password and confirmation do not match");
+            }
+
+            var user = await _userManager.FindByIdAsync(currentUserId);
+            if (user == null)
+            {
+                _logger.LogWarning($"User {currentUserId} not found");
+                return ApiResponse<string>.Fail("User not found");
+            }
+
+            // Change password using UserManager
+            var changeResult = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+            if (!changeResult.Succeeded)
+            {
+                _logger.LogWarning($"Password change failed for user {currentUserId}: {string.Join(", ", changeResult.Errors.Select(e => e.Description))}");
+                return ApiResponse<string>.Fail(changeResult.Errors.Select(e => e.Description));
+            }
+
+            _logger.LogInformation($"Password changed successfully for user: {currentUserId}");
+            return ApiResponse<string>.Success(currentUserId, "Password changed successfully");
+        }
+
         private async Task<string> GenerateJwtToken(User user)
         {
             _logger.LogInformation($"Generating JWT token for user: {user.UserName}");
+
             var userRoles = await _userManager.GetRolesAsync(user);
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName)
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim("Role", user.Role.ToString())
             };
+
             foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
-            claims.Add(new Claim("Role", user.Role.ToString()));
+
             if (user is BranchUser branchUser)
             {
                 claims.Add(new Claim("BranchId", branchUser.BranchId.ToString()));
             }
+
             _logger.LogInformation($"Claims for {user.UserName}: {string.Join(", ", claims.Select(c => $"{c.Type}: {c.Value}"))}");
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
                 _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured")));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(Convert.ToDouble(_configuration["Jwt:ExpireHours"])),
                 signingCredentials: creds);
+
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
             _logger.LogInformation($"Generated JWT token for {user.UserName}");
             return tokenString;

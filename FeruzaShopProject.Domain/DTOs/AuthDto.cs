@@ -69,8 +69,33 @@ namespace FeruzaShopProject.Domain.DTOs
         [StringLength(100)]
         public string? CurrentPassword { get; set; } // Required for self-reset
     }
+    public class UserProfileDto
+    {
+        public Guid Id { get; set; }
+        public string? UserName { get; set; }
+        public string? Name { get; set; }
+        public string? ContactInfo { get; set; }
+        public Role Role { get; set; }
+        public Guid? BranchId { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+    }
 
-    public class ForgetRequest
+    public class UpdateProfileRequest
+    {
+        public string? Name { get; set; }
+        public string? ContactInfo { get; set; }
+        public string? PhoneNumber { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        public string CurrentPassword { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmNewPassword { get; set; }
+    }
+
+    public class DeactivateUserRequest
     {
         [Required]
         public Guid UserId { get; set; }
