@@ -285,20 +285,20 @@ namespace FeruzaShopProject.API.Controllers
         /// </summary>
         [HttpGet("reports/daily")]
         [Authorize(Roles = "Manager,Sales,Finance")]
-        public async Task<ActionResult<ApiResponse<DailySalesReportDto>>> GenerateDailySalesReport(
-            [FromQuery] DateTime date,
-            [FromQuery] Guid? branchId = null,
-            [FromQuery] string? paymentMethod = null,
-            [FromQuery] Guid? bankAccountId = null)
+        public async Task<ActionResult<ApiResponse<DailySalesReportDto>>> GetDailySalesReportRange(
+                [FromQuery] DateTime startDate,
+                [FromQuery] DateTime endDate,
+                [FromQuery] Guid? branchId = null,
+                [FromQuery] string? paymentMethod = null)
         {
             try
             {
-                var result = await _transactionService.GenerateDailySalesReportAsync(date, branchId, paymentMethod, bankAccountId);
+                var result = await _transactionService.GenerateDailySalesReportAsync(startDate, endDate, branchId, paymentMethod);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating daily sales report for date: {Date}", date);
+                _logger.LogError(ex, "Error generating daily sales report for date: {Date}", startDate);
                 return StatusCode(500, ApiResponse<DailySalesReportDto>.Fail("Internal server error"));
             }
         }

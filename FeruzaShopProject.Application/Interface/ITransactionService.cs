@@ -25,7 +25,11 @@ namespace FeruzaShopProject.Application.Interface
             Guid? customerId = null,
             DateTime? fromDate = null,
             DateTime? toDate = null);
-        Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null);
+        Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(
+            DateTime startDate,
+            DateTime endDate,
+            Guid? branchId = null,
+            string? paymentMethod = null);
         Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null);
         Task<ApiResponse<bool>> MarkCommissionAsPaidAsync(Guid transactionId);
         Task<ApiResponse<CreditTransactionWithPaymentsDto>> GetCreditTransactionWithPaymentsAsync(Guid transactionId);

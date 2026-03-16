@@ -162,28 +162,52 @@ namespace FeruzaShopProject.Domain.DTOs
 
     public class DailySalesReportDto
     {
-        public DateTime ReportDate { get; set; }
+        // Date range
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+
+        // Filters applied
         public Guid? BranchId { get; set; }
         public string BranchName { get; set; }
         public string PaymentMethod { get; set; }
-        public Guid? BankAccountId { get; set; }
-        public string BankAccountName { get; set; }
 
+        // Summary counts
         public int TotalTransactions { get; set; }
+        public int TotalDays { get; set; }
+
+        // Financial totals
         public decimal TotalSalesAmount { get; set; }
         public decimal TotalCostAmount { get; set; }
         public decimal TotalNetProfit { get; set; }
         public decimal ProfitMarginPercentage { get; set; }
 
+        // Payment method breakdown
         public decimal TotalCashAmount { get; set; }
         public decimal TotalBankAmount { get; set; }
         public decimal TotalCreditAmount { get; set; }
+
+        // Commission breakdown
         public decimal TotalCommissionAmount { get; set; }
         public decimal TotalPaidCommission { get; set; }
         public decimal TotalPendingCommission { get; set; }
 
+        // Daily summaries
+        public List<DailySummaryDto> DailySummaries { get; set; } = new();
+
+        // Detailed items
         public List<DailySalesItemDto> SalesItems { get; set; } = new();
+
+        // Payment summaries
         public List<PaymentSummaryDto> PaymentSummaries { get; set; } = new();
+    }
+    public class DailySummaryDto
+    {
+        public DateTime Date { get; set; }
+        public int TransactionCount { get; set; }
+        public decimal TotalSales { get; set; }
+        public decimal TotalCash { get; set; }
+        public decimal TotalBank { get; set; }
+        public decimal TotalCredit { get; set; }
     }
 
     public class DailySalesItemDto

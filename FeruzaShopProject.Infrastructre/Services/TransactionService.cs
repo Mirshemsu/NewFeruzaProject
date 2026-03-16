@@ -933,10 +933,22 @@ namespace FeruzaShopProject.Infrastructre.Services
                         return ApiResponse<List<TransactionResponseDto>>.Fail($"Error: {ex.Message}");
                     }
                 }
-        public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null)
+        public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(
+     DateTime startDate,
+     DateTime endDate,
+     Guid? branchId = null,
+     string? paymentMethod = null)
         {
             try
             {
+                _logger.LogInformation("Generating daily sales report from {StartDate} to {EndDate}", startDate, endDate);
+
+                // Validate date range
+                if (startDate > endDate)
+                {
+                    return ApiResponse<DailySalesReportDto>.Fail("Start date cannot be after end date");
+                }
+
                 var query = _context.DailySales
                     .Include(ds => ds.Branch)
                     .Include(ds => ds.Product)
@@ -944,15 +956,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Include(ds => ds.Transaction)
                     .Include(ds => ds.Customer)
                     .Include(ds => ds.Painter)
-                    .Where(ds => ds.SaleDate == date.Date)
+                    .Where(ds => ds.SaleDate.Date >= startDate.Date && ds.SaleDate.Date <= endDate.Date)
                     .AsQueryable();
 
                 if (branchId.HasValue)
                     query = query.Where(ds => ds.BranchId == branchId.Value);
+
                 if (!string.IsNullOrEmpty(paymentMethod) && Enum.TryParse<PaymentMethod>(paymentMethod, out var method))
                     query = query.Where(ds => ds.PaymentMethod == method);
 
                 var dailySales = await query
+                    .OrderBy(ds => ds.SaleDate)
+                    .ThenBy(ds => ds.CreatedAt)
                     .Select(ds => new
                     {
                         Sale = ds,
@@ -966,10 +981,15 @@ namespace FeruzaShopProject.Infrastructre.Services
                         CustomerName = ds.Customer != null ? ds.Customer.Name : null,
                         PainterName = ds.Painter != null ? ds.Painter.Name : null,
                         TransactionDate = ds.Transaction != null ? ds.Transaction.TransactionDate : ds.SaleDate,
-                        // ========== INCLUDE REMARK ==========
                         Remark = ds.Remark ?? ds.Transaction.Remark
                     })
                     .ToListAsync();
+
+                // Group by date for daily breakdown
+                var salesByDate = dailySales
+                    .GroupBy(x => x.Sale.SaleDate.Date)
+                    .OrderBy(g => g.Key)
+                    .ToList();
 
                 // Calculate totals in a single pass
                 var totals = dailySales.Aggregate(
@@ -998,23 +1018,49 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 var totalNetProfit = totals.TotalSales - totals.TotalCost - totals.TotalCommission;
 
+                // Create daily summaries
+                var dailySummaries = salesByDate.Select(g => new DailySummaryDto
+                {
+                    Date = g.Key,
+                    TransactionCount = g.Count(),
+                    TotalSales = g.Sum(x => x.Sale.TotalAmount),
+                    TotalCash = g.Where(x => x.Sale.PaymentMethod == PaymentMethod.Cash).Sum(x => x.Sale.TotalAmount),
+                    TotalBank = g.Where(x => x.Sale.PaymentMethod == PaymentMethod.Bank).Sum(x => x.Sale.TotalAmount),
+                    TotalCredit = g.Where(x => x.Sale.PaymentMethod == PaymentMethod.Credit).Sum(x => x.Sale.TotalAmount)
+                }).ToList();
+
                 var report = new DailySalesReportDto
                 {
-                    ReportDate = date.Date,
+                    StartDate = startDate.Date,
+                    EndDate = endDate.Date,
                     BranchId = branchId,
                     BranchName = branchId.HasValue ? dailySales.FirstOrDefault()?.BranchName : "All Branches",
                     PaymentMethod = paymentMethod,
+
+                    // Summary counts
                     TotalTransactions = dailySales.Count,
+                    TotalDays = salesByDate.Count,
+
+                    // Financial totals
                     TotalSalesAmount = totals.TotalSales,
                     TotalCostAmount = totals.TotalCost,
                     TotalNetProfit = totalNetProfit,
                     ProfitMarginPercentage = totals.TotalSales > 0 ? (totalNetProfit / totals.TotalSales) * 100 : 0,
+
+                    // Payment method breakdown
                     TotalCashAmount = totals.CashAmount,
                     TotalBankAmount = totals.BankAmount,
                     TotalCreditAmount = totals.CreditAmount,
+
+                    // Commission breakdown
                     TotalCommissionAmount = totals.TotalCommission,
                     TotalPaidCommission = totals.PaidCommission,
                     TotalPendingCommission = totals.PendingCommission,
+
+                    // Daily summaries
+                    DailySummaries = dailySummaries,
+
+                    // Detailed sales items
                     SalesItems = dailySales.Select(x => new DailySalesItemDto
                     {
                         Id = x.Sale.Id,
@@ -1046,9 +1092,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                         PainterName = x.PainterName,
                         IsPartialPayment = x.Sale.IsPartialPayment,
                         IsCreditPayment = x.Sale.IsCreditPayment,
-                        // ========== SET REMARK FIELD ==========
                         Remark = x.Remark
                     }).ToList(),
+
                     PaymentSummaries = dailySales
                         .GroupBy(x => x.Sale.PaymentMethod)
                         .Select(g => new PaymentSummaryDto
@@ -1062,20 +1108,19 @@ namespace FeruzaShopProject.Infrastructre.Services
                         }).ToList()
                 };
 
-                _logger.LogInformation("Generated daily sales report for {Date}. " +
+                _logger.LogInformation("Generated daily sales report from {StartDate} to {EndDate}. " +
                     "Sales: {TotalSales:C2}, Cost: {TotalCost:C2}, Profit: {NetProfit:C2}, Margin: {Margin:F1}%",
-                    date.Date, report.TotalSalesAmount, report.TotalCostAmount,
+                    startDate.Date, endDate.Date, report.TotalSalesAmount, report.TotalCostAmount,
                     report.TotalNetProfit, report.ProfitMarginPercentage);
 
                 return ApiResponse<DailySalesReportDto>.Success(report);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating daily sales report for date: {Date}", date);
+                _logger.LogError(ex, "Error generating daily sales report from {StartDate} to {EndDate}", startDate, endDate);
                 return ApiResponse<DailySalesReportDto>.Fail($"Error generating report: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null)
         {
             try
