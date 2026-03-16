@@ -184,7 +184,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Admin view - get all branches closing for a date
         /// </summary>
         [HttpGet("admin/all-branches/{date}")]
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Manager,Finance")]
         public async Task<ActionResult<ApiResponse<AllBranchesClosingDto>>> GetAllBranchesClosing(DateTime date)
         {
             try
@@ -203,7 +203,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Admin view - get specific branch closing detail
         /// </summary>
         [HttpGet("admin/branch/{branchId}/{date}")]
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Manager,Finance")]
         public async Task<ActionResult<ApiResponse<BranchClosingSummaryDto>>> GetBranchClosingDetail(Guid branchId, DateTime date)
         {
             try
@@ -222,7 +222,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Admin view - get closings by date range
         /// </summary>
         [HttpPost("admin/date-range")]
-        [Authorize(Roles = "Admin,Finance")]
+        [Authorize(Roles = "Manager,Finance")]
         public async Task<ActionResult<ApiResponse<List<BranchClosingSummaryDto>>>> GetClosingsByDateRange([FromBody] DateRangeDto dto)
         {
             try

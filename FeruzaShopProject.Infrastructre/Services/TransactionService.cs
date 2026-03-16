@@ -133,12 +133,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
-                // Validate stock for non-credit transactions
-                if (dto.PaymentMethod != PaymentMethod.Credit &&
-                    !await ValidateStockAsync(dto.ProductId, dto.Quantity, dto.BranchId))
-                {
-                    return ApiResponse<TransactionResponseDto>.Fail("Insufficient stock");
-                }
 
                 // Create sales transaction using AutoMapper
                 var salesTransaction = _mapper.Map<Transaction>(dto);
@@ -874,66 +868,71 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        public async Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetPendingCreditTransactionsAsync(Guid? customerId = null, Guid? branchId = null)
-        {
-            try
-            {
-                var query = _context.Transactions
-                    .Include(t => t.Branch)
-                    .Include(t => t.Product)
-                    .Include(t => t.Customer)
-                    .Where(t => t.PaymentMethod == PaymentMethod.Credit);
-
-                if (customerId.HasValue)
-                    query = query.Where(t => t.CustomerId == customerId.Value);
-                if (branchId.HasValue)
-                    query = query.Where(t => t.BranchId == branchId.Value);
-
-                var transactions = await query
-                    .OrderByDescending(t => t.TransactionDate)
-                    .ToListAsync();
-
-                var result = new List<CreditTransactionHistoryDto>();
-
-                foreach (var transaction in transactions)
+        public async Task<ApiResponse<List<TransactionResponseDto>>> GetPendingCreditTransactionsAsync(
+            Guid? branchId = null,
+            Guid? customerId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null)
                 {
-                    var paidAmount = await CalculatePaidAmountAsync(transaction.Id);
-                    var totalAmount = CalculateTotalAmount(transaction);
-
-                    if (paidAmount < totalAmount) // Only include pending transactions
+                    try
                     {
-                        var history = new CreditTransactionHistoryDto
+                        _logger.LogInformation("Getting pending credit transactions");
+
+                        var query = _context.Transactions
+                            .Include(t => t.Branch)
+                            .Include(t => t.Product)
+                                .ThenInclude(p => p.Category)
+                            .Include(t => t.Customer)
+                            .Include(t => t.Painter)
+                            .Where(t => t.PaymentMethod == PaymentMethod.Credit && t.IsActive)
+                            .Select(t => new
+                            {
+                                Transaction = t,
+                                PaidAmount = t.CreditPayments.Sum(p => (decimal?)p.Amount) ?? 0,
+                                TotalAmount = t.UnitPrice * t.Quantity
+                            })
+                            .AsQueryable();
+
+                        // Apply filters
+                        if (branchId.HasValue)
+                            query = query.Where(x => x.Transaction.BranchId == branchId.Value);
+
+                        if (customerId.HasValue)
+                            query = query.Where(x => x.Transaction.CustomerId == customerId.Value);
+
+                        if (fromDate.HasValue)
+                            query = query.Where(x => x.Transaction.TransactionDate.Date >= fromDate.Value.Date);
+
+                        if (toDate.HasValue)
+                            query = query.Where(x => x.Transaction.TransactionDate.Date <= toDate.Value.Date);
+
+                        // Filter for pending only (paid amount < total amount)
+                        query = query.Where(x => x.PaidAmount < x.TotalAmount);
+
+                        var results = await query
+                            .OrderByDescending(x => x.Transaction.TransactionDate)
+                            .ToListAsync();
+
+                        var result = results.Select(x =>
                         {
-                            TransactionId = transaction.Id,
-                            TransactionDate = transaction.TransactionDate,
-                            ItemCode = transaction.ItemCode,
-                            ProductName = transaction.Product.Name,
-                            Quantity = transaction.Quantity,
-                            UnitPrice = transaction.UnitPrice,
-                            TotalAmount = totalAmount,
-                            PaidAmount = paidAmount,
-                            CustomerId = transaction.CustomerId ?? Guid.Empty,
-                            CustomerName = transaction.Customer?.Name ?? "Unknown",
-                            CustomerPhoneNumber = transaction.Customer?.PhoneNumber ?? "Unknown",
-                            BranchId = transaction.BranchId,
-                            BranchName = transaction.Branch.Name,
-                            LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id),
-                            // ========== SET REMARK FIELD ==========
-                            Remark = transaction.Remark
-                        };
-                        result.Add(history);
+                            var dto = _mapper.Map<TransactionResponseDto>(x.Transaction);
+                            dto.TotalAmount = x.TotalAmount;
+                            dto.PaidAmount = x.PaidAmount;
+                            dto.CommissionAmount = x.Transaction.Quantity * x.Transaction.CommissionRate;
+                            dto.IsPartialPayment = x.PaidAmount > 0 && x.PaidAmount < x.TotalAmount;
+                            dto.IsCreditPayment = true;
+                            return dto;
+                        }).ToList();
+
+                        _logger.LogInformation("Retrieved {Count} pending credit transactions", result.Count);
+                        return ApiResponse<List<TransactionResponseDto>>.Success(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error getting pending credit transactions");
+                        return ApiResponse<List<TransactionResponseDto>>.Fail($"Error: {ex.Message}");
                     }
                 }
-
-                return ApiResponse<List<CreditTransactionHistoryDto>>.Success(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting pending credit transactions");
-                return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving pending credit transactions: {ex.Message}");
-            }
-        }
-
         public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null)
         {
             try

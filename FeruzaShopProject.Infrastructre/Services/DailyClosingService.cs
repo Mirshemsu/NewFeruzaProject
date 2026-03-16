@@ -746,40 +746,74 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 foreach (var branch in branches)
                 {
-                    // Get daily sales for this branch
-                    var dailySales = await _context.DailySales
-                        .Where(ds => ds.BranchId == branch.Id &&
-                                    ds.SaleDate.Date == date.Date &&
-                                    ds.IsActive)
-                        .ToListAsync();
+                    // ========== FIX: Get closing data separately to avoid complex joins ==========
+                    DailyClosing? closing = null;
 
-                    var totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
-                    var totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
-                    var totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
-                    var totalSales = totalCash + totalBank + totalCredit;
+                    try
+                    {
+                        closing = await _context.DailyClosings
+                            .Include(dc => dc.Closer)
+                            .Include(dc => dc.Approver)
+                            .Where(dc => dc.BranchId == branch.Id &&
+                                        dc.ClosingDate.Date == date.Date &&
+                                        dc.IsActive)
+                            .OrderByDescending(dc => dc.CreatedAt)
+                            .FirstOrDefaultAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error fetching closing for branch {BranchId}", branch.Id);
+                        // Continue with null closing
+                    }
+
+                    decimal totalCash = 0;
+                    decimal totalBank = 0;
+                    decimal totalCredit = 0;
+                    decimal totalSales = 0;
+
+                    if (closing != null)
+                    {
+                        // Use the amounts from DailyClosing (these already include transfers)
+                        totalCash = closing.TotalCashAmount;
+                        totalBank = closing.TotalBankAmount;
+                        totalCredit = closing.TotalCreditAmount;
+                        totalSales = closing.TotalSalesAmount;
+
+                        // Update status counts
+                        if (closing.Status == DailyClosingStatus.Approved)
+                            closedCount++;
+                        else if (closing.Status == DailyClosingStatus.Pending ||
+                                 closing.Status == DailyClosingStatus.Closed)
+                            pendingCount++;
+                    }
+                    else
+                    {
+                        // If no closing record, fallback to DailySales
+                        try
+                        {
+                            var dailySales = await _context.DailySales
+                                .Where(ds => ds.BranchId == branch.Id &&
+                                            ds.SaleDate.Date == date.Date &&
+                                            ds.IsActive)
+                                .ToListAsync();
+
+                            totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
+                            totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
+                            totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
+                            totalSales = totalCash + totalBank + totalCredit;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error fetching daily sales for branch {BranchId}", branch.Id);
+                            // Use zeros if error
+                        }
+                    }
 
                     // Update totals
                     totalSalesAllBranches += totalSales;
                     totalCashAllBranches += totalCash;
                     totalBankAllBranches += totalBank;
                     totalCreditAllBranches += totalCredit;
-
-                    // Get closing status
-                    var closing = await _context.DailyClosings
-                        .Include(dc => dc.Closer)
-                        .Where(dc => dc.BranchId == branch.Id &&
-                                    dc.ClosingDate.Date == date.Date &&
-                                    dc.IsActive)
-                        .OrderByDescending(dc => dc.CreatedAt)
-                        .FirstOrDefaultAsync();
-
-                    if (closing != null)
-                    {
-                        if (closing.Status == DailyClosingStatus.Approved)
-                            closedCount++;
-                        else if (closing.Status == DailyClosingStatus.Pending)
-                            pendingCount++;
-                    }
 
                     branchSummaries.Add(new BranchClosingSummaryDto
                     {
@@ -820,7 +854,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<AllBranchesClosingDto>.Fail($"Error: {ex.Message}");
             }
         }
-
         /// <summary>
         /// Admin view - get detailed closing for a specific branch
         /// </summary>

@@ -20,7 +20,11 @@ namespace FeruzaShopProject.Application.Interface
         Task<ApiResponse<bool>> DeleteTransactionAsync(Guid id);
         Task<ApiResponse<TransactionResponseDto>> PayCreditAsync(PayCreditDto dto);
         Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetCreditTransactionHistoryAsync(Guid? customerId);
-        Task<ApiResponse<List<CreditTransactionHistoryDto>>> GetPendingCreditTransactionsAsync(Guid? customerId = null, Guid? branchId = null);
+        Task<ApiResponse<List<TransactionResponseDto>>> GetPendingCreditTransactionsAsync(
+            Guid? branchId = null,
+            Guid? customerId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null);
         Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(DateTime date, Guid? branchId = null, string? paymentMethod = null, Guid? bankAccountId = null);
         Task<ApiResponse<CreditSummaryDto>> GetCreditSummaryAsync(Guid? customerId = null);
         Task<ApiResponse<bool>> MarkCommissionAsPaidAsync(Guid transactionId);

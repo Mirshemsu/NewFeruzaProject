@@ -262,9 +262,11 @@ namespace FeruzaShopProject.API.Controllers
         /// </summary>
         [HttpGet("credit/pending")]
         [Authorize(Roles = "Manager,Sales")]
-        public async Task<ActionResult<ApiResponse<List<CreditTransactionHistoryDto>>>> GetPendingCreditTransactions(
-            [FromQuery] Guid? customerId = null,
-            [FromQuery] Guid? branchId = null)
+        public async Task<ActionResult<ApiResponse<List<TransactionResponseDto>>>> GetPendingCreditTransactionsAsync(
+            Guid? branchId = null,
+            Guid? customerId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null)
         {
             try
             {
