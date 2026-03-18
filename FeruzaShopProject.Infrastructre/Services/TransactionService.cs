@@ -869,70 +869,90 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetPendingCreditTransactionsAsync(
-            Guid? branchId = null,
-            Guid? customerId = null,
-            DateTime? fromDate = null,
-            DateTime? toDate = null)
-                {
-                    try
-                    {
-                        _logger.LogInformation("Getting pending credit transactions");
-
-                        var query = _context.Transactions
-                            .Include(t => t.Branch)
-                            .Include(t => t.Product)
-                                .ThenInclude(p => p.Category)
-                            .Include(t => t.Customer)
-                            .Include(t => t.Painter)
-                            .Where(t => t.PaymentMethod == PaymentMethod.Credit && t.IsActive)
-                            .Select(t => new
-                            {
-                                Transaction = t,
-                                PaidAmount = t.CreditPayments.Sum(p => (decimal?)p.Amount) ?? 0,
-                                TotalAmount = t.UnitPrice * t.Quantity
-                            })
-                            .AsQueryable();
-
-                        // Apply filters
-                        if (branchId.HasValue)
-                            query = query.Where(x => x.Transaction.BranchId == branchId.Value);
-
-                        if (customerId.HasValue)
-                            query = query.Where(x => x.Transaction.CustomerId == customerId.Value);
-
-                        if (fromDate.HasValue)
-                            query = query.Where(x => x.Transaction.TransactionDate.Date >= fromDate.Value.Date);
-
-                        if (toDate.HasValue)
-                            query = query.Where(x => x.Transaction.TransactionDate.Date <= toDate.Value.Date);
-
-                        // Filter for pending only (paid amount < total amount)
-                        query = query.Where(x => x.PaidAmount < x.TotalAmount);
-
-                        var results = await query
-                            .OrderByDescending(x => x.Transaction.TransactionDate)
-                            .ToListAsync();
-
-                        var result = results.Select(x =>
+                     Guid? branchId = null,
+                     Guid? customerId = null,
+                     DateTime? fromDate = null,
+                     DateTime? toDate = null)
                         {
-                            var dto = _mapper.Map<TransactionResponseDto>(x.Transaction);
-                            dto.TotalAmount = x.TotalAmount;
-                            dto.PaidAmount = x.PaidAmount;
-                            dto.CommissionAmount = x.Transaction.Quantity * x.Transaction.CommissionRate;
-                            dto.IsPartialPayment = x.PaidAmount > 0 && x.PaidAmount < x.TotalAmount;
-                            dto.IsCreditPayment = true;
-                            return dto;
-                        }).ToList();
+            try
+            {
+                _logger.LogInformation("Getting pending credit transactions with filters: BranchId: {BranchId}", branchId);
 
-                        _logger.LogInformation("Retrieved {Count} pending credit transactions", result.Count);
-                        return ApiResponse<List<TransactionResponseDto>>.Success(result);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error getting pending credit transactions");
-                        return ApiResponse<List<TransactionResponseDto>>.Fail($"Error: {ex.Message}");
-                    }
+                // DEBUG: Check all distinct branch IDs in credit transactions
+                var allBranchIds = await _context.Transactions
+                    .Where(t => t.PaymentMethod == PaymentMethod.Credit && t.IsActive)
+                    .Select(t => t.BranchId)
+                    .Distinct()
+                    .ToListAsync();
+
+                _logger.LogInformation("All branch IDs with credit transactions: {BranchIds}",
+                    string.Join(", ", allBranchIds.Select(id => id.ToString())));
+
+                // DEBUG: If branchId provided, check if it exists in the list
+                if (branchId.HasValue)
+                {
+                    bool exists = allBranchIds.Contains(branchId.Value);
+                    _logger.LogInformation("BranchId {BranchId} exists in credit transactions: {Exists}",
+                        branchId.Value, exists);
                 }
+
+                // Your existing query
+                var query = _context.Transactions
+                    .Include(t => t.Branch)
+                    .Include(t => t.Product)
+                        .ThenInclude(p => p.Category)
+                    .Include(t => t.Customer)
+                    .Include(t => t.Painter)
+                    .Where(t => t.PaymentMethod == PaymentMethod.Credit && t.IsActive)
+                    .Select(t => new
+                    {
+                        Transaction = t,
+                        PaidAmount = t.CreditPayments.Sum(p => (decimal?)p.Amount) ?? 0,
+                        TotalAmount = t.UnitPrice * t.Quantity
+                    })
+                    .AsQueryable();
+
+                if (branchId.HasValue)
+                {
+                    // Log the exact value being compared
+                    _logger.LogInformation("Filtering by branchId: {BranchId}", branchId.Value);
+                    query = query.Where(x => x.Transaction.BranchId == branchId.Value);
+
+                    // Log count after branch filter
+                    var afterBranchCount = await query.CountAsync();
+                    _logger.LogInformation("Transactions after branch filter: {Count}", afterBranchCount);
+                }
+
+                // Filter for pending only
+                query = query.Where(x => x.PaidAmount < x.TotalAmount);
+
+                var afterPendingCount = await query.CountAsync();
+                _logger.LogInformation("Transactions after pending filter: {Count}", afterPendingCount);
+
+                var results = await query
+                    .OrderByDescending(x => x.Transaction.TransactionDate)
+                    .ToListAsync();
+
+                var result = results.Select(x =>
+                {
+                    var dto = _mapper.Map<TransactionResponseDto>(x.Transaction);
+                    dto.TotalAmount = x.TotalAmount;
+                    dto.PaidAmount = x.PaidAmount;
+                    dto.CommissionAmount = x.Transaction.Quantity * x.Transaction.CommissionRate;
+                    dto.IsPartialPayment = x.PaidAmount > 0 && x.PaidAmount < x.TotalAmount;
+                    dto.IsCreditPayment = true;
+                    return dto;
+                }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} pending credit transactions", result.Count);
+                return ApiResponse<List<TransactionResponseDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting pending credit transactions");
+                return ApiResponse<List<TransactionResponseDto>>.Fail($"Error: {ex.Message}");
+            }
+        }
         public async Task<ApiResponse<DailySalesReportDto>> GenerateDailySalesReportAsync(
      DateTime startDate,
      DateTime endDate,
