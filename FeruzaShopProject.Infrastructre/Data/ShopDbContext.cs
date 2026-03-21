@@ -221,10 +221,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.Property(dc => dc.CashBankTransactionId).HasMaxLength(100);
                 entity.Property(dc => dc.BankTransferTransactionId).HasMaxLength(100);
 
-                // Configure Status enum conversion
-                entity.Property(dc => dc.Status)
-                    .HasConversion<string>()
-                    .HasMaxLength(20);
+               
 
                 // Relationships
                 entity.HasOne(dc => dc.Closer)

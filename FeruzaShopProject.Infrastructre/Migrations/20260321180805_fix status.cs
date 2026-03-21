@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FeruzaShopProject.Infrastructre.Migrations
 {
     /// <inheritdoc />
-    public partial class update1 : Migration
+    public partial class fixstatus : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -90,23 +90,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Suppliers",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ContactInfo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Suppliers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -157,30 +140,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
                         name: "FK_AspNetUsers_Branches_BranchId",
-                        column: x => x.BranchId,
-                        principalTable: "Branches",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BankAccounts",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BankName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    AccountNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    AccountOwner = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BankAccounts", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BankAccounts_Branches_BranchId",
                         column: x => x.BranchId,
                         principalTable: "Branches",
                         principalColumn: "Id",
@@ -303,14 +262,65 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DailyClosings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClosingDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ClosedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ClosedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Remarks = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TotalTransactions = table.Column<int>(type: "int", nullable: false),
+                    TotalSalesAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalCashAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalBankAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalCreditAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CashBankTransactionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    BankTransferTransactionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DailyClosings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DailyClosings_AspNetUsers_ApprovedBy",
+                        column: x => x.ApprovedBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DailyClosings_AspNetUsers_ClosedBy",
+                        column: x => x.ClosedBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DailyClosings_Branches_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Branches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PurchaseOrders",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    InvoiceNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    FinanceVerifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FinanceVerifiedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -319,8 +329,20 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 {
                     table.PrimaryKey("PK_PurchaseOrders", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_PurchaseOrders_AspNetUsers_ApprovedBy",
+                        column: x => x.ApprovedBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_PurchaseOrders_AspNetUsers_CreatedBy",
                         column: x => x.CreatedBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_AspNetUsers_FinanceVerifiedBy",
+                        column: x => x.FinanceVerifiedBy,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -330,11 +352,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         principalTable: "Branches",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PurchaseOrders_Suppliers_SupplierId",
-                        column: x => x.SupplierId,
-                        principalTable: "Suppliers",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -382,6 +399,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     PaymentMethod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     CommissionRate = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     CommissionPaid = table.Column<bool>(type: "bit", nullable: false),
+                    Remark = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -416,46 +434,16 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PurchaseHistory",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PurchaseOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PerformedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Details = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PurchaseHistory", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PurchaseHistory_AspNetUsers_PerformedByUserId",
-                        column: x => x.PerformedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PurchaseHistory_PurchaseOrders_PurchaseOrderId",
-                        column: x => x.PurchaseOrderId,
-                        principalTable: "PurchaseOrders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PurchaseOrderItems",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PurchaseOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    QuantityOrdered = table.Column<int>(type: "int", nullable: false),
-                    QuantityReceived = table.Column<int>(type: "int", nullable: true),
-                    QuantityApproved = table.Column<int>(type: "int", nullable: true),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    BuyingPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    SupplierName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -486,6 +474,7 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Remark = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -520,6 +509,9 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PainterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsPartialPayment = table.Column<bool>(type: "bit", nullable: false),
+                    IsCreditPayment = table.Column<bool>(type: "bit", nullable: false),
+                    OriginalTransactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Remark = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -572,8 +564,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     NewProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     NewQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: true),
                     NewPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ProductId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -594,16 +584,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_ProductExchanges_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ProductExchanges_Products_ProductId1",
-                        column: x => x.ProductId1,
-                        principalTable: "Products",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ProductExchanges_Transactions_OriginalTransactionId",
                         column: x => x.OriginalTransactionId,
                         principalTable: "Transactions",
@@ -618,7 +598,8 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BranchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TransactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TransactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PurchaseOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MovementType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Quantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
                     PreviousQuantity = table.Column<decimal>(type: "decimal(18,3)", precision: 18, scale: 3, nullable: false),
@@ -650,6 +631,43 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         principalTable: "Transactions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseHistory",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PurchaseOrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PerformedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Details = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    PurchaseOrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseHistory_AspNetUsers_PerformedByUserId",
+                        column: x => x.PerformedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseHistory_PurchaseOrderItems_PurchaseOrderItemId",
+                        column: x => x.PurchaseOrderItemId,
+                        principalTable: "PurchaseOrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseHistory_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -697,11 +715,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BankAccounts_BranchId",
-                table: "BankAccounts",
-                column: "BranchId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Branches_Name",
                 table: "Branches",
                 column: "Name",
@@ -730,6 +743,21 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_DailyClosings_ApprovedBy",
+                table: "DailyClosings",
+                column: "ApprovedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DailyClosings_BranchId",
+                table: "DailyClosings",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DailyClosings_ClosedBy",
+                table: "DailyClosings",
+                column: "ClosedBy");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DailySales_BranchId_SaleDate",
                 table: "DailySales",
                 columns: new[] { "BranchId", "SaleDate" });
@@ -753,11 +781,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "IX_DailySales_SaleDate",
                 table: "DailySales",
                 column: "SaleDate");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DailySales_SaleDate_PaymentMethod",
-                table: "DailySales",
-                columns: new[] { "SaleDate", "PaymentMethod" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_DailySales_TransactionId",
@@ -791,16 +814,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 column: "OriginalTransactionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProductExchanges_ProductId",
-                table: "ProductExchanges",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductExchanges_ProductId1",
-                table: "ProductExchanges",
-                column: "ProductId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Products_CategoryId",
                 table: "Products",
                 column: "CategoryId");
@@ -816,6 +829,11 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 column: "PurchaseOrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseHistory_PurchaseOrderItemId",
+                table: "PurchaseHistory",
+                column: "PurchaseOrderItemId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrderItems_ProductId",
                 table: "PurchaseOrderItems",
                 column: "ProductId");
@@ -824,6 +842,11 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "IX_PurchaseOrderItems_PurchaseOrderId",
                 table: "PurchaseOrderItems",
                 column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_ApprovedBy",
+                table: "PurchaseOrders",
+                column: "ApprovedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_BranchId",
@@ -836,15 +859,15 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_FinanceVerifiedBy",
+                table: "PurchaseOrders",
+                column: "FinanceVerifiedBy");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_Id",
                 table: "PurchaseOrders",
                 column: "Id",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PurchaseOrders_SupplierId",
-                table: "PurchaseOrders",
-                column: "SupplierId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StockMovements_BranchId",
@@ -870,12 +893,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "IX_Stocks_ProductId_BranchId",
                 table: "Stocks",
                 columns: new[] { "ProductId", "BranchId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Suppliers_Name",
-                table: "Suppliers",
-                column: "Name",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -928,10 +945,10 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "BankAccounts");
+                name: "CreditPayments");
 
             migrationBuilder.DropTable(
-                name: "CreditPayments");
+                name: "DailyClosings");
 
             migrationBuilder.DropTable(
                 name: "DailySales");
@@ -943,9 +960,6 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "PurchaseHistory");
 
             migrationBuilder.DropTable(
-                name: "PurchaseOrderItems");
-
-            migrationBuilder.DropTable(
                 name: "StockMovements");
 
             migrationBuilder.DropTable(
@@ -955,16 +969,13 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "PurchaseOrders");
+                name: "PurchaseOrderItems");
 
             migrationBuilder.DropTable(
                 name: "Transactions");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "PurchaseOrders");
 
             migrationBuilder.DropTable(
                 name: "Customers");
@@ -976,10 +987,13 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                 name: "Products");
 
             migrationBuilder.DropTable(
-                name: "Branches");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "Branches");
         }
     }
 }
