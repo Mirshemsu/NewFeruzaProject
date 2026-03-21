@@ -29,7 +29,6 @@ namespace FeruzaShopProject.Infrastructre.Data
         {
             // ✅ important line — required for Identity tables
             base.OnModelCreating(modelBuilder);
-
             // ========== GLOBAL QUERY FILTERS ==========
             modelBuilder.Entity<Branch>().HasQueryFilter(b => b.IsActive);
             modelBuilder.Entity<Category>().HasQueryFilter(c => c.IsActive);
@@ -50,14 +49,12 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasValue<BranchUser>("BranchUser")
                     .HasValue<GlobalUser>("GlobalUser");
             });
-
             // ========== BRANCH CONFIGURATION ==========
             modelBuilder.Entity<Branch>(entity =>
             {
                 entity.HasKey(b => b.Id);
                 entity.HasIndex(b => b.Name).IsUnique();
             });
-
             // ========== CATEGORY CONFIGURATION ==========
             modelBuilder.Entity<Category>(entity =>
             {
@@ -65,7 +62,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.Property(c => c.Name).HasMaxLength(100).IsRequired();
                 entity.HasIndex(c => c.Name).IsUnique();
             });
-
             // ========== PRODUCT CONFIGURATION ==========
             modelBuilder.Entity<Product>(entity =>
             {
@@ -99,8 +95,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(e => e.NewProductId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
-
-            // ========== PRODUCT EXCHANGE CONFIGURATION ==========
+            // ========== PRODUCT EXCHANGE CONFIGURATION =======
             modelBuilder.Entity<ProductExchange>(entity =>
             {
                 entity.HasKey(pe => pe.Id);
@@ -135,8 +130,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(pe => pe.NewProductId);
                 entity.HasIndex(pe => pe.CreatedAt);
             });
-
-            // ========== PURCHASE ORDER CONFIGURATION ==========
+            // ========== PURCHASE ORDER CONFIGURATION =========
             modelBuilder.Entity<PurchaseOrder>(entity =>
             {
                 entity.HasKey(po => po.Id);
@@ -169,8 +163,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasConversion<string>()
                     .HasMaxLength(30);
             });
-
-            // ========== PURCHASE ORDER ITEM CONFIGURATION ==========
+            // ========== PURCHASE ORDER ITEM CONFIGURATION ====
             modelBuilder.Entity<PurchaseOrderItem>(entity =>
             {
                 entity.HasKey(poi => poi.Id);
@@ -192,8 +185,7 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(poi => poi.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
-
-            // ========== PURCHASE HISTORY CONFIGURATION ==========
+            // ========== PURCHASE HISTORY CONFIGURATION =======
             modelBuilder.Entity<PurchaseHistory>(entity =>
             {
                 entity.HasKey(ph => ph.Id);
@@ -217,7 +209,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
             });
-
             // ========== DAILY CLOSING CONFIGURATION ==========
             modelBuilder.Entity<DailyClosing>(entity =>
             {
@@ -252,7 +243,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(dc => dc.BranchId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
-
             // ========== STOCK CONFIGURATION ==========
             modelBuilder.Entity<Stock>(entity =>
             {
@@ -271,7 +261,6 @@ namespace FeruzaShopProject.Infrastructre.Data
 
                 entity.HasIndex(s => new { s.ProductId, s.BranchId }).IsUnique();
             });
-
             // ========== STOCK MOVEMENT CONFIGURATION ==========
             modelBuilder.Entity<StockMovement>(entity =>
             {
@@ -299,7 +288,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(sm => sm.TransactionId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
-
             // ========== TRANSACTION CONFIGURATION ==========
             modelBuilder.Entity<Transaction>(entity =>
             {
@@ -338,7 +326,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(t => t.PaymentMethod);
                 entity.HasIndex(t => new { t.BranchId, t.TransactionDate });
             });
-
             // ========== DAILY SALES CONFIGURATION ==========
             modelBuilder.Entity<DailySales>(entity =>
             {
@@ -382,7 +369,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(ds => ds.SaleDate);
                 entity.HasIndex(ds => new { ds.BranchId, ds.SaleDate });
             });
-
             // ========== CREDIT PAYMENT CONFIGURATION ==========
             modelBuilder.Entity<CreditPayment>(entity =>
             {
@@ -402,7 +388,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasIndex(cp => cp.PaymentDate);
                 entity.HasIndex(cp => cp.TransactionId);
             });
-
             // ========== CUSTOMER CONFIGURATION ==========
             modelBuilder.Entity<Customer>(entity =>
             {
@@ -411,7 +396,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.Property(c => c.PhoneNumber).HasMaxLength(20).IsRequired();
                 entity.HasIndex(c => c.PhoneNumber).IsUnique();
             });
-
             // ========== PAINTER CONFIGURATION ==========
             modelBuilder.Entity<Painter>(entity =>
             {
@@ -420,9 +404,6 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.Property(p => p.PhoneNumber).HasMaxLength(20).IsRequired();
                 entity.HasIndex(p => p.PhoneNumber).IsUnique();
             });
-
-        
-
             // ========== BRANCH USER CONFIGURATION ==========
             modelBuilder.Entity<BranchUser>(entity =>
             {

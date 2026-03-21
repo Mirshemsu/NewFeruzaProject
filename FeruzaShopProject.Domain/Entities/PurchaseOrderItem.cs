@@ -16,8 +16,8 @@ namespace FeruzaShopProject.Domain.Entities
         public int Quantity { get; set; }
 
         // Prices (set by finance per item)
-        public decimal? BuyingPrice { get; set; }      // Cost price
-        public decimal? UnitPrice { get; set; }        // Selling price
+        public decimal? BuyingPrice { get; set; }     
+        public decimal? UnitPrice { get; set; }        
         public string? SupplierName { get; set; }
 
         // Simple calculated fields

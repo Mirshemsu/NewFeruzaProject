@@ -51,7 +51,8 @@ namespace FeruzaShopProject.Domain.DTOs
     {
         [Required]
         public Guid Id { get; set; }
-
+        public Guid? BranchId { get; set; }
+        public Guid? ProductId { get; set; }
         public Guid? CustomerId { get; set; }
         public Guid? PainterId { get; set; }
 
