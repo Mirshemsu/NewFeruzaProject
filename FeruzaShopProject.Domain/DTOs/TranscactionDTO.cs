@@ -56,6 +56,19 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid? CustomerId { get; set; }
         public Guid? PainterId { get; set; }
 
+        // ========== ADD THESE FIELDS FOR UPDATING CUSTOMER/PAINTER ==========
+        [StringLength(100)]
+        public string? CustomerName { get; set; }
+
+        [StringLength(20)]
+        public string? CustomerPhoneNumber { get; set; }
+
+        [StringLength(100)]
+        public string? PainterName { get; set; }
+
+        [StringLength(20)]
+        public string? PainterPhoneNumber { get; set; }
+
         [Range(0, double.MaxValue)]
         public decimal? UnitPrice { get; set; }
 
@@ -69,7 +82,6 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public bool? CommissionPaid { get; set; }
 
-        // ========== NEW: Remark field ==========
         [StringLength(500)]
         public string? Remark { get; set; }
     }

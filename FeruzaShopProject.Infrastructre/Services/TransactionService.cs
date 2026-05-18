@@ -268,13 +268,12 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetAllTransactionsAsync(
-            DateTime? startDate = null,
-            DateTime? endDate = null,
-            Guid? branchId = null)
+     DateTime? startDate = null,
+     DateTime? endDate = null,
+     Guid? branchId = null)
         {
             try
             {
-                // Get all DailySales entries for the date range (these represent ACTUAL payments/sales)
                 var dailySalesQuery = _context.DailySales
                     .Include(ds => ds.Transaction)
                         .ThenInclude(t => t.Branch)
@@ -288,7 +287,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(ds => ds.IsActive)
                     .AsQueryable();
 
-                // Apply date filters if provided
                 if (startDate.HasValue)
                 {
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date >= startDate.Value.Date);
@@ -304,12 +302,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
                 }
 
+                // ========== FIX: Order by SaleDate ASC (oldest first) or CreatedAt ASC ==========
                 var dailySales = await dailySalesQuery
-                    .OrderByDescending(ds => ds.SaleDate)
-                    .ThenByDescending(ds => ds.CreatedAt)
+                    .OrderBy(ds => ds.SaleDate)           // First by sale date (chronological)
+                    .ThenBy(ds => ds.CreatedAt)           // Then by creation time (when entered)
                     .ToListAsync();
 
-                // Transform DailySales into TransactionResponseDto format
                 var result = new List<TransactionResponseDto>();
 
                 foreach (var dailySale in dailySales)
@@ -318,7 +316,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
 
-                        // Override with DailySales data (actual sold/payment data)
                         transactionDto.Quantity = dailySale.Quantity;
                         transactionDto.UnitPrice = dailySale.UnitPrice;
                         transactionDto.TotalAmount = dailySale.TotalAmount;
@@ -326,7 +323,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                         transactionDto.CommissionPaid = dailySale.CommissionPaid;
                         transactionDto.TransactionDate = dailySale.SaleDate;
 
-                        // For credit payments, mark as partial if applicable
                         if (dailySale.IsCreditPayment)
                         {
                             transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
@@ -361,12 +357,14 @@ namespace FeruzaShopProject.Infrastructre.Services
             {
                 var existingTransaction = await _context.Transactions
                     .Include(t => t.Product)
+                    .Include(t => t.Customer)  // Include Customer
+                    .Include(t => t.Painter)   // Include Painter
                     .FirstOrDefaultAsync(t => t.Id == dto.Id);
 
                 if (existingTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Transaction not found");
 
-                // ========== CHECK IF DATE IS CLOSED OR APPROVED ==========
+                // ========== CHECK IF TRANSACTION DATE IS CLOSED OR APPROVED ==========
                 var dateStatus = await _context.DailyClosings
                     .Where(dc => dc.BranchId == existingTransaction.BranchId &&
                                 dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
@@ -396,12 +394,113 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
+                // ========== HANDLE CUSTOMER UPDATE ==========
+                if (dto.CustomerId.HasValue)
+                {
+                    // If CustomerId is provided, just update the reference
+                    existingTransaction.CustomerId = dto.CustomerId.Value;
+                }
+                else if (!string.IsNullOrWhiteSpace(dto.CustomerName) && !string.IsNullOrWhiteSpace(dto.CustomerPhoneNumber))
+                {
+                    // If customer details are provided but no ID, find or create customer
+                    var existingCustomer = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.PhoneNumber == dto.CustomerPhoneNumber.Trim());
+
+                    if (existingCustomer != null)
+                    {
+                        // Update existing customer's name if needed
+                        if (existingCustomer.Name != dto.CustomerName.Trim())
+                        {
+                            existingCustomer.Name = dto.CustomerName.Trim();
+                            existingCustomer.UpdatedAt = DateTime.UtcNow;
+                            _context.Customers.Update(existingCustomer);
+                        }
+                        existingTransaction.CustomerId = existingCustomer.Id;
+                    }
+                    else
+                    {
+                        // Create new customer
+                        var newCustomer = new Customer
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = dto.CustomerName.Trim(),
+                            PhoneNumber = dto.CustomerPhoneNumber.Trim(),
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        await _context.Customers.AddAsync(newCustomer);
+                        existingTransaction.CustomerId = newCustomer.Id;
+                    }
+                }
+
+                // ========== HANDLE PAINTER UPDATE ==========
+                if (dto.PainterId.HasValue)
+                {
+                    // If PainterId is provided, just update the reference
+                    existingTransaction.PainterId = dto.PainterId.Value;
+                }
+                else if (!string.IsNullOrWhiteSpace(dto.PainterName) && !string.IsNullOrWhiteSpace(dto.PainterPhoneNumber))
+                {
+                    // If painter details are provided but no ID, find or create painter
+                    var existingPainter = await _context.Painters
+                        .FirstOrDefaultAsync(p => p.PhoneNumber == dto.PainterPhoneNumber.Trim());
+
+                    if (existingPainter != null)
+                    {
+                        // Update existing painter's name if needed
+                        if (existingPainter.Name != dto.PainterName.Trim())
+                        {
+                            existingPainter.Name = dto.PainterName.Trim();
+                            existingPainter.UpdatedAt = DateTime.UtcNow;
+                            _context.Painters.Update(existingPainter);
+                        }
+                        existingTransaction.PainterId = existingPainter.Id;
+                    }
+                    else
+                    {
+                        // Create new painter
+                        var newPainter = new Painter
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = dto.PainterName.Trim(),
+                            PhoneNumber = dto.PainterPhoneNumber.Trim(),
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        await _context.Painters.AddAsync(newPainter);
+                        existingTransaction.PainterId = newPainter.Id;
+                    }
+                }
+
+                // ========== CHECK IF NEW BRANCH (IF CHANGING) HAS CLOSED/APPROVED STATUS FOR THE DATE ==========
+                if (dto.BranchId.HasValue && dto.BranchId.Value != existingTransaction.BranchId)
+                {
+                    var newBranchDateStatus = await _context.DailyClosings
+                        .Where(dc => dc.BranchId == dto.BranchId.Value &&
+                                    dc.ClosingDate.Date == existingTransaction.TransactionDate.Date &&
+                                    dc.IsActive)
+                        .Select(dc => dc.Status)
+                        .FirstOrDefaultAsync();
+
+                    if (newBranchDateStatus == DailyClosingStatus.Approved)
+                    {
+                        return ApiResponse<TransactionResponseDto>.Fail(
+                            $"Cannot move transaction to new branch. The date {existingTransaction.TransactionDate:yyyy-MM-dd} is already approved and locked in the target branch.");
+                    }
+
+                    if (newBranchDateStatus == DailyClosingStatus.Closed)
+                    {
+                        return ApiResponse<TransactionResponseDto>.Fail(
+                            $"Cannot move transaction to new branch. The date {existingTransaction.TransactionDate:yyyy-MM-dd} is already closed in the target branch.");
+                    }
+                }
+
                 // ========== STORE OLD VALUES FOR COMPARISON ==========
                 var oldQuantity = existingTransaction.Quantity;
                 var oldUnitPrice = existingTransaction.UnitPrice;
                 var oldPaymentMethod = existingTransaction.PaymentMethod;
-                var oldCustomerId = existingTransaction.CustomerId;
-                var oldPainterId = existingTransaction.PainterId;
                 var oldCommissionRate = existingTransaction.CommissionRate;
                 var oldCommissionPaid = existingTransaction.CommissionPaid;
                 var oldTotalAmount = existingTransaction.TotalAmount;
@@ -433,8 +532,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // ========== UPDATE BASIC PROPERTIES ==========
                 if (dto.BranchId.HasValue) existingTransaction.BranchId = dto.BranchId.Value;
                 if (dto.ProductId.HasValue) existingTransaction.ProductId = dto.ProductId.Value;
-                if (dto.CustomerId.HasValue) existingTransaction.CustomerId = dto.CustomerId;
-                if (dto.PainterId.HasValue) existingTransaction.PainterId = dto.PainterId;
                 if (dto.UnitPrice.HasValue) existingTransaction.UnitPrice = dto.UnitPrice.Value;
                 if (dto.Quantity.HasValue) existingTransaction.Quantity = dto.Quantity.Value;
                 if (dto.PaymentMethod.HasValue) existingTransaction.PaymentMethod = dto.PaymentMethod.Value;
@@ -537,6 +634,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
+                // If unit price changed, update total amount
+                if (dto.UnitPrice.HasValue && dto.UnitPrice.Value != oldUnitPrice)
+                {
+                    // Create a record of price change if needed for audit
+                    _logger.LogInformation("Unit price changed from {OldPrice} to {NewPrice} for transaction {TransactionId}",
+                        oldUnitPrice, dto.UnitPrice.Value, existingTransaction.Id);
+                }
+
                 // ========== UPDATE DAILY SALES ENTRIES ==========
                 var existingDailySales = await _context.DailySales
                     .Where(ds => ds.TransactionId == existingTransaction.Id)
@@ -598,9 +703,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                             true);
                     }
                 }
+                // Normal update (same branch)
                 else
                 {
-                    // Normal update (same branch)
                     if (oldPaymentMethod != PaymentMethod.Credit)
                     {
                         await UpdateDailyClosingAmountsAsync(
@@ -631,6 +736,27 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 result.TotalAmount = existingTransaction.UnitPrice * existingTransaction.Quantity;
                 result.CommissionAmount = existingTransaction.Quantity * existingTransaction.CommissionRate;
+
+                // Add customer and painter details to response
+                if (existingTransaction.CustomerId.HasValue)
+                {
+                    var customer = await _context.Customers.FindAsync(existingTransaction.CustomerId.Value);
+                    if (customer != null)
+                    {
+                        result.CustomerName = customer.Name;
+                        result.CustomerPhoneNumber = customer.PhoneNumber;
+                    }
+                }
+
+                if (existingTransaction.PainterId.HasValue)
+                {
+                    var painter = await _context.Painters.FindAsync(existingTransaction.PainterId.Value);
+                    if (painter != null)
+                    {
+                        result.PainterName = painter.Name;
+                        result.PainterPhoneNumber = painter.PhoneNumber;
+                    }
+                }
 
                 if (existingTransaction.PaymentMethod == PaymentMethod.Credit)
                 {
@@ -929,8 +1055,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(t => t.CustomerId == customerId.Value);
                 }
 
+                // ========== FIX: Order by TransactionDate ASC and CreatedAt ASC ==========
                 var transactions = await query
-                    .OrderByDescending(t => t.TransactionDate)
+                    .OrderBy(t => t.TransactionDate)  // Chronological by transaction date
+                    .ThenBy(t => t.CreatedAt)         // Then by creation time
                     .ToListAsync();
 
                 var result = new List<CreditTransactionHistoryDto>();
@@ -954,7 +1082,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                         BranchId = transaction.BranchId,
                         BranchName = transaction.Branch.Name,
                         LastPaymentDate = await GetLastPaymentDateAsync(transaction.Id),
-                        // ========== SET REMARK FIELD ==========
                         Remark = transaction.Remark
                     };
                     result.Add(history);
@@ -968,36 +1095,16 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<List<CreditTransactionHistoryDto>>.Fail($"Error retrieving credit history: {ex.Message}");
             }
         }
-
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetPendingCreditTransactionsAsync(
-                     Guid? branchId = null,
-                     Guid? customerId = null,
-                     DateTime? fromDate = null,
-                     DateTime? toDate = null)
-                        {
+     Guid? branchId = null,
+     Guid? customerId = null,
+     DateTime? fromDate = null,
+     DateTime? toDate = null)
+        {
             try
             {
                 _logger.LogInformation("Getting pending credit transactions with filters: BranchId: {BranchId}", branchId);
 
-                // DEBUG: Check all distinct branch IDs in credit transactions
-                var allBranchIds = await _context.Transactions
-                    .Where(t => t.PaymentMethod == PaymentMethod.Credit && t.IsActive)
-                    .Select(t => t.BranchId)
-                    .Distinct()
-                    .ToListAsync();
-
-                _logger.LogInformation("All branch IDs with credit transactions: {BranchIds}",
-                    string.Join(", ", allBranchIds.Select(id => id.ToString())));
-
-                // DEBUG: If branchId provided, check if it exists in the list
-                if (branchId.HasValue)
-                {
-                    bool exists = allBranchIds.Contains(branchId.Value);
-                    _logger.LogInformation("BranchId {BranchId} exists in credit transactions: {Exists}",
-                        branchId.Value, exists);
-                }
-
-                // Your existing query
                 var query = _context.Transactions
                     .Include(t => t.Branch)
                     .Include(t => t.Product)
@@ -1015,23 +1122,31 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 if (branchId.HasValue)
                 {
-                    // Log the exact value being compared
-                    _logger.LogInformation("Filtering by branchId: {BranchId}", branchId.Value);
                     query = query.Where(x => x.Transaction.BranchId == branchId.Value);
+                }
 
-                    // Log count after branch filter
-                    var afterBranchCount = await query.CountAsync();
-                    _logger.LogInformation("Transactions after branch filter: {Count}", afterBranchCount);
+                if (customerId.HasValue)
+                {
+                    query = query.Where(x => x.Transaction.CustomerId == customerId.Value);
+                }
+
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(x => x.Transaction.TransactionDate.Date >= fromDate.Value.Date);
+                }
+
+                if (toDate.HasValue)
+                {
+                    query = query.Where(x => x.Transaction.TransactionDate.Date <= toDate.Value.Date);
                 }
 
                 // Filter for pending only
                 query = query.Where(x => x.PaidAmount < x.TotalAmount);
 
-                var afterPendingCount = await query.CountAsync();
-                _logger.LogInformation("Transactions after pending filter: {Count}", afterPendingCount);
-
+                // ========== FIX: Order by TransactionDate ASC and CreatedAt ASC ==========
                 var results = await query
-                    .OrderByDescending(x => x.Transaction.TransactionDate)
+                    .OrderBy(x => x.Transaction.TransactionDate)  // Chronological by transaction date
+                    .ThenBy(x => x.Transaction.CreatedAt)        // Then by creation time
                     .ToListAsync();
 
                 var result = results.Select(x =>
@@ -1396,16 +1511,15 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateRangeAsync(
-            DateTime? startDate = null,
-            DateTime? endDate = null,
-            Guid? branchId = null,
-            Guid? customerId = null,
-            Guid? productId = null,
-            string? paymentMethod = null)
+     DateTime? startDate = null,
+     DateTime? endDate = null,
+     Guid? branchId = null,
+     Guid? customerId = null,
+     Guid? productId = null,
+     string? paymentMethod = null)
         {
             try
             {
-                // Get all DailySales entries for the date range
                 var dailySalesQuery = _context.DailySales
                     .Include(ds => ds.Transaction)
                         .ThenInclude(t => t.Branch)
@@ -1419,7 +1533,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(ds => ds.IsActive)
                     .AsQueryable();
 
-                // Apply date filters
                 if (startDate.HasValue)
                 {
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date >= startDate.Value.Date);
@@ -1430,7 +1543,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.SaleDate.Date <= endDate.Value.Date);
                 }
 
-                // Apply other filters
                 if (branchId.HasValue)
                 {
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
@@ -1452,12 +1564,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
+                // ========== FIX: Order by SaleDate ASC and CreatedAt ASC ==========
                 var dailySales = await dailySalesQuery
-                    .OrderByDescending(ds => ds.SaleDate)
-                    .ThenByDescending(ds => ds.CreatedAt)
+                    .OrderBy(ds => ds.SaleDate)           // Chronological by sale date
+                    .ThenBy(ds => ds.CreatedAt)           // Then by creation time
                     .ToListAsync();
 
-                // Transform DailySales into TransactionResponseDto format
                 var result = new List<TransactionResponseDto>();
 
                 foreach (var dailySale in dailySales)
@@ -1466,7 +1578,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
 
-                        // Override with DailySales data (actual sold/payment data)
                         transactionDto.Quantity = dailySale.Quantity;
                         transactionDto.UnitPrice = dailySale.UnitPrice;
                         transactionDto.TotalAmount = dailySale.TotalAmount;
@@ -1474,7 +1585,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                         transactionDto.CommissionPaid = dailySale.CommissionPaid;
                         transactionDto.TransactionDate = dailySale.SaleDate;
 
-                        // For credit payments, mark as partial if applicable
                         if (dailySale.IsCreditPayment)
                         {
                             transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
@@ -1504,15 +1614,14 @@ namespace FeruzaShopProject.Infrastructre.Services
         }
 
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateAsync(
-            DateTime date,
-            Guid? branchId = null,
-            Guid? customerId = null,
-            Guid? productId = null,
-            string? paymentMethod = null)
+     DateTime date,
+     Guid? branchId = null,
+     Guid? customerId = null,
+     Guid? productId = null,
+     string? paymentMethod = null)
         {
             try
             {
-                // Get DailySales for the specific date
                 var dailySalesQuery = _context.DailySales
                     .Include(ds => ds.Transaction)
                         .ThenInclude(t => t.Branch)
@@ -1526,7 +1635,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(ds => ds.IsActive && ds.SaleDate.Date == date.Date)
                     .AsQueryable();
 
-                // Apply filters
                 if (branchId.HasValue)
                 {
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.BranchId == branchId.Value);
@@ -1548,11 +1656,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
+                // ========== FIX: Order by CreatedAt ASC (oldest first within the same day) ==========
                 var dailySales = await dailySalesQuery
-                    .OrderByDescending(ds => ds.CreatedAt)
+                    .OrderBy(ds => ds.CreatedAt)    // Order by creation time (when sale was entered)
                     .ToListAsync();
 
-                // Transform DailySales into TransactionResponseDto format
                 var result = new List<TransactionResponseDto>();
 
                 foreach (var dailySale in dailySales)
@@ -1561,7 +1669,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
 
-                        // Override with DailySales data (actual sold/payment data)
                         transactionDto.Quantity = dailySale.Quantity;
                         transactionDto.UnitPrice = dailySale.UnitPrice;
                         transactionDto.TotalAmount = dailySale.TotalAmount;
@@ -1569,7 +1676,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                         transactionDto.CommissionPaid = dailySale.CommissionPaid;
                         transactionDto.TransactionDate = dailySale.SaleDate;
 
-                        // For credit payments, mark as partial if applicable
                         if (dailySale.IsCreditPayment)
                         {
                             transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
