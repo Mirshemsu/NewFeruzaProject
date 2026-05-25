@@ -175,7 +175,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get exchange summary report
         /// </summary>
         [HttpGet("summary")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<ActionResult<ApiResponse<ExchangeSummaryDto>>> GetExchangeSummary(
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
