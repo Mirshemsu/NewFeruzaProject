@@ -1,4 +1,5 @@
-﻿using FeruzaShopProject.Domain.DTOs;
+﻿
+using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Entities;
 using FeruzaShopProject.Domain.Shared;
 using System;
@@ -60,6 +61,16 @@ namespace FeruzaShopProject.Application.Interface
         /// </summary>
         Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto);
 
+        // ========== NEW: REJECTION UPDATE OPERATIONS ==========
+
+
+
+        /// <summary>
+        /// Finance can update a rejected purchase order and resubmit for approval
+        /// </summary>
+        Task<ApiResponse<PurchaseOrderDto>> UpdateRejectedPurchaseOrderAsync(UpdateRejectedPurchaseOrderDto dto);
+
+      
 
         // ========== QUERY METHODS ==========
 

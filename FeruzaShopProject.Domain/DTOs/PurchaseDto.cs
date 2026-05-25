@@ -149,6 +149,7 @@ namespace FeruzaShopProject.Domain.DTOs
 
         // ========== INVOICE NUMBER ==========
         public string? InvoiceNumber { get; set; }
+        public string? RejectionReason { get; set; }
 
         // ========== APPROVAL TRACKING ==========
         public DateTime? FinanceVerifiedAt { get; set; }
@@ -187,6 +188,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid PurchaseOrderId { get; set; }
         public PurchaseOrderStatus NewStatus { get; set; }
         public string Message { get; set; }
+        public string RejectionReason { get; set; }  // Only reason field
     }
 
     public class PurchaseOrderStatsDto
@@ -268,6 +270,21 @@ namespace FeruzaShopProject.Domain.DTOs
         public string CreatedByName { get; set; }
     }
 
+    public class UpdateRejectedPurchaseOrderDto
+    {
+        public Guid PurchaseOrderId { get; set; }
+        public string? InvoiceNumber { get; set; }
+        public List<UpdateRejectedItemDto> Items { get; set; }
+    }
+
+    public class UpdateRejectedItemDto
+    {
+        public Guid ItemId { get; set; }
+        public string? SupplierName { get; set; }
+        public decimal? BuyingPrice { get; set; }
+        public decimal? SellingPrice { get; set; }
+        public int? Quantity { get; set; }
+    }
     public class RecentPurchaseHistoryDto
     {
         public Guid PurchaseOrderId { get; set; }

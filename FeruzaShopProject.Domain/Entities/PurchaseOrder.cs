@@ -18,14 +18,18 @@ namespace FeruzaShopProject.Domain.Entities
 
         // ========== INVOICE NUMBER (Added by Finance) ==========
         [StringLength(50)]
-        public string? InvoiceNumber { get; set; }  // Supplier invoice number - added during finance verification
+        public string? InvoiceNumber { get; set; }
+
+        // ========== REJECTION REASON ==========
+        [StringLength(500)]
+        public string? RejectionReason { get; set; }  // Only this field - no who or when
 
         // ========== APPROVAL TRACKING (Per Purchase) ==========
-        public DateTime? FinanceVerifiedAt { get; set; }  // When finance verified the purchase
-        public Guid? FinanceVerifiedBy { get; set; }      // Who verified from finance
+        public DateTime? FinanceVerifiedAt { get; set; }
+        public Guid? FinanceVerifiedBy { get; set; }
 
-        public DateTime? ApprovedAt { get; set; }         // When manager approved the purchase
-        public Guid? ApprovedBy { get; set; }             // Who approved from management
+        public DateTime? ApprovedAt { get; set; }
+        public Guid? ApprovedBy { get; set; }
 
         // Simple progress tracking
         public int TotalItems => Items?.Count ?? 0;

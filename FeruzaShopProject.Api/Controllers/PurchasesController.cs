@@ -305,6 +305,49 @@ namespace ShopMgtSys.Api.Controllers
             }
         }
 
+        // Add this after the existing Reject endpoints (around line 250)
+
+        // ========== REJECTION UPDATE OPERATIONS ==========
+
+        /// <summary>
+        /// Finance can update a rejected purchase order and resubmit for approval
+        /// </summary>
+        [HttpPut("update-rejected")]
+        [Authorize(Roles = "Finance,Manager")]
+        public async Task<ActionResult<ApiResponse<PurchaseOrderDto>>> UpdateRejectedPurchaseOrder([FromBody] UpdateRejectedPurchaseOrderDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("Finance updating rejected purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+
+                var purchaseOrder = await _purchaseService.GetPurchaseOrderByIdAsync(dto.PurchaseOrderId);
+                if (!purchaseOrder.IsCompletedSuccessfully)
+                {
+                    _logger.LogWarning("Purchase order {PurchaseOrderId} not found", dto.PurchaseOrderId);
+                    return NotFound(purchaseOrder);
+                }
+
+                // Only Finance and Manager can update rejected orders
+                if (!User.IsInRole("Finance") && !User.IsInRole("Manager"))
+                {
+                    return Forbid();
+                }
+
+                // Check branch access
+                if (!await HasBranchAccessAsync(purchaseOrder.Data.BranchId))
+                    return Forbid();
+
+                var result = await _purchaseService.UpdateRejectedPurchaseOrderAsync(dto);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating rejected purchase order: {PurchaseOrderId}", dto.PurchaseOrderId);
+                return StatusCode(500, ApiResponse<PurchaseOrderDto>.Fail("An error occurred while updating rejected purchase order"));
+            }
+        }
+
+       
         /// <summary>
         /// Convenience endpoint to reject with simple parameters
         /// </summary>

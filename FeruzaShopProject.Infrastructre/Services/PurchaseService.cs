@@ -322,14 +322,14 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
         private async Task UpdateStockFromPurchaseAsync(
-    Guid productId,
-    Guid branchId,
-    int quantity,
-    decimal buyingPrice,
-    decimal sellingPrice,
-    Guid userId,
-    Guid purchaseOrderId)
-        {
+            Guid productId,
+            Guid branchId,
+            int quantity,
+            decimal buyingPrice,
+            decimal sellingPrice,
+            Guid userId,
+            Guid purchaseOrderId)
+                {
             try
             {
                 // Find existing stock or create new
@@ -796,6 +796,8 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         #region Reject/Cancel Operations
 
+        #region Reject/Cancel Operations
+
         public async Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -820,7 +822,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<RejectResponseDto>.Fail("Cannot reject an approved purchase order");
                 }
 
+                // Store rejection reason
                 purchaseOrder.Status = PurchaseOrderStatus.Rejected;
+                purchaseOrder.RejectionReason = dto.Reason;  // Store the reason
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
@@ -833,10 +837,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                 {
                     PurchaseOrderId = purchaseOrder.Id,
                     NewStatus = purchaseOrder.Status,
-                    Message = $"Purchase order rejected. Reason: {dto.Reason}"
+                    Message = $"Purchase order rejected. Reason: {dto.Reason}",
+                    RejectionReason = dto.Reason  // Include reason in response
                 };
 
-                _logger.LogInformation("Purchase order {PurchaseOrderId} rejected", purchaseOrder.Id);
+                _logger.LogInformation("Purchase order {PurchaseOrderId} rejected with reason: {Reason}",
+                    purchaseOrder.Id, dto.Reason);
+
                 return ApiResponse<RejectResponseDto>.Success(response, "Purchase order rejected successfully");
             }
             catch (Exception ex)
@@ -847,6 +854,103 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
+        #region Finance Update Rejected Order
+
+        public async Task<ApiResponse<PurchaseOrderDto>> UpdateRejectedPurchaseOrderAsync(UpdateRejectedPurchaseOrderDto dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var userId = await GetCurrentUserIdAsync();
+
+                var purchaseOrder = await _context.PurchaseOrders
+                    .Include(po => po.Items)
+                    .Include(po => po.Branch)
+                    .FirstOrDefaultAsync(po => po.Id == dto.PurchaseOrderId && po.IsActive);
+
+                if (purchaseOrder == null)
+                {
+                    _logger.LogWarning("Purchase order not found or inactive: {PurchaseOrderId}", dto.PurchaseOrderId);
+                    return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found or inactive");
+                }
+
+                // Check if order is rejected
+                if (purchaseOrder.Status != PurchaseOrderStatus.Rejected)
+                {
+                    _logger.LogWarning("Cannot update non-rejected purchase order: {Status}", purchaseOrder.Status);
+                    return ApiResponse<PurchaseOrderDto>.Fail($"Cannot update purchase order in {purchaseOrder.Status} status. Only rejected orders can be updated.");
+                }
+
+                // Update invoice number if provided
+                if (!string.IsNullOrWhiteSpace(dto.InvoiceNumber))
+                {
+                    purchaseOrder.InvoiceNumber = dto.InvoiceNumber;
+                }
+
+                // Update items
+                if (dto.Items != null && dto.Items.Any())
+                {
+                    foreach (var itemDto in dto.Items)
+                    {
+                        var item = purchaseOrder.Items.FirstOrDefault(i => i.Id == itemDto.ItemId && i.IsActive);
+                        if (item == null)
+                        {
+                            _logger.LogWarning("Purchase order item not found: {ItemId}", itemDto.ItemId);
+                            return ApiResponse<PurchaseOrderDto>.Fail($"Purchase order item not found: {itemDto.ItemId}");
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(itemDto.SupplierName))
+                        {
+                            item.SupplierName = itemDto.SupplierName;
+                        }
+
+                        if (itemDto.BuyingPrice.HasValue)
+                        {
+                            item.BuyingPrice = itemDto.BuyingPrice.Value;
+                        }
+
+                        if (itemDto.SellingPrice.HasValue)
+                        {
+                            item.UnitPrice = itemDto.SellingPrice.Value;
+                        }
+
+                        if (itemDto.Quantity.HasValue && itemDto.Quantity.Value > 0)
+                        {
+                            item.Quantity = itemDto.Quantity.Value;
+                        }
+
+                        item.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                // Change status back to pending manager approval
+                purchaseOrder.Status = PurchaseOrderStatus.PendingManagerApproval;
+                purchaseOrder.RejectionReason = null;  // Clear the rejection reason
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
+
+                await AddPurchaseHistoryAsync(purchaseOrder.Id, "UpdatedAfterRejection", userId,
+                    $"Finance updated rejected purchase order. New status: {purchaseOrder.Status}");
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                var result = await GetPurchaseOrderByIdAsync(purchaseOrder.Id);
+                _logger.LogInformation("Updated rejected purchase order {PurchaseOrderId}", purchaseOrder.Id);
+
+                return ApiResponse<PurchaseOrderDto>.Success(result.Data,
+                    "Purchase order updated successfully and sent back for manager approval");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating rejected purchase order: {@Dto}", dto);
+                await transaction.RollbackAsync();
+                return ApiResponse<PurchaseOrderDto>.Fail("Error updating rejected purchase order");
+            }
+        }
+
+        #endregion
+
+        #endregion
         public async Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1319,6 +1423,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDashboardDto>.Fail("Error retrieving purchase order dashboard");
             }
         }
+        #region Query Methods
+
+      
+        #endregion
         #endregion
 
         #region Helper/Convenience Methods
