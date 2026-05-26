@@ -127,29 +127,25 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                     if (moneyDifference < 0)
                     {
-                        // Customer gets refund
                         isRefund = true;
                         amount = Math.Abs(moneyDifference.Value);
                     }
                     else if (moneyDifference > 0)
                     {
-                        // Customer needs to pay more
                         isAdditionalPayment = true;
                         amount = moneyDifference.Value;
                     }
                     else
                     {
-                        // Even exchange
                         isEvenExchange = true;
                         amount = 0;
                     }
                 }
                 else if (isReturnOnly)
                 {
-                    // Full or partial return - customer gets refund
                     amount = originalTotal;
                     isRefund = true;
-                    moneyDifference = -originalTotal; // Negative for refund
+                    moneyDifference = -originalTotal;
                 }
 
                 // Create exchange entity
@@ -163,14 +159,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                     ReturnQuantity = returnQuantity,
                     NewProductId = newProduct?.Id,
                     NewQuantity = newQuantity,
-                    NewPrice = newPrice,                   
+                    NewPrice = newPrice,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
                 await _context.ProductExchanges.AddAsync(exchange);
-                await _context.SaveChangesAsync(); // Save to get exchange ID
+                await _context.SaveChangesAsync();
 
                 // ========== STOCK UPDATES - ONLY FOR NON-CREDIT TRANSACTIONS ==========
                 if (!isCreditTransaction)
@@ -191,10 +187,35 @@ namespace FeruzaShopProject.Infrastructre.Services
                             branchId,
                             originalTransaction.Id,
                             StockMovementType.Return,
-                            returnQuantity,
+                            returnQuantity, // Positive = adding back to stock
                             previousOriginalQuantity,
                             originalStock.Quantity,
                             $"Product {(isReturnOnly ? "return" : "exchange")} #{exchange.Id} - {returnQuantity} items returned"
+                        );
+                    }
+                    else
+                    {
+                        // Create new stock record for the product
+                        var newStock = new Stock
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = originalProduct.Id,
+                            BranchId = branchId,
+                            Quantity = returnQuantity,
+                            CreatedAt = DateTime.UtcNow,
+                            IsActive = true
+                        };
+                        await _context.Stocks.AddAsync(newStock);
+
+                        await CreateStockMovementAsync(
+                            originalProduct.Id,
+                            branchId,
+                            originalTransaction.Id,
+                            StockMovementType.Return,
+                            returnQuantity,
+                            0,
+                            returnQuantity,
+                            $"Product {(isReturnOnly ? "return" : "exchange")} #{exchange.Id} - New stock record created with {returnQuantity} items"
                         );
                     }
 
@@ -210,13 +231,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                             newStock.Quantity -= newQuantity.Value;
                             newStock.UpdatedAt = DateTime.UtcNow;
 
-                            // Create StockMovement for the new product taken
                             await CreateStockMovementAsync(
                                 newProduct.Id,
                                 branchId,
                                 originalTransaction.Id,
                                 StockMovementType.Sale,
-                                newQuantity.Value,
+                                -newQuantity.Value, // Negative for removal
                                 previousNewQuantity,
                                 newStock.Quantity,
                                 $"Product exchange #{exchange.Id} - {newQuantity} items taken"
@@ -227,8 +247,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                 else
                 {
                     // For credit transactions, just log that no stock changes were made
-                    _logger.LogInformation("Credit transaction exchange/return - no stock changes. TransactionId: {TransactionId}",
-                        originalTransaction.Id);
+                    _logger.LogInformation("Credit transaction exchange/return - no stock changes. TransactionId: {TransactionId}, ExchangeId: {ExchangeId}",
+                        originalTransaction.Id, exchange.Id);
                 }
 
                 // Update original transaction quantity
@@ -245,20 +265,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await dbTransaction.CommitAsync();
 
                 // Load related data for response
-                await _context.Entry(exchange)
-                    .Reference(e => e.OriginalTransaction).LoadAsync();
-                await _context.Entry(exchange.OriginalTransaction)
-                    .Reference(t => t.Customer).LoadAsync();
-                await _context.Entry(exchange.OriginalTransaction)
-                    .Reference(t => t.Branch).LoadAsync();
-                await _context.Entry(exchange)
-                    .Reference(e => e.OriginalProduct).LoadAsync();
-
-                if (exchange.NewProductId.HasValue)
-                {
-                    await _context.Entry(exchange)
-                        .Reference(e => e.NewProduct).LoadAsync();
-                }
+                await LoadNavigationPropertiesAsync(exchange);
 
                 // Map to response
                 var result = _mapper.Map<ProductExchangeResponseDto>(exchange);
@@ -269,10 +276,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                 result.Status = "Created";
                 result.IsCreditTransaction = isCreditTransaction;
 
-                _logger.LogInformation("{Type} created: {ExchangeId} for {TransactionType} transaction",
+                _logger.LogInformation("{Type} created: {ExchangeId} for {TransactionType} transaction. " +
+                    "ReturnQty: {ReturnQty}, NewQty: {NewQty}, StockChanges: {StockChanges}",
                     isReturnOnly ? "Return" : "Exchange",
                     exchange.Id,
-                    isCreditTransaction ? "Credit" : "Cash/Bank");
+                    isCreditTransaction ? "Credit" : "Cash/Bank",
+                    returnQuantity,
+                    newQuantity,
+                    !isCreditTransaction ? "Yes" : "No (Credit)");
 
                 return ApiResponse<ProductExchangeResponseDto>.Success(
                     result,
@@ -302,7 +313,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (exchange == null)
                     return ApiResponse<ProductExchangeResponseDto>.Fail("Exchange not found");
 
-                // Calculate totals for response
                 var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
                 decimal? newTotal = null;
                 decimal? moneyDifference = null;
@@ -316,10 +326,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
                 else if (isReturnOnly)
                 {
-                    moneyDifference = -originalTotal; // Negative for refund
+                    moneyDifference = -originalTotal;
                 }
 
-                // Map using AutoMapper
                 var result = _mapper.Map<ProductExchangeResponseDto>(exchange);
                 result.OriginalTotal = originalTotal;
                 result.NewTotal = newTotal;
@@ -352,7 +361,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(e => e.IsActive)
                     .AsQueryable();
 
-                // Apply filters
                 if (branchId.HasValue)
                 {
                     query = query.Where(e => e.OriginalTransaction.BranchId == branchId.Value);
@@ -372,7 +380,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .OrderByDescending(e => e.CreatedAt)
                     .ToListAsync();
 
-                // Map all exchanges with calculated totals
                 var result = exchanges.Select(exchange =>
                 {
                     var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
@@ -424,9 +431,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (exchange == null)
                     return ApiResponse<bool>.Fail("Exchange not found");
 
-                // Check if this was a credit transaction
                 bool isCreditTransaction = exchange.OriginalTransaction?.PaymentMethod == PaymentMethod.Credit;
-
                 var branchId = exchange.OriginalTransaction.BranchId;
                 bool isReturnOnly = !exchange.NewProductId.HasValue;
 
@@ -441,19 +446,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                     if (originalStock != null)
                     {
                         var currentOriginalQuantity = originalStock.Quantity;
-                        originalStock.Quantity -= exchange.ReturnQuantity; // Remove returned items
+                        originalStock.Quantity -= exchange.ReturnQuantity;
                         originalStock.UpdatedAt = DateTime.UtcNow;
 
-                        // Create reverse StockMovement for the original product
                         await CreateStockMovementAsync(
                             exchange.OriginalProductId,
                             branchId,
                             exchange.OriginalTransactionId,
                             StockMovementType.Adjustment,
-                            exchange.ReturnQuantity,
+                            -exchange.ReturnQuantity, // Negative for removal
                             currentOriginalQuantity,
                             originalStock.Quantity,
-                            $"Exchange #{exchange.Id} deletion - reverse return (Credit: {isCreditTransaction})"
+                            $"Exchange #{exchange.Id} deletion - reverse return"
                         );
                     }
 
@@ -467,19 +471,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                         if (newStock != null)
                         {
                             var currentNewQuantity = newStock.Quantity;
-                            newStock.Quantity += exchange.NewQuantity.Value; // Add back taken items
+                            newStock.Quantity += exchange.NewQuantity.Value;
                             newStock.UpdatedAt = DateTime.UtcNow;
 
-                            // Create reverse StockMovement for the new product
                             await CreateStockMovementAsync(
                                 exchange.NewProductId.Value,
                                 branchId,
                                 exchange.OriginalTransactionId,
                                 StockMovementType.Adjustment,
-                                exchange.NewQuantity.Value,
+                                exchange.NewQuantity.Value, // Positive for adding back
                                 currentNewQuantity,
                                 newStock.Quantity,
-                                $"Exchange #{exchange.Id} deletion - reverse sale (Credit: {isCreditTransaction})"
+                                $"Exchange #{exchange.Id} deletion - reverse sale"
                             );
                         }
                     }
@@ -530,7 +533,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .OrderByDescending(e => e.CreatedAt)
                     .ToListAsync();
 
-                // Map exchanges with calculated totals
                 var result = exchanges.Select(exchange =>
                 {
                     var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
@@ -583,7 +585,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .OrderByDescending(e => e.CreatedAt)
                     .ToListAsync();
 
-                // Map exchanges with calculated totals
                 var result = exchanges.Select(exchange =>
                 {
                     var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
@@ -631,7 +632,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Where(e => e.IsActive)
                     .AsQueryable();
 
-                // Apply filters
                 if (branchId.HasValue)
                 {
                     query = query.Where(e => e.OriginalTransaction.BranchId == branchId.Value);
@@ -659,13 +659,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     TotalAdditionalPayment = exchanges.Where(e => e.IsAdditionalPayment).Sum(e => e.Amount ?? 0),
                 };
 
-                // Get recent exchanges
                 var recentExchanges = exchanges
                     .OrderByDescending(e => e.CreatedAt)
                     .Take(10)
                     .ToList();
 
-                // Map recent exchanges with calculated totals
                 summary.RecentExchanges = recentExchanges.Select(exchange =>
                 {
                     var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
@@ -714,10 +712,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Include(e => e.OriginalTransaction)
                         .ThenInclude(t => t.Branch)
                     .Include(e => e.OriginalProduct)
-                    .Where(e => e.IsActive && !e.NewProductId.HasValue) // Return-only exchanges
+                    .Where(e => e.IsActive && !e.NewProductId.HasValue)
                     .AsQueryable();
 
-                // Apply filters
                 if (branchId.HasValue)
                 {
                     query = query.Where(e => e.OriginalTransaction.BranchId == branchId.Value);
@@ -737,7 +734,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .OrderByDescending(e => e.CreatedAt)
                     .ToListAsync();
 
-                // Map returns with calculated totals
                 var result = returns.Select(exchange =>
                 {
                     var originalTotal = exchange.OriginalPrice * exchange.ReturnQuantity;
@@ -796,15 +792,42 @@ namespace FeruzaShopProject.Infrastructre.Services
                     MovementDate = DateTime.UtcNow,
                     Reason = reason,
                     CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     IsActive = true
                 };
 
                 await _context.StockMovements.AddAsync(stockMovement);
-                _logger.LogDebug("StockMovement created: {ProductId}, {MovementType}", productId, movementType);
+                _logger.LogDebug("StockMovement created: Product={ProductId}, Branch={BranchId}, " +
+                    "PreviousQty={PreviousQty}, NewQty={NewQty}, Change={Change}, Type={Type}, Reason={Reason}",
+                    productId, branchId, previousQuantity, newQuantity, quantity, movementType, reason);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating StockMovement");
+                _logger.LogError(ex, "Error creating StockMovement for ProductId: {ProductId}", productId);
+                throw;
+            }
+        }
+
+        private async Task LoadNavigationPropertiesAsync(ProductExchange exchange)
+        {
+            await _context.Entry(exchange)
+                .Reference(e => e.OriginalTransaction).LoadAsync();
+
+            if (exchange.OriginalTransaction != null)
+            {
+                await _context.Entry(exchange.OriginalTransaction)
+                    .Reference(t => t.Customer).LoadAsync();
+                await _context.Entry(exchange.OriginalTransaction)
+                    .Reference(t => t.Branch).LoadAsync();
+            }
+
+            await _context.Entry(exchange)
+                .Reference(e => e.OriginalProduct).LoadAsync();
+
+            if (exchange.NewProductId.HasValue)
+            {
+                await _context.Entry(exchange)
+                    .Reference(e => e.NewProduct).LoadAsync();
             }
         }
 

@@ -272,7 +272,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     purchaseOrder.ApprovedAt = DateTime.UtcNow;
                     purchaseOrder.ApprovedBy = userId;
 
-                    // ========== UPDATE STOCK FOR EACH ITEM ==========
+                    // ========== UPDATE STOCK FOR EACH ITEM (FIXED) ==========
                     foreach (var item in purchaseOrder.Items)
                     {
                         await UpdateStockFromPurchaseAsync(
@@ -321,6 +321,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error in manager approval");
             }
         }
+
+        /// <summary>
+        /// Updates stock and creates a StockMovement record in a single atomic operation
+        /// with correct PreviousQuantity and NewQuantity values for purchases.
+        /// </summary>
         private async Task UpdateStockFromPurchaseAsync(
             Guid productId,
             Guid branchId,
@@ -329,16 +334,24 @@ namespace FeruzaShopProject.Infrastructre.Services
             decimal sellingPrice,
             Guid userId,
             Guid purchaseOrderId)
-                {
+        {
             try
             {
-                // Find existing stock or create new
+                // CRITICAL: Read the current stock BEFORE any changes
                 var stock = await _context.Stocks
                     .FirstOrDefaultAsync(s => s.ProductId == productId && s.BranchId == branchId);
 
-                decimal previousQuantity = 0;
+                var previousQuantity = stock?.Quantity ?? 0m;
+                var newQuantity = previousQuantity + quantity; // Add for purchases
 
-                if (stock == null)
+                // Update or create stock record
+                if (stock != null)
+                {
+                    stock.Quantity = newQuantity;
+                    stock.UpdatedAt = DateTime.UtcNow;
+                    _context.Stocks.Update(stock);
+                }
+                else
                 {
                     // Create new stock record
                     stock = new Stock
@@ -353,37 +366,29 @@ namespace FeruzaShopProject.Infrastructre.Services
                     await _context.Stocks.AddAsync(stock);
                     _logger.LogInformation("Created new stock record for Product {ProductId} in Branch {BranchId}", productId, branchId);
                 }
-                else
-                {
-                    // Update existing stock
-                    previousQuantity = stock.Quantity;
-                    stock.Quantity += quantity;
-                    stock.UpdatedAt = DateTime.UtcNow;
-                }
 
-                // Update product prices (optional - you might want to update the product's default prices)
+                // Update product prices
                 var product = await _context.Products.FindAsync(productId);
                 if (product != null)
                 {
-                    // You might want to update average buying price or keep latest
-                    product.BuyingPrice = buyingPrice; // or calculate average
+                    product.BuyingPrice = buyingPrice;
                     product.UnitPrice = sellingPrice;
                     product.UpdatedAt = DateTime.UtcNow;
                     _context.Products.Update(product);
                 }
 
-                // Create stock movement record for audit
+                // Create stock movement record with CORRECT values
                 var stockMovement = new StockMovement
                 {
                     Id = Guid.NewGuid(),
                     ProductId = productId,
                     BranchId = branchId,
-                    TransactionId = null, // No sales transaction for purchase
+                    TransactionId = null,
                     PurchaseOrderId = purchaseOrderId,
                     MovementType = StockMovementType.Purchase,
-                    Quantity = quantity,
-                    PreviousQuantity = previousQuantity,
-                    NewQuantity = previousQuantity + quantity,
+                    Quantity = quantity, // Positive for purchase
+                    PreviousQuantity = previousQuantity,  // ✅ CORRECT: quantity before purchase
+                    NewQuantity = newQuantity,            // ✅ CORRECT: quantity after purchase
                     MovementDate = DateTime.UtcNow,
                     Reason = $"Purchase Order #{purchaseOrderId} - Added {quantity} units (Cost: {buyingPrice:C}, Sell: {sellingPrice:C})",
                     CreatedAt = DateTime.UtcNow,
@@ -393,15 +398,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.StockMovements.AddAsync(stockMovement);
 
                 _logger.LogInformation(
-                    "Stock updated for Product {ProductId} in Branch {BranchId}: +{Quantity} units. New total: {NewQuantity}",
-                    productId, branchId, quantity, previousQuantity + quantity);
+                    "Stock updated for Product {ProductId} in Branch {BranchId}: +{Quantity} units. " +
+                    "Previous: {PreviousQty}, New: {NewQty}",
+                    productId, branchId, quantity, previousQuantity, newQuantity);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating stock from purchase for Product {ProductId}", productId);
-                throw; // Re-throw to rollback the transaction
+                throw;
             }
         }
+
         #endregion
 
         #region Sales Edit Operations
@@ -458,7 +465,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         .Select(i => i.ItemId.Value)
                         .ToHashSet();
 
-                    // ========== FIX: Find items to remove FIRST and delete them from context ==========
+                    // Remove items not in request
                     var itemsToRemove = purchaseOrder.Items
                         .Where(i => i.IsActive && !requestedItemIds.Contains(i.Id))
                         .ToList();
@@ -481,7 +488,6 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                         if (itemDto.ItemId.HasValue)
                         {
-                            // ========== FIX: Find existing item directly from context ==========
                             var existingItem = await _context.PurchaseOrderItems
                                 .FirstOrDefaultAsync(i => i.Id == itemDto.ItemId.Value &&
                                                           i.PurchaseOrderId == purchaseOrder.Id);
@@ -544,6 +550,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDto>.Fail("Error editing purchase order");
             }
         }
+
         public async Task<ApiResponse<bool>> DeletePurchaseOrderBySalesAsync(Guid purchaseOrderId, string? reason = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -796,8 +803,6 @@ namespace FeruzaShopProject.Infrastructre.Services
 
         #region Reject/Cancel Operations
 
-        #region Reject/Cancel Operations
-
         public async Task<ApiResponse<RejectResponseDto>> RejectPurchaseOrderAsync(RejectPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -824,7 +829,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 // Store rejection reason
                 purchaseOrder.Status = PurchaseOrderStatus.Rejected;
-                purchaseOrder.RejectionReason = dto.Reason;  // Store the reason
+                purchaseOrder.RejectionReason = dto.Reason;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "Rejected", userId,
@@ -838,7 +843,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     PurchaseOrderId = purchaseOrder.Id,
                     NewStatus = purchaseOrder.Status,
                     Message = $"Purchase order rejected. Reason: {dto.Reason}",
-                    RejectionReason = dto.Reason  // Include reason in response
+                    RejectionReason = dto.Reason
                 };
 
                 _logger.LogInformation("Purchase order {PurchaseOrderId} rejected with reason: {Reason}",
@@ -853,8 +858,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<RejectResponseDto>.Fail("Error rejecting purchase order");
             }
         }
-
-        #region Finance Update Rejected Order
 
         public async Task<ApiResponse<PurchaseOrderDto>> UpdateRejectedPurchaseOrderAsync(UpdateRejectedPurchaseOrderDto dto)
         {
@@ -925,7 +928,7 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 // Change status back to pending manager approval
                 purchaseOrder.Status = PurchaseOrderStatus.PendingManagerApproval;
-                purchaseOrder.RejectionReason = null;  // Clear the rejection reason
+                purchaseOrder.RejectionReason = null;
                 purchaseOrder.UpdatedAt = DateTime.UtcNow;
 
                 await AddPurchaseHistoryAsync(purchaseOrder.Id, "UpdatedAfterRejection", userId,
@@ -948,9 +951,6 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
-        #endregion
-
-        #endregion
         public async Task<ApiResponse<bool>> CancelPurchaseOrderAsync(CancelPurchaseOrderDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -1175,7 +1175,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(po => po.BranchId == branchId.Value);
                 }
 
-                // Get all data first, then calculate in memory
                 var purchaseOrders = await query.ToListAsync();
 
                 var stats = new PurchaseOrderStatsDto
@@ -1188,7 +1187,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Rejected = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Rejected),
                     Cancelled = purchaseOrders.Count(po => po.Status == PurchaseOrderStatus.Cancelled),
 
-                    // Calculate totals in memory
                     TotalBuyingCost = purchaseOrders.Sum(po => po.Items?
                         .Where(i => i.BuyingPrice.HasValue)
                         .Sum(i => i.BuyingPrice.Value * i.Quantity) ?? 0),
@@ -1208,7 +1206,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     stats.BranchName = branch?.Name;
                 }
 
-                // Calculate average profit margin
                 var allItems = purchaseOrders.SelectMany(po => po.Items ?? new List<PurchaseOrderItem>())
                     .Where(i => i.ProfitMargin.HasValue)
                     .ToList();
@@ -1217,7 +1214,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     ? allItems.Average(i => i.ProfitMargin.Value)
                     : 0;
 
-                // Calculate monthly stats
                 var now = DateTime.UtcNow;
                 var firstDayThisMonth = new DateTime(now.Year, now.Month, 1);
                 var firstDayLastMonth = firstDayThisMonth.AddMonths(-1);
@@ -1239,6 +1235,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderStatsDto>.Fail("Error retrieving purchase order statistics");
             }
         }
+
         public async Task<ApiResponse<PurchaseOrderDashboardDto>> GetPurchaseOrderDashboardAsync(Guid? branchId = null)
         {
             try
@@ -1255,7 +1252,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     query = query.Where(po => po.BranchId == branchId.Value);
                 }
 
-                // Fetch all data first
                 var purchaseOrders = await query.ToListAsync();
 
                 var dashboard = new PurchaseOrderDashboardDto();
@@ -1423,10 +1419,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<PurchaseOrderDashboardDto>.Fail("Error retrieving purchase order dashboard");
             }
         }
-        #region Query Methods
 
-      
-        #endregion
         #endregion
 
         #region Helper/Convenience Methods
@@ -1466,14 +1459,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 // Admin can always edit (except approved)
-                var isAdmin = true; // Check user role from claims
+                var isAdmin = true;
                 if (isAdmin && purchaseOrder.Status != PurchaseOrderStatus.Approved)
                 {
                     return ApiResponse<bool>.Success(true, "Admin can edit");
                 }
 
                 // Finance can edit if not approved
-                var isFinance = true; // Check user role from claims
+                var isFinance = true;
                 if (isFinance && purchaseOrder.Status != PurchaseOrderStatus.Approved)
                 {
                     return ApiResponse<bool>.Success(true, "Finance can edit");
