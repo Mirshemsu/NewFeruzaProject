@@ -79,7 +79,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get stock history for a date range with detailed movement breakdown
         /// </summary>
         [HttpGet("history")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Manager,Sales,Finance")]
         public async Task<ActionResult<ApiResponse<List<StockHistoryDto>>>> GetStockHistory(
             [FromQuery] Guid productId,
             [FromQuery] Guid branchId,
@@ -112,7 +112,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get credit stock summary (unpaid credit items)
         /// </summary>
         [HttpGet("credit-summary")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Manager,Sales,Finance")]
         public async Task<ActionResult<ApiResponse<StockCreditSummaryDto>>> GetCreditStockSummary(
             [FromQuery] Guid? branchId = null,
             [FromQuery] Guid? customerId = null)
@@ -228,7 +228,7 @@ namespace FeruzaShopProject.API.Controllers
         /// Get overdue credit items (older than 30 days)
         /// </summary>
         [HttpGet("overdue-credit")]
-        [Authorize(Roles = "Manager,Finance")]
+        [Authorize(Roles = "Manager,Sales,Finance")]
         public async Task<ActionResult<ApiResponse<List<CreditStockItemDto>>>> GetOverdueCredit(
             [FromQuery] Guid? branchId = null)
         {

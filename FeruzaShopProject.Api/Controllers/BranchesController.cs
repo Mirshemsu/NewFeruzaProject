@@ -31,10 +31,10 @@ namespace FeruzaShopProject.Api.Controllers
         public async Task<ActionResult<ApiResponse<List<BranchDto>>>> GetAll()
         {
             // Only Managers/Finance can list all branches
-            if (!User.IsInRole(Role.Manager.ToString()) && !User.IsInRole(Role.Finance.ToString()))
-            {
-                return Forbid();
-            }
+            //if (!User.IsInRole(Role.Manager.ToString()) && !User.IsInRole(Role.Finance.ToString()))
+            //{
+            //    return Forbid();
+            //}
 
             var result = await _branchService.GetAllBranchesAsync();
             return Ok(result);
