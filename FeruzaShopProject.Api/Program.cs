@@ -90,6 +90,7 @@ builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 builder.Services.AddScoped<IProductExchangeService, ProductExchangeService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IDailyClosingService, DailyClosingService>();
+builder.Services.AddScoped<IProductTransferService, ProductTransferService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

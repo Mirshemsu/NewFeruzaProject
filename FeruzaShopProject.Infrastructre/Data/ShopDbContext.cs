@@ -22,6 +22,7 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<PurchaseHistory> PurchaseHistory { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
         public DbSet<DailyClosing> DailyClosings { get; set; }
+        public DbSet<ProductTransfer> ProductTransfers { get; set; }
 
         public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options) { }
 
@@ -408,6 +409,38 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .WithMany(b => b.Users)
                     .HasForeignKey(bu => bu.BranchId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ProductTransfer>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.TransferNumber).IsUnique();
+
+                entity.Property(e => e.TransferNumber)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Quantity)
+                    .HasPrecision(18, 2);
+
+                // Configure Product relationship
+                entity.HasOne(e => e.Product)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict); // Use Restrict instead of Cascade
+
+                // Configure FromBranch relationship - NO ACTION to avoid cascade cycles
+                entity.HasOne(e => e.FromBranch)
+                    .WithMany()
+                    .HasForeignKey(e => e.FromBranchId)
+                    .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade to Restrict
+
+                // Configure ToBranch relationship - NO ACTION to avoid cascade cycles
+                entity.HasOne(e => e.ToBranch)
+                    .WithMany()
+                    .HasForeignKey(e => e.ToBranchId)
+                    .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade to Restrict
             });
         }
     }
