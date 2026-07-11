@@ -1025,6 +1025,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<PurchaseOrderDto>.Fail("Purchase order not found");
                 }
 
+                // Stable item order for all detail screens (admin / finance / sales)
+                purchaseOrder.Items = purchaseOrder.Items
+                    .OrderBy(i => i.CreatedAt)
+                    .ToList();
+
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);
                 return ApiResponse<PurchaseOrderDto>.Success(result);
             }
