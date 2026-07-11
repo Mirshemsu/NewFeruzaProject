@@ -130,7 +130,7 @@ namespace FeruzaShopProject.Api.Controllers
         }
 
         [HttpGet("low-stock")]
-        [Authorize(Roles = "Admin,Manager,Staff")]
+        [Authorize(Roles = "Admin,Manager,Staff,Sales")]
         public async Task<IActionResult> GetLowStock([FromQuery] int threshold = 10)
         {
             var result = await _productService.GetLowStockProductsAsync(threshold);

@@ -100,4 +100,10 @@ namespace FeruzaShopProject.Domain.DTOs
         [Required]
         public Guid UserId { get; set; }
     }
+
+    public class ActivateUserRequest
+    {
+        [Required]
+        public Guid UserId { get; set; }
+    }
 }

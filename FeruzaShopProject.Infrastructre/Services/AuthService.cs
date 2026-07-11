@@ -48,9 +48,21 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogWarning($"User {request.Username} not found");
                 return ApiResponse<LoginResponse>.Fail("Invalid username or password");
             }
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                _logger.LogWarning($"Deactivated user {request.Username} attempted login");
+                return ApiResponse<LoginResponse>.Fail("Account is deactivated. Contact your administrator.");
+            }
+
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
             if (!result.Succeeded)
             {
+                if (result.IsLockedOut)
+                {
+                    _logger.LogWarning($"Locked-out user {request.Username} attempted login");
+                    return ApiResponse<LoginResponse>.Fail("Account is deactivated. Contact your administrator.");
+                }
+
                 _logger.LogWarning($"Invalid password for user {request.Username}");
                 return ApiResponse<LoginResponse>.Fail("Invalid username or password");
             }
@@ -178,12 +190,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                 return ApiResponse<string>.Fail("Cannot deactivate yourself");
             }
 
-            // Since you don't have IsActive property, you might want to:
-            // Option 1: Add IsActive property to User entity
-            // Option 2: Remove user (hard delete) - BE CAREFUL with this!
-            // Option 3: Lock user out using LockoutEndDate
+            var enableResult = await _userManager.SetLockoutEnabledAsync(user, true);
+            if (!enableResult.Succeeded)
+            {
+                _logger.LogWarning($"Failed to enable lockout for user {request.UserId}");
+                return ApiResponse<string>.Fail("Failed to deactivate user");
+            }
 
-            // Using Lockout as a way to "deactivate" (temporary solution)
             var lockoutResult = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
             if (!lockoutResult.Succeeded)
             {
@@ -193,6 +206,51 @@ namespace FeruzaShopProject.Infrastructre.Services
 
             _logger.LogInformation($"User {request.UserId} deactivated successfully by {currentUserId}");
             return ApiResponse<string>.Success(request.UserId.ToString(), "User deactivated successfully");
+        }
+
+        public async Task<ApiResponse<string>> ActivateUserAsync(ActivateUserRequest request, string currentUserId)
+        {
+            _logger.LogInformation($"Attempting to activate user {request.UserId} by {currentUserId}");
+
+            var currentUser = await _userManager.FindByIdAsync(currentUserId);
+            if (currentUser == null)
+            {
+                _logger.LogWarning($"Current user {currentUserId} not found");
+                return ApiResponse<string>.Fail("Current user not found");
+            }
+
+            var currentUserRoles = await _userManager.GetRolesAsync(currentUser);
+            if (!currentUserRoles.Contains(Role.Manager.ToString()) && !currentUserRoles.Contains(Role.Finance.ToString()))
+            {
+                _logger.LogWarning($"User {currentUserId} lacks permission to activate users");
+                return ApiResponse<string>.Fail("Only Manager or Finance roles can activate users");
+            }
+
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+            {
+                _logger.LogWarning($"User {request.UserId} not found");
+                return ApiResponse<string>.Fail("User not found");
+            }
+
+            var unlockResult = await _userManager.SetLockoutEndDateAsync(user, null);
+            if (!unlockResult.Succeeded)
+            {
+                _logger.LogWarning($"Failed to activate user {request.UserId}");
+                return ApiResponse<string>.Fail("Failed to activate user");
+            }
+
+            await _userManager.ResetAccessFailedCountAsync(user);
+
+            _logger.LogInformation($"User {request.UserId} activated successfully by {currentUserId}");
+            return ApiResponse<string>.Success(request.UserId.ToString(), "User activated successfully");
+        }
+
+        private static bool IsUserActive(User user)
+        {
+            return !(user.LockoutEnabled
+                     && user.LockoutEnd.HasValue
+                     && user.LockoutEnd.Value > DateTimeOffset.UtcNow);
         }
 
         public async Task<ApiResponse<List<UserResponseDto>>> ListUserAsync(string? role = null, Guid? branchId = null, string currentUserId = null)
@@ -233,8 +291,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                 Username = u.UserName,
                 Name = u.Name,
                 ContactInfo = u.ContactInfo,
-                Role = u.Role,            
-                BranchId = u is BranchUser bu ? bu.BranchId : null
+                Role = u.Role,
+                BranchId = u is BranchUser bu ? bu.BranchId : null,
+                IsActive = IsUserActive(u)
             }).ToList();
 
             _logger.LogInformation($"Listed {userDtos.Count} users for {currentUserId}");

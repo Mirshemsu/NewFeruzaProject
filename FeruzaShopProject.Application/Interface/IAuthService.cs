@@ -14,6 +14,7 @@ namespace FeruzaShopProject.Application.Interface
         Task<ApiResponse<string>> RegisterAsync(RegisterRequest request);
         Task<ApiResponse<string>> LogoutAsync();
         Task<ApiResponse<string>> DeactivateUserAsync(DeactivateUserRequest request, string currentUserId);
+        Task<ApiResponse<string>> ActivateUserAsync(ActivateUserRequest request, string currentUserId);
         Task<ApiResponse<List<UserResponseDto>>> ListUserAsync(string? role = null, Guid? branchId = null, string currentUserId = null);
         Task<ApiResponse<string>> ResetPasswordAsync(ResetPasswordRequest request, string currentUserId);
 

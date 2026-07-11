@@ -73,6 +73,24 @@ namespace FeruzaShopProject.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("activate")]
+        [Authorize(Roles = "Manager,Finance")]
+        public async Task<IActionResult> ActivateUser([FromBody] ActivateUserRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(ApiResponse<string>.Fail("Current user ID not found in token"));
+
+            var response = await _authService.ActivateUserAsync(request, currentUserId);
+            if (!response.IsCompletedSuccessfully)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
         [HttpGet("users")]
         [Authorize(Roles = "Manager,Finance")]
         public async Task<IActionResult> ListUsers([FromQuery] string? role = null, [FromQuery] Guid? branchId = null)
