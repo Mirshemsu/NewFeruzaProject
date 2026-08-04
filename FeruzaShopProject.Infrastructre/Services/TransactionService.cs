@@ -312,28 +312,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     if (dailySale.Transaction != null)
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
-
-                        transactionDto.Quantity = dailySale.Quantity;
-                        transactionDto.UnitPrice = dailySale.UnitPrice;
-                        transactionDto.TotalAmount = dailySale.TotalAmount;
-                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
-                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
-                        transactionDto.TransactionDate = dailySale.SaleDate;
-
-                        if (dailySale.IsCreditPayment)
-                        {
-                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
-                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                        }
-                        else
-                        {
-                            transactionDto.IsPartialPayment = false;
-                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
-                            {
-                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                            }
-                        }
-
+                        await ApplyDailySaleToTransactionDtoAsync(transactionDto, dailySale);
                         result.Add(transactionDto);
                     }
                 }
@@ -859,12 +838,16 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (creditTransaction == null)
                     return ApiResponse<TransactionResponseDto>.Fail("Credit transaction not found");
 
-                // ========== CHECK IF PAYMENT DATE IS CLOSED OR APPROVED ==========
-                var paymentDate = dto.PaymentDate.Date;
+                // Single server business date for PaymentDate, DailySales.SaleDate, and daily closing.
+                // Do not use client dto.PaymentDate here — device timezone/clock can shift the calendar day
+                // so the sales list (SaleDate) and bank footer (PaymentDate) land on different days.
+                var now = DateTime.UtcNow;
+                var businessDate = now.Date;
 
+                // ========== CHECK IF PAYMENT DATE IS CLOSED OR APPROVED ==========
                 var dateStatus = await _context.DailyClosings
                     .Where(dc => dc.BranchId == creditTransaction.BranchId &&
-                                dc.ClosingDate.Date == paymentDate &&
+                                dc.ClosingDate.Date == businessDate &&
                                 dc.IsActive)
                     .Select(dc => dc.Status)
                     .FirstOrDefaultAsync();
@@ -872,13 +855,13 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dateStatus == DailyClosingStatus.Approved)
                 {
                     return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already approved and locked.");
+                        $"Cannot process payment for {businessDate:yyyy-MM-dd}. This date is already approved and locked.");
                 }
 
                 if (dateStatus == DailyClosingStatus.Closed)
                 {
                     return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot process payment for {paymentDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
+                        $"Cannot process payment for {businessDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
                 var previousPaidAmount = await CalculatePaidAmountAsync(creditTransaction.Id);
@@ -899,9 +882,9 @@ namespace FeruzaShopProject.Infrastructre.Services
                     TransactionId = dto.TransactionId,
                     Amount = dto.Amount,
                     PaymentMethod = dto.PaymentMethod,
-                    PaymentDate = dto.PaymentDate,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
+                    PaymentDate = now,
+                    CreatedAt = now,
+                    UpdatedAt = now,
                     IsActive = true,
                     Remark = dto.Remark
                 };
@@ -915,7 +898,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     BranchId = creditTransaction.BranchId,
                     ProductId = creditTransaction.ProductId,
                     TransactionId = creditTransaction.Id,
-                    SaleDate = DateTime.UtcNow.Date,
+                    SaleDate = businessDate,
                     Quantity = paidQuantity,
                     UnitPrice = creditTransaction.UnitPrice,
                     TotalAmount = dto.Amount,
@@ -927,8 +910,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     PainterId = creditTransaction.PainterId,
                     IsPartialPayment = (dto.Amount < totalAmount),
                     IsCreditPayment = true,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
+                    CreatedAt = now,
+                    UpdatedAt = now,
                     IsActive = true,
                     Remark = dto.Remark
                 };
@@ -953,7 +936,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 {
                     await UpdateDailyClosingAmountsAsync(
                         creditTransaction.BranchId,
-                        paymentDate,
+                        businessDate,
                         dto.PaymentMethod,
                         dto.Amount,
                         true);
@@ -1508,28 +1491,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     if (dailySale.Transaction != null)
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
-
-                        transactionDto.Quantity = dailySale.Quantity;
-                        transactionDto.UnitPrice = dailySale.UnitPrice;
-                        transactionDto.TotalAmount = dailySale.TotalAmount;
-                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
-                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
-                        transactionDto.TransactionDate = dailySale.SaleDate;
-
-                        if (dailySale.IsCreditPayment)
-                        {
-                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
-                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                        }
-                        else
-                        {
-                            transactionDto.IsPartialPayment = false;
-                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
-                            {
-                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                            }
-                        }
-
+                        await ApplyDailySaleToTransactionDtoAsync(transactionDto, dailySale);
                         result.Add(transactionDto);
                     }
                 }
@@ -1598,28 +1560,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     if (dailySale.Transaction != null)
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
-
-                        transactionDto.Quantity = dailySale.Quantity;
-                        transactionDto.UnitPrice = dailySale.UnitPrice;
-                        transactionDto.TotalAmount = dailySale.TotalAmount;
-                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
-                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
-                        transactionDto.TransactionDate = dailySale.SaleDate;
-
-                        if (dailySale.IsCreditPayment)
-                        {
-                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
-                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                        }
-                        else
-                        {
-                            transactionDto.IsPartialPayment = false;
-                            if (dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
-                            {
-                                transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                            }
-                        }
-
+                        await ApplyDailySaleToTransactionDtoAsync(transactionDto, dailySale);
                         result.Add(transactionDto);
                     }
                 }
@@ -1843,20 +1784,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     if (dailySale.Transaction != null)
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
-
-                        transactionDto.Quantity = dailySale.Quantity;
-                        transactionDto.UnitPrice = dailySale.UnitPrice;
-                        transactionDto.TotalAmount = dailySale.TotalAmount;
-                        transactionDto.CommissionAmount = dailySale.CommissionAmount;
-                        transactionDto.CommissionPaid = dailySale.CommissionPaid;
-                        transactionDto.TransactionDate = dailySale.SaleDate;
-
-                        if (dailySale.IsCreditPayment)
-                        {
-                            transactionDto.IsPartialPayment = dailySale.IsPartialPayment;
-                            transactionDto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
-                        }
-
+                        await ApplyDailySaleToTransactionDtoAsync(transactionDto, dailySale);
                         recentDtos.Add(transactionDto);
                     }
                 }
@@ -2124,6 +2052,39 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.Entry(transaction).Reference(t => t.Customer).LoadAsync();
             if (transaction.PainterId.HasValue)
                 await _context.Entry(transaction).Reference(t => t.Painter).LoadAsync();
+        }
+
+        /// <summary>
+        /// Overlays DailySales amounts/date onto the transaction DTO.
+        /// For credit settlements, exposes Cash/Bank from DailySales and sets IsCreditPayment
+        /// so clients can show "Credit (Cash)" / "Credit (Bank)".
+        /// </summary>
+        private async Task ApplyDailySaleToTransactionDtoAsync(TransactionResponseDto dto, DailySales dailySale)
+        {
+            dto.Quantity = dailySale.Quantity;
+            dto.UnitPrice = dailySale.UnitPrice;
+            dto.TotalAmount = dailySale.TotalAmount;
+            dto.CommissionAmount = dailySale.CommissionAmount;
+            dto.CommissionPaid = dailySale.CommissionPaid;
+            dto.TransactionDate = dailySale.SaleDate;
+
+            if (dailySale.IsCreditPayment)
+            {
+                dto.IsCreditPayment = true;
+                dto.IsPartialPayment = dailySale.IsPartialPayment;
+                dto.PaymentMethod = dailySale.PaymentMethod;
+                dto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+            }
+            else
+            {
+                dto.IsCreditPayment = false;
+                dto.IsPartialPayment = false;
+                if (dailySale.Transaction != null &&
+                    dailySale.Transaction.PaymentMethod == PaymentMethod.Credit)
+                {
+                    dto.PaidAmount = await CalculatePaidAmountAsync(dailySale.TransactionId);
+                }
+            }
         }
 
         private async Task CreateDailySalesAsync(Transaction transaction, bool isCreditPayment = false)

@@ -140,10 +140,26 @@ namespace FeruzaShopProject.Domain.DTOs
         // Calculated properties
         public decimal TotalAmount { get; set; } // Now set from DailySales for credit payments
         public decimal CommissionAmount { get; set; } // Now set from DailySales for credit payments
-        public bool IsCredit => PaymentMethod == PaymentMethod.Credit;
+
+        /// <summary>
+        /// True for original credit sales, or DailySales rows that settle a credit (cash/bank).
+        /// </summary>
+        public bool IsCredit => PaymentMethod == PaymentMethod.Credit || IsCreditPayment;
+
         public decimal PaidAmount { get; set; }
-        public decimal RemainingAmount => IsCredit ? (TotalAmount - PaidAmount) : 0;
-        public bool IsFullyPaid => IsCredit && RemainingAmount <= 0;
+
+        public decimal RemainingAmount =>
+            IsCreditPayment
+                ? 0
+                : PaymentMethod == PaymentMethod.Credit
+                    ? TotalAmount - PaidAmount
+                    : 0;
+
+        /// <summary>
+        /// Credit-settlement rows are already paid; original credit uses remaining balance.
+        /// </summary>
+        public bool IsFullyPaid =>
+            IsCreditPayment || (PaymentMethod == PaymentMethod.Credit && RemainingAmount <= 0);
     }
 
     public class CreditTransactionHistoryDto
