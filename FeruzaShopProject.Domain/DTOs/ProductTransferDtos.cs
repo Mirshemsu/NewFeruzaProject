@@ -11,6 +11,7 @@ namespace FeruzaShopProject.Domain.DTOs
         public Guid FromBranchId { get; set; }
         public Guid ToBranchId { get; set; }
         public decimal Quantity { get; set; }
+        public string InvoiceNumber { get; set; }
         public string Reason { get; set; }
     }
 
@@ -41,6 +42,7 @@ namespace FeruzaShopProject.Domain.DTOs
     {
         public Guid Id { get; set; }
         public string TransferNumber { get; set; }
+        public string InvoiceNumber { get; set; }
         public string ProductName { get; set; }
         public string FromBranchName { get; set; }
         public string ToBranchName { get; set; }

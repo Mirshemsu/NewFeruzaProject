@@ -45,6 +45,19 @@ namespace FeruzaShopProject.Infrastructure.Services
                 if (fromBranch == null || toBranch == null)
                     return ApiResponse<TransferResponseDto>.Fail("Branch not found");
 
+                var invoiceNumber = (dto.InvoiceNumber ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(invoiceNumber))
+                    return ApiResponse<TransferResponseDto>.Fail("Invoice number is required");
+
+                if (invoiceNumber.Length > 50)
+                    return ApiResponse<TransferResponseDto>.Fail("Invoice number must be at most 50 characters");
+
+                var invoiceExists = await _context.ProductTransfers
+                    .AnyAsync(t => t.InvoiceNumber == invoiceNumber);
+                if (invoiceExists)
+                    return ApiResponse<TransferResponseDto>.Fail(
+                        $"Invoice number '{invoiceNumber}' is already used on another transfer");
+
                 // Check if enough stock exists (validation only, NOT deduction)
                 var sourceStock = await _context.Stocks
                     .FirstOrDefaultAsync(s => s.ProductId == dto.ProductId &&
@@ -65,6 +78,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                 {
                     Id = Guid.NewGuid(),
                     TransferNumber = transferNumber,
+                    InvoiceNumber = invoiceNumber,
                     ProductId = dto.ProductId,
                     FromBranchId = dto.FromBranchId,
                     ToBranchId = dto.ToBranchId,
@@ -363,6 +377,7 @@ namespace FeruzaShopProject.Infrastructure.Services
             {
                 Id = transfer.Id,
                 TransferNumber = transfer.TransferNumber,
+                InvoiceNumber = transfer.InvoiceNumber ?? string.Empty,
                 ProductName = transfer.Product?.Name ?? "Unknown",
                 FromBranchName = transfer.FromBranch?.Name ?? "Unknown",
                 ToBranchName = transfer.ToBranch?.Name ?? "Unknown",

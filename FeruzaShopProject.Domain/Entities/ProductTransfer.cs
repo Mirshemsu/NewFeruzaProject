@@ -12,6 +12,13 @@ namespace FeruzaShopProject.Domain.Entities
             [Required]
             public string TransferNumber { get; set; }
 
+            /// <summary>
+            /// User-entered invoice number; must be unique across transfers.
+            /// </summary>
+            [Required]
+            [StringLength(50)]
+            public string InvoiceNumber { get; set; }
+
             [Required]
             public Guid ProductId { get; set; }
 

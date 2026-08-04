@@ -419,8 +419,13 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasKey(e => e.Id);
 
                 entity.HasIndex(e => e.TransferNumber).IsUnique();
+                entity.HasIndex(e => e.InvoiceNumber).IsUnique();
 
                 entity.Property(e => e.TransferNumber)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.InvoiceNumber)
                     .IsRequired()
                     .HasMaxLength(50);
 
