@@ -5,6 +5,7 @@ using FeruzaShopProject.Application.Interface;
 using FeruzaShopProject.Domain.DTOs;
 using FeruzaShopProject.Domain.Shared;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -131,10 +132,33 @@ namespace FeruzaShopProject.Api.Controllers
 
         [HttpGet("low-stock")]
         [Authorize(Roles = "Admin,Manager,Staff,Sales")]
-        public async Task<IActionResult> GetLowStock([FromQuery] int threshold = 10)
+        public async Task<IActionResult> GetLowStock(
+            [FromQuery] int threshold = 10,
+            [FromQuery] Guid? branchId = null)
         {
-            var result = await _productService.GetLowStockProductsAsync(threshold);
+            // Sales users are always scoped to their own branch.
+            if (User.IsInRole("Sales"))
+            {
+                var salesBranchId = GetUserBranchId();
+                if (!salesBranchId.HasValue)
+                {
+                    return BadRequest(ApiResponse<List<ProductLowStockDto>>.Fail(
+                        "Sales user has no branch assigned."));
+                }
+
+                branchId = salesBranchId;
+            }
+
+            var result = await _productService.GetLowStockProductsAsync(threshold, branchId);
             return Ok(result);
+        }
+
+        private Guid? GetUserBranchId()
+        {
+            var branchIdClaim = User.FindFirst("BranchId")?.Value;
+            if (Guid.TryParse(branchIdClaim, out var id))
+                return id;
+            return null;
         }
 
         [HttpDelete("{id:guid}")]

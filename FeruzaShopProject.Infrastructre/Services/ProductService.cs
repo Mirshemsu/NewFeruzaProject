@@ -757,14 +757,21 @@ namespace FeruzaShopProject.Infrastructure.Services
                 return "Low Stock";
             return "In Stock";
         }
-        public async Task<ApiResponse<List<ProductLowStockDto>>> GetLowStockProductsAsync(int threshold = 10)
+        public async Task<ApiResponse<List<ProductLowStockDto>>> GetLowStockProductsAsync(int threshold = 10, Guid? branchId = null)
         {
             try
             {
-                var lowStockItems = await _context.Stocks
+                var query = _context.Stocks
                     .Include(s => s.Product)
                     .Include(s => s.Branch)
-                    .Where(s => s.Quantity <= threshold && s.IsActive && s.Product.IsActive)
+                    .Where(s => s.Quantity <= threshold && s.IsActive && s.Product.IsActive);
+
+                if (branchId.HasValue)
+                {
+                    query = query.Where(s => s.BranchId == branchId.Value);
+                }
+
+                var lowStockItems = await query
                     .Select(s => new ProductLowStockDto
                     {
                         ProductId = s.ProductId,
@@ -784,7 +791,7 @@ namespace FeruzaShopProject.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving low stock products");
+                _logger.LogError(ex, "Error retrieving low stock products for branch {BranchId}", branchId);
                 return ApiResponse<List<ProductLowStockDto>>.Fail("Failed to retrieve low stock products");
             }
         }
