@@ -98,7 +98,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Items = new List<PurchaseOrderItem>()
                 };
 
-                // Validate and add items
+                // Validate and add items (preserve request/receipt order via LineOrder)
+                var lineOrder = 0;
                 foreach (var itemDto in dto.Items)
                 {
                     var product = await _context.Products.FindAsync(itemDto.ProductId);
@@ -114,6 +115,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         PurchaseOrderId = purchaseOrder.Id,
                         ProductId = itemDto.ProductId,
                         Quantity = itemDto.Quantity,
+                        LineOrder = lineOrder++,
                         CreatedAt = DateTime.UtcNow,
                         IsActive = true
                     };
@@ -476,7 +478,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                         _logger.LogInformation("Removing {Count} items from purchase order", itemsToRemove.Count);
                     }
 
-                    // Process each item from the DTO
+                    // Process each item from the DTO (index = receipt/display order)
+                    var lineOrder = 0;
                     foreach (var itemDto in dto.Items)
                     {
                         var product = await _context.Products.FindAsync(itemDto.ProductId);
@@ -496,6 +499,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                             {
                                 existingItem.ProductId = itemDto.ProductId;
                                 existingItem.Quantity = itemDto.Quantity;
+                                existingItem.LineOrder = lineOrder;
                                 existingItem.UpdatedAt = DateTime.UtcNow;
                                 _context.PurchaseOrderItems.Update(existingItem);
                             }
@@ -509,11 +513,14 @@ namespace FeruzaShopProject.Infrastructre.Services
                                 PurchaseOrderId = purchaseOrder.Id,
                                 ProductId = itemDto.ProductId,
                                 Quantity = itemDto.Quantity,
+                                LineOrder = lineOrder,
                                 CreatedAt = DateTime.UtcNow,
                                 IsActive = true
                             };
                             await _context.PurchaseOrderItems.AddAsync(newItem);
                         }
+
+                        lineOrder++;
                     }
                 }
 
@@ -1027,7 +1034,8 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 // Stable item order for all detail screens (admin / finance / sales)
                 purchaseOrder.Items = purchaseOrder.Items
-                    .OrderBy(i => i.CreatedAt)
+                    .OrderBy(i => i.LineOrder)
+                    .ThenBy(i => i.CreatedAt)
                     .ToList();
 
                 var result = _mapper.Map<PurchaseOrderDto>(purchaseOrder);

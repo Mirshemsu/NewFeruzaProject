@@ -170,9 +170,12 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasKey(poi => poi.Id);
 
                 entity.Property(poi => poi.Quantity).IsRequired();
+                entity.Property(poi => poi.LineOrder).HasDefaultValue(0);
                 entity.Property(poi => poi.BuyingPrice).HasPrecision(18, 2);
                 entity.Property(poi => poi.UnitPrice).HasPrecision(18, 2);
                 entity.Property(poi => poi.SupplierName).HasMaxLength(200);
+
+                entity.HasIndex(poi => new { poi.PurchaseOrderId, poi.LineOrder });
 
                 // Relationship with PurchaseOrder
                 entity.HasOne(poi => poi.PurchaseOrder)

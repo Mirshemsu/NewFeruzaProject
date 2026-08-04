@@ -223,7 +223,10 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.ApprovedBy, opt => opt.MapFrom(src =>
                     src.Approver != null ? src.Approver.Name : null))
                 .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => src.TotalBuyingCost))
-                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src =>
+                    src.Items == null
+                        ? null
+                        : src.Items.OrderBy(i => i.LineOrder).ThenBy(i => i.CreatedAt).ToList()));
 
             CreateMap<PurchaseOrderItem, PurchaseOrderItemDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src =>

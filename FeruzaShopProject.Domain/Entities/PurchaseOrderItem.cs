@@ -15,6 +15,11 @@ namespace FeruzaShopProject.Domain.Entities
         [Required]
         public int Quantity { get; set; }
 
+        /// <summary>
+        /// Stable display/receipt order within the purchase (0-based).
+        /// </summary>
+        public int LineOrder { get; set; }
+
         // Prices (set by finance per item)
         public decimal? BuyingPrice { get; set; }     
         public decimal? UnitPrice { get; set; }        
