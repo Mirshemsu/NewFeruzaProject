@@ -1076,7 +1076,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dto.PaidAmount = x.PaidAmount;
                     dto.CommissionAmount = x.Transaction.Quantity * x.Transaction.CommissionRate;
                     dto.IsPartialPayment = x.PaidAmount > 0 && x.PaidAmount < x.TotalAmount;
-                    dto.IsCreditPayment = true;
                     return dto;
                 }).ToList();
 
