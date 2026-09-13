@@ -41,6 +41,7 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public decimal CommissionRate { get; set; }
         public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
+        public Guid? BankAccountId { get; set; }
 
         // ========== NEW: Remark field ==========
         [StringLength(500)]
@@ -82,6 +83,8 @@ namespace FeruzaShopProject.Domain.DTOs
 
         public bool? CommissionPaid { get; set; }
 
+        public Guid? BankAccountId { get; set; }
+
         [StringLength(500)]
         public string? Remark { get; set; }
     }
@@ -98,6 +101,8 @@ namespace FeruzaShopProject.Domain.DTOs
         public PaymentMethod PaymentMethod { get; set; }
 
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+
+        public Guid? BankAccountId { get; set; }
 
         // ========== NEW: Remark field for credit payment notes ==========
         [StringLength(500)]
@@ -117,6 +122,8 @@ namespace FeruzaShopProject.Domain.DTOs
         public decimal UnitPrice { get; set; } // This comes from Transaction or DailySales
         public decimal Quantity { get; set; } // This comes from Transaction or DailySales
         public PaymentMethod PaymentMethod { get; set; }
+        public Guid? BankAccountId { get; set; }
+        public string? BankAccountName { get; set; }
         public decimal CommissionRate { get; set; }
         public bool CommissionPaid { get; set; }
 

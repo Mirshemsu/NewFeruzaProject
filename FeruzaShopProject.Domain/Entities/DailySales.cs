@@ -33,6 +33,8 @@ namespace FeruzaShopProject.Domain.Entities
         [Required]
         public PaymentMethod PaymentMethod { get; set; }
 
+        public Guid? BankAccountId { get; set; }
+
         // Commission info
         [Range(0, double.MaxValue)]
         public decimal CommissionRate { get; set; }
@@ -57,5 +59,6 @@ namespace FeruzaShopProject.Domain.Entities
         public Transaction Transaction { get; set; }
         public Customer Customer { get; set; }
         public Painter Painter { get; set; }
+        public BankAccount BankAccount { get; set; }
     }
 }

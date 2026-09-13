@@ -22,7 +22,8 @@ namespace FeruzaShopProject.Application.Mapper
                             .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                             .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
                             .ForMember(dest => dest.CommissionRate, opt => opt.MapFrom(src => src.CommissionRate))
-                            .ForMember(dest => dest.CommissionPaid, opt => opt.MapFrom(src => false))
+                            .ForMember(dest => dest.CommissionPaid, opt => opt.MapFrom(src => src.CommissionRate > 0))
+                            .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.BankAccountId))
                             .ForMember(dest => dest.Remark, opt => opt.MapFrom(src => src.Remark))
                             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
@@ -39,7 +40,8 @@ namespace FeruzaShopProject.Application.Mapper
                             .ForMember(dest => dest.DailySales, opt => opt.Ignore())
                             .ForMember(dest => dest.StockMovements, opt => opt.Ignore())
                             .ForMember(dest => dest.CreditPayments, opt => opt.Ignore())
-                            .ForMember(dest => dest.Exchanges, opt => opt.Ignore());
+                            .ForMember(dest => dest.Exchanges, opt => opt.Ignore())
+                            .ForMember(dest => dest.BankAccount, opt => opt.Ignore());
 
             // UpdateTransactionDto -> Transaction
             CreateMap<UpdateTransactionDto, Transaction>()
@@ -57,6 +59,8 @@ namespace FeruzaShopProject.Application.Mapper
                   .ForMember(dest => dest.CustomerPhoneNumber, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : null))
                   .ForMember(dest => dest.PainterName, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.Name : null))
                   .ForMember(dest => dest.PainterPhoneNumber, opt => opt.MapFrom(src => src.Painter != null ? src.Painter.PhoneNumber : null))
+                  .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.BankAccountId))
+                  .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.BankAccount != null ? src.BankAccount.BankName : null))
                   .ForMember(dest => dest.IsCredit, opt => opt.MapFrom(src => src.PaymentMethod == PaymentMethod.Credit))
                   .ForMember(dest => dest.TotalAmount, opt => opt.Ignore()) // Calculated in service
                   .ForMember(dest => dest.CommissionAmount, opt => opt.Ignore()) // Calculated in service
@@ -79,6 +83,8 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
                 .ForMember(dest => dest.CommissionRate, opt => opt.MapFrom(src => src.CommissionRate))
                 .ForMember(dest => dest.CommissionPaid, opt => opt.MapFrom(src => src.CommissionPaid))
+                .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.BankAccountId))
+                .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.BankAccount != null ? src.BankAccount.BankName : null))
                 .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Branch.Name))
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Product.Category.Name))
@@ -102,7 +108,9 @@ namespace FeruzaShopProject.Application.Mapper
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
-                .ForMember(dest => dest.Transaction, opt => opt.Ignore());
+                .ForMember(dest => dest.Transaction, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccount, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.BankAccountId));
 
             // Transaction -> CreditTransactionHistoryDto
             CreateMap<Transaction, CreditTransactionHistoryDto>()

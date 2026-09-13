@@ -23,6 +23,9 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
         public DbSet<DailyClosing> DailyClosings { get; set; }
         public DbSet<ProductTransfer> ProductTransfers { get; set; }
+        public DbSet<BankAccount> BankAccounts { get; set; }
+        public DbSet<CommissionAccount> CommissionAccounts { get; set; }
+        public DbSet<CommissionLedgerEntry> CommissionLedgerEntries { get; set; }
 
         public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options) { }
 
@@ -38,6 +41,8 @@ namespace FeruzaShopProject.Infrastructre.Data
             modelBuilder.Entity<Customer>().HasQueryFilter(c => c.IsActive);
             modelBuilder.Entity<Painter>().HasQueryFilter(p => p.IsActive);
             modelBuilder.Entity<ProductExchange>().HasQueryFilter(pe => pe.IsActive);
+            modelBuilder.Entity<BankAccount>().HasQueryFilter(a => a.IsActive);
+            modelBuilder.Entity<CommissionAccount>().HasQueryFilter(a => a.IsActive);
 
             // ========== USER CONFIGURATION ==========
             modelBuilder.Entity<User>(entity =>
@@ -323,6 +328,11 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(t => t.PainterId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(t => t.BankAccount)
+                    .WithMany(a => a.Transactions)
+                    .HasForeignKey(t => t.BankAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(t => t.TransactionDate);
                 entity.HasIndex(t => t.PaymentMethod);
                 entity.HasIndex(t => new { t.BranchId, t.TransactionDate });
@@ -367,6 +377,11 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .HasForeignKey(ds => ds.PainterId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(ds => ds.BankAccount)
+                    .WithMany(a => a.DailySales)
+                    .HasForeignKey(ds => ds.BankAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(ds => ds.SaleDate);
                 entity.HasIndex(ds => new { ds.BranchId, ds.SaleDate });
             });
@@ -384,6 +399,11 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasOne(cp => cp.Transaction)
                     .WithMany(t => t.CreditPayments)
                     .HasForeignKey(cp => cp.TransactionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(cp => cp.BankAccount)
+                    .WithMany(a => a.CreditPayments)
+                    .HasForeignKey(cp => cp.BankAccountId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(cp => cp.PaymentDate);
@@ -449,6 +469,56 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .WithMany()
                     .HasForeignKey(e => e.ToBranchId)
                     .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade to Restrict
+            });
+            // ========== BANK ACCOUNT CONFIGURATION ==========
+            modelBuilder.Entity<BankAccount>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.BankName).HasMaxLength(120).IsRequired();
+                entity.Property(a => a.AccountNumber).HasMaxLength(50).IsRequired();
+                entity.Property(a => a.AccountOwner).HasMaxLength(150).IsRequired();
+
+                entity.HasOne(a => a.Branch)
+                    .WithMany()
+                    .HasForeignKey(a => a.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(a => new { a.BranchId, a.AccountNumber }).IsUnique();
+            });
+            // ========== COMMISSION ACCOUNT CONFIGURATION ==========
+            modelBuilder.Entity<CommissionAccount>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.HasOne(a => a.Branch)
+                    .WithMany()
+                    .HasForeignKey(a => a.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<CommissionLedgerEntry>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SignedAmount).HasPrecision(18, 2);
+                entity.Property(e => e.CheckNumber).HasMaxLength(50);
+                entity.Property(e => e.Note).HasMaxLength(500);
+                entity.Property(e => e.ProductName).HasMaxLength(200);
+                entity.Property(e => e.ItemCode).HasMaxLength(50);
+                entity.Property(e => e.CreatedByName).HasMaxLength(100);
+                entity.Property(e => e.EntryType)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.CommissionAccount)
+                    .WithMany(a => a.Entries)
+                    .HasForeignKey(e => e.CommissionAccountId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Transaction)
+                    .WithMany()
+                    .HasForeignKey(e => e.TransactionId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.EntryDate);
+                entity.HasIndex(e => e.TransactionId);
             });
         }
     }

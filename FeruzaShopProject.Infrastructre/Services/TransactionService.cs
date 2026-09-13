@@ -20,17 +20,23 @@ namespace FeruzaShopProject.Infrastructre.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
         private readonly ILogger<TransactionService> _logger;
+        private readonly IBankAccountService _bankAccountService;
+        private readonly ICommissionAccountService _commissionAccountService;
 
         public TransactionService(
             ShopDbContext context,
             IMapper mapper,
             ILogger<TransactionService> logger,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IBankAccountService bankAccountService,
+            ICommissionAccountService commissionAccountService)
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+            _bankAccountService = bankAccountService;
+            _commissionAccountService = commissionAccountService;
         }
 
         public async Task<ApiResponse<TransactionResponseDto>> CreateTransactionAsync(CreateTransactionDto dto)
@@ -133,11 +139,20 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
+                var resolvedBankAccountId = dto.PaymentMethod == PaymentMethod.Bank ? dto.BankAccountId : null;
+                var bankError = await _bankAccountService.ValidateForPaymentAsync(
+                    resolvedBankAccountId, dto.PaymentMethod, dto.BranchId);
+                if (bankError != null)
+                    return ApiResponse<TransactionResponseDto>.Fail(bankError);
+
                 // Create sales transaction using AutoMapper
                 var salesTransaction = _mapper.Map<Transaction>(dto);
                 salesTransaction.CustomerId = customerId;
                 salesTransaction.PainterId = painterId;
                 salesTransaction.Remark = dto.Remark;
+                salesTransaction.BankAccountId = resolvedBankAccountId;
+                if (salesTransaction.CommissionRate > 0)
+                    salesTransaction.CommissionPaid = true;
 
                 // Ensure TransactionDate is set correctly
                 salesTransaction.TransactionDate = dto.TransactionDate;
@@ -156,6 +171,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                 salesTransaction.Validate();
 
                 await _context.Transactions.AddAsync(salesTransaction);
+
+                var commissionError = await _commissionAccountService.ApplySaleCommissionAsync(
+                    salesTransaction.BranchId,
+                    salesTransaction.Id,
+                    CalculateCommissionAmount(salesTransaction),
+                    salesTransaction.TransactionDate,
+                    product.Name,
+                    salesTransaction.ItemCode,
+                    userId,
+                    await GetCurrentUserNameAsync(userId));
+                if (commissionError != null)
+                    return ApiResponse<TransactionResponseDto>.Fail(commissionError);
 
                 // Update stock with movement for non-credit transactions (FIXED)
                 if (dto.PaymentMethod != PaymentMethod.Credit)
@@ -470,6 +497,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 var oldUnitPrice = existingTransaction.UnitPrice;
                 var oldPaymentMethod = existingTransaction.PaymentMethod;
                 var oldCommissionPaid = existingTransaction.CommissionPaid;
+                var oldCommissionRate = existingTransaction.CommissionRate;
                 var oldTotalAmount = existingTransaction.TotalAmount;
                 var oldProductId = existingTransaction.ProductId;
                 var oldBranchId = existingTransaction.BranchId;
@@ -506,8 +534,33 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.CommissionPaid.HasValue) existingTransaction.CommissionPaid = dto.CommissionPaid.Value;
                 if (dto.Remark != null) existingTransaction.Remark = dto.Remark;
 
+                var resolvedMethod = existingTransaction.PaymentMethod;
+                var resolvedBankAccountId = resolvedMethod == PaymentMethod.Bank
+                    ? (dto.BankAccountId ?? existingTransaction.BankAccountId)
+                    : null;
+                var bankError = await _bankAccountService.ValidateForPaymentAsync(
+                    resolvedBankAccountId, resolvedMethod, existingTransaction.BranchId);
+                if (bankError != null)
+                    return ApiResponse<TransactionResponseDto>.Fail(bankError);
+
+                existingTransaction.BankAccountId = resolvedBankAccountId;
+                if (existingTransaction.CommissionRate > 0)
+                    existingTransaction.CommissionPaid = true;
+
                 existingTransaction.UpdatedAt = DateTime.UtcNow;
                 existingTransaction.Validate();
+
+                var commissionError = await _commissionAccountService.ApplySaleCommissionAsync(
+                    existingTransaction.BranchId,
+                    existingTransaction.Id,
+                    CalculateCommissionAmount(existingTransaction),
+                    existingTransaction.TransactionDate,
+                    existingTransaction.Product?.Name,
+                    existingTransaction.ItemCode,
+                    null,
+                    null);
+                if (commissionError != null)
+                    return ApiResponse<TransactionResponseDto>.Fail(commissionError);
 
                 var newTotalAmount = existingTransaction.TotalAmount;
 
@@ -600,6 +653,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                         dailySale.CommissionAmount = existingTransaction.Quantity * existingTransaction.CommissionRate;
                         dailySale.CommissionPaid = existingTransaction.CommissionPaid;
                         dailySale.PaymentMethod = existingTransaction.PaymentMethod;
+                        dailySale.BankAccountId = existingTransaction.BankAccountId;
                         dailySale.UpdatedAt = DateTime.UtcNow;
 
                         _context.DailySales.Update(dailySale);
@@ -757,6 +811,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                     return ApiResponse<bool>.Fail("Cannot delete credit transaction with payments");
                 }
 
+                var deleteCommissionError = await _commissionAccountService.ApplySaleCommissionAsync(
+                    existingTransaction.BranchId,
+                    existingTransaction.Id,
+                    0,
+                    existingTransaction.TransactionDate,
+                    existingTransaction.Product?.Name,
+                    existingTransaction.ItemCode,
+                    null,
+                    null);
+                if (deleteCommissionError != null)
+                    return ApiResponse<bool>.Fail(deleteCommissionError);
+
                 // ========== DELETE RELATED RECORDS FIRST ==========
 
                 // 1. Delete StockMovements
@@ -871,6 +937,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (dto.Amount > remainingAmount)
                     return ApiResponse<TransactionResponseDto>.Fail($"Payment amount exceeds remaining balance. Remaining: {remainingAmount}");
 
+                var creditBankAccountId = dto.PaymentMethod == PaymentMethod.Bank ? dto.BankAccountId : null;
+                var creditBankError = await _bankAccountService.ValidateForPaymentAsync(
+                    creditBankAccountId, dto.PaymentMethod, creditTransaction.BranchId);
+                if (creditBankError != null)
+                    return ApiResponse<TransactionResponseDto>.Fail(creditBankError);
+
                 // Calculate what portion of the payment is being made
                 var paymentPercentage = dto.Amount / totalAmount;
                 var paidQuantity = creditTransaction.Quantity * paymentPercentage;
@@ -882,6 +954,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     TransactionId = dto.TransactionId,
                     Amount = dto.Amount,
                     PaymentMethod = dto.PaymentMethod,
+                    BankAccountId = creditBankAccountId,
                     PaymentDate = now,
                     CreatedAt = now,
                     UpdatedAt = now,
@@ -903,6 +976,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     UnitPrice = creditTransaction.UnitPrice,
                     TotalAmount = dto.Amount,
                     PaymentMethod = dto.PaymentMethod,
+                    BankAccountId = creditBankAccountId,
                     CommissionRate = creditTransaction.CommissionRate,
                     CommissionAmount = paidQuantity * creditTransaction.CommissionRate,
                     CommissionPaid = creditTransaction.CommissionPaid,
@@ -2051,6 +2125,16 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.Entry(transaction).Reference(t => t.Customer).LoadAsync();
             if (transaction.PainterId.HasValue)
                 await _context.Entry(transaction).Reference(t => t.Painter).LoadAsync();
+            if (transaction.BankAccountId.HasValue)
+                await _context.Entry(transaction).Reference(t => t.BankAccount).LoadAsync();
+        }
+
+        private async Task<string?> GetCurrentUserNameAsync(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                return null;
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            return user?.Name ?? user?.UserName;
         }
 
         /// <summary>
@@ -2065,6 +2149,7 @@ namespace FeruzaShopProject.Infrastructre.Services
             dto.TotalAmount = dailySale.TotalAmount;
             dto.CommissionAmount = dailySale.CommissionAmount;
             dto.CommissionPaid = dailySale.CommissionPaid;
+            dto.BankAccountId = dailySale.BankAccountId;
             dto.TransactionDate = dailySale.SaleDate;
 
             if (dailySale.IsCreditPayment)
@@ -2101,6 +2186,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     UnitPrice = transaction.UnitPrice,
                     TotalAmount = CalculateTotalAmount(transaction),
                     PaymentMethod = transaction.PaymentMethod,
+                    BankAccountId = transaction.BankAccountId,
                     CommissionRate = transaction.CommissionRate,
                     CommissionAmount = CalculateCommissionAmount(transaction),
                     CommissionPaid = transaction.CommissionPaid,

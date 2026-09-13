@@ -18,6 +18,8 @@ namespace FeruzaShopProject.Domain.Entities
         [Required]
         public PaymentMethod PaymentMethod { get; set; }
 
+        public Guid? BankAccountId { get; set; }
+
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
         [StringLength(500)]
@@ -25,5 +27,6 @@ namespace FeruzaShopProject.Domain.Entities
 
         // Navigation properties
         public Transaction Transaction { get; set; }
+        public BankAccount BankAccount { get; set; }
     }
 }

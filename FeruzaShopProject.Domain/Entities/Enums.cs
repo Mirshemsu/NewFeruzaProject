@@ -52,4 +52,12 @@ namespace FeruzaShopProject.Domain.Entities
         Rejected,   // Finance rejected (needs reopening)
         Adjusted    // Finance made adjustments
     }
+
+    public enum CommissionLedgerEntryType
+    {
+        Allocation,
+        Deduction,
+        Reversal,
+        Adjustment
+    }
 }
