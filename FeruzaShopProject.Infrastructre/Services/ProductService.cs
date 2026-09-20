@@ -225,23 +225,11 @@ namespace FeruzaShopProject.Infrastructure.Services
                         errors.Add("Stock quantity cannot be negative");
                     }
 
-                    // Check if product already exists
+                    // Check if product already exists (including products created earlier in this batch)
                     var existingProduct = existingProducts.GetValueOrDefault(productDto.ItemCode);
 
                     if (existingProduct != null)
                     {
-                        // PRODUCT EXISTS - Check for branch conflicts
-                        var existingBranchIds = existingProduct.Stocks?.Select(s => s.BranchId).ToHashSet() ?? new HashSet<Guid>();
-                        var newBranchIds = productDto.BranchStocks.Select(b => b.BranchId).ToHashSet();
-
-                        // Find branches that already have this product
-                        var conflictingBranches = existingBranchIds.Intersect(newBranchIds).ToList();
-
-                        if (conflictingBranches.Any())
-                        {
-                            errors.Add($"Product already exists in branches: {string.Join(", ", conflictingBranches)}. Use update endpoint to modify existing stock.");
-                        }
-
                         if (errors.Any())
                         {
                             result.FailedCount++;
@@ -255,31 +243,45 @@ namespace FeruzaShopProject.Infrastructure.Services
                             continue;
                         }
 
-                        // Add stocks for NEW branches only
                         try
                         {
+                            ApplyCatalogFields(existingProduct, productDto);
+
                             foreach (var branchStock in productDto.BranchStocks)
                             {
-                                // Only add if product doesn't exist in this branch
-                                if (!existingBranchIds.Contains(branchStock.BranchId))
-                                {
-                                    var stock = new Stock
-                                    {
-                                        Id = Guid.NewGuid(),
-                                        ProductId = existingProduct.Id,
-                                        BranchId = branchStock.BranchId,
-                                        Quantity = branchStock.Quantity,
-                                        CreatedAt = DateTime.UtcNow,
-                                        IsActive = true
-                                    };
-                                    stocksToAdd.Add(stock);
+                                var existingStock = existingProduct.Stocks?
+                                    .FirstOrDefault(s => s.BranchId == branchStock.BranchId);
 
-                                    _logger.LogDebug("Adding existing product {ItemCode} to new branch {BranchId} with quantity {Quantity}",
-                                        productDto.ItemCode, branchStock.BranchId, branchStock.Quantity);
+                                if (existingStock != null)
+                                {
+                                    existingStock.Quantity = branchStock.Quantity;
+                                    existingStock.IsActive = true;
+                                    existingStock.UpdatedAt = DateTime.UtcNow;
+                                    continue;
                                 }
+
+                                var pendingStock = stocksToAdd.FirstOrDefault(s =>
+                                    s.ProductId == existingProduct.Id &&
+                                    s.BranchId == branchStock.BranchId);
+
+                                if (pendingStock != null)
+                                {
+                                    pendingStock.Quantity = branchStock.Quantity;
+                                    continue;
+                                }
+
+                                var stock = new Stock
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ProductId = existingProduct.Id,
+                                    BranchId = branchStock.BranchId,
+                                    Quantity = branchStock.Quantity,
+                                    CreatedAt = DateTime.UtcNow,
+                                    IsActive = true
+                                };
+                                stocksToAdd.Add(stock);
                             }
 
-                            // Add to successful results (will fetch complete product later)
                             result.SuccessCount++;
                         }
                         catch (Exception ex)
@@ -290,7 +292,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                                 RowIndex = i + 1,
                                 ItemCode = productDto.ItemCode,
                                 ProductName = productDto.Name,
-                                ErrorMessage = $"Error adding to new branch: {ex.Message}"
+                                ErrorMessage = $"Error updating product: {ex.Message}"
                             });
                         }
                     }
@@ -371,7 +373,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                     _logger.LogInformation("Adding {Count} stock entries", stocksToAdd.Count);
                 }
 
-                if (productsToAdd.Any() || stocksToAdd.Any())
+                if (result.SuccessCount > 0)
                 {
                     await _context.SaveChangesAsync();
                 }
@@ -381,16 +383,20 @@ namespace FeruzaShopProject.Infrastructure.Services
                 // Get complete product responses for successful items
                 var allAffectedProducts = new HashSet<Guid>();
 
-                // Add newly created products
                 foreach (var product in productsToAdd)
                 {
                     allAffectedProducts.Add(product.Id);
                 }
 
-                // Add existing products that got new stocks
-                foreach (var stock in stocksToAdd.Where(s => productsToAdd.All(p => p.Id != s.ProductId)))
+                foreach (var stock in stocksToAdd)
                 {
                     allAffectedProducts.Add(stock.ProductId);
+                }
+
+                foreach (var existing in existingProducts.Values)
+                {
+                    if (allItemCodes.Contains(existing.ItemCode))
+                        allAffectedProducts.Add(existing.Id);
                 }
 
                 foreach (var productId in allAffectedProducts)
@@ -579,26 +585,7 @@ namespace FeruzaShopProject.Infrastructure.Services
 
                 foreach (var product in products)
                 {
-                    var productDto = _mapper.Map<ProductResponseDto>(product);
-
-                    // Calculate total stock across ALL branches
-                    productDto.TotalStock = product.Stocks?
-                        .Where(s => s.IsActive)
-                        .Sum(s => s.Quantity) ?? 0;
-
-                    // Add branch-specific stock information
-                    productDto.BranchStocks = product.Stocks?
-                        .Where(s => s.IsActive && s.Branch != null)
-                        .Select(s => new BranchStockInfoDto
-                        {
-                            BranchId = s.BranchId,
-                            BranchName = s.Branch.Name,
-                            Quantity = s.Quantity,
-                            StockStatus = GetStockStatus(s.Quantity, product.ReorderLevel)
-                        })
-                        .ToList() ?? new List<BranchStockInfoDto>();
-
-                    result.Add(productDto);
+                    result.Add(MapProductWithStocks(product));
                 }
 
                 return ApiResponse<List<ProductResponseDto>>.Success(result);
@@ -987,6 +974,43 @@ namespace FeruzaShopProject.Infrastructure.Services
             }
         }
 
+        private void ApplyCatalogFields(Product product, CreateProductDto dto)
+        {
+            product.Name = dto.Name;
+            product.ItemDescription = dto.ItemDescription;
+            product.Amount = dto.Amount;
+            product.Unit = dto.Unit;
+            product.BuyingPrice = dto.BuyingPrice;
+            product.UnitPrice = dto.UnitPrice;
+            product.CommissionPerProduct = dto.CommissionPerProduct;
+            product.ReorderLevel = dto.ReorderLevel;
+            product.CategoryId = dto.CategoryId;
+            product.UpdatedAt = DateTime.UtcNow;
+            product.ValidateAmount();
+        }
+
+        private ProductResponseDto MapProductWithStocks(Product product)
+        {
+            var productDto = _mapper.Map<ProductResponseDto>(product);
+            productDto.Amount = product.Amount;
+            productDto.Unit = product.Unit;
+            productDto.TotalStock = product.Stocks?
+                .Where(s => s.IsActive)
+                .Sum(s => s.Quantity) ?? 0;
+            productDto.BranchStocks = product.Stocks?
+                .Where(s => s.IsActive && s.Branch != null)
+                .Select(s => new BranchStockInfoDto
+                {
+                    BranchId = s.BranchId,
+                    BranchName = s.Branch.Name,
+                    Quantity = s.Quantity,
+                    StockStatus = GetStockStatus(s.Quantity, product.ReorderLevel)
+                })
+                .OrderBy(s => s.BranchName)
+                .ToList() ?? new List<BranchStockInfoDto>();
+            return productDto;
+        }
+
         private async Task<ProductResponseDto> GetProductResponse(Guid productId)
         {
             var product = await _context.Products
@@ -996,7 +1020,7 @@ namespace FeruzaShopProject.Infrastructure.Services
                 .Where(p => p.Id == productId && p.IsActive)
                 .FirstOrDefaultAsync();
 
-            return product == null ? null : _mapper.Map<ProductResponseDto>(product);
+            return product == null ? null : MapProductWithStocks(product);
         }
     }
 }

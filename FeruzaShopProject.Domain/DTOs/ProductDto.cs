@@ -15,6 +15,8 @@ namespace FeruzaShopProject.Domain.DTOs
         public string ItemCode { get; set; }
         public string ItemDescription { get; set; }
         public string Quantity { get; set; } // Display quantity (e.g., "10.000 Kg")
+        public decimal Amount { get; set; }
+        public UnitType Unit { get; set; }
         public decimal BuyingPrice { get; set; }
         public decimal SellingPrice { get; set; }
         public decimal CommissionPerProduct { get; set; }
@@ -106,7 +108,7 @@ namespace FeruzaShopProject.Domain.DTOs
     public class BulkCreateProductDto
     {
         [Required, MinLength(1, ErrorMessage = "At least one product is required")]
-        [MaxLength(100, ErrorMessage = "Maximum 100 products can be created in one bulk operation")]
+        [MaxLength(1000, ErrorMessage = "Maximum 1000 products can be processed in one bulk operation")]
         public List<CreateProductDto> Products { get; set; } = new();
     }
 

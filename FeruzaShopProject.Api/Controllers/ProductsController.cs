@@ -49,9 +49,9 @@ namespace FeruzaShopProject.Api.Controllers
                 _logger.LogInformation("Bulk creating {Count} products", dto.Products.Count);
 
                 // Validate batch size
-                if (dto.Products.Count > 100)
+                if (dto.Products.Count > 1000)
                 {
-                    return BadRequest(ApiResponse<BulkProductResultDto>.Fail("Maximum batch size is 100 products"));
+                    return BadRequest(ApiResponse<BulkProductResultDto>.Fail("Maximum batch size is 1000 products"));
                 }
 
                 var result = await _productService.BulkCreateProductsAsync(dto);
