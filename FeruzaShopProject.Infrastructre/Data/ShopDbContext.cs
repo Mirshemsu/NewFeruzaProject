@@ -22,6 +22,7 @@ namespace FeruzaShopProject.Infrastructre.Data
         public DbSet<PurchaseHistory> PurchaseHistory { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
         public DbSet<DailyClosing> DailyClosings { get; set; }
+        public DbSet<CashBankTransfer> CashBankTransfers { get; set; }
         public DbSet<ProductTransfer> ProductTransfers { get; set; }
         public DbSet<BankAccount> BankAccounts { get; set; }
         public DbSet<CommissionAccount> CommissionAccounts { get; set; }
@@ -248,6 +249,32 @@ namespace FeruzaShopProject.Infrastructre.Data
                     .WithMany()
                     .HasForeignKey(dc => dc.BranchId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(dc => new { dc.BranchId, dc.ClosingDate })
+                    .IsUnique()
+                    .HasFilter("[IsActive] = 1")
+                    .HasDatabaseName("IX_DailyClosings_OneActivePerBranchDate");
+            });
+
+            modelBuilder.Entity<CashBankTransfer>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Amount).HasPrecision(18, 2);
+                entity.Property(t => t.BankReference).HasMaxLength(100);
+                entity.Property(t => t.Remarks).HasMaxLength(500);
+                entity.Property(t => t.Direction).HasConversion<int>();
+
+                entity.HasOne(t => t.Branch)
+                    .WithMany()
+                    .HasForeignKey(t => t.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(t => t.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(t => t.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(t => new { t.BranchId, t.TransferDate });
             });
             // ========== STOCK CONFIGURATION ==========
             modelBuilder.Entity<Stock>(entity =>

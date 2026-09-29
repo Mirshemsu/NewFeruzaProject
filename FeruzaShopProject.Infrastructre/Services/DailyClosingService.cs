@@ -73,7 +73,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                                 $"Date {dto.ClosingDate:yyyy-MM-dd} is already closed. Wait for finance approval.");
 
                         case DailyClosingStatus.Pending:
-                            // This is the normal case - update the existing record to Closed
+                            // Snapshot sales plus transfers, then mark the day closed.
+                            await ApplyComputedTotalsAsync(existingClosing);
                             existingClosing.Status = DailyClosingStatus.Closed;
                             existingClosing.ClosedAt = DateTime.UtcNow;
                             existingClosing.ClosedBy = userId;
@@ -83,7 +84,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                             await _context.SaveChangesAsync();
                             await transaction.CommitAsync();
 
-                            var result = _mapper.Map<DailyClosingDto>(existingClosing);
+                            var result = await MapWithTransfersAsync(existingClosing);
                             _logger.LogInformation("Daily sales CLOSED for branch {BranchId} on {Date}",
                                 dto.BranchId, dto.ClosingDate.Date);
 
@@ -97,18 +98,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
-                // If no existing closing or it was rejected, get fresh data
-                var dailySales = await _context.DailySales
-                    .Where(ds => ds.BranchId == dto.BranchId &&
-                                ds.SaleDate.Date == dto.ClosingDate.Date &&
-                                ds.IsActive)
-                    .ToListAsync();
-
-                var totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
-                var totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
-                var totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
-                var totalSales = totalCash + totalBank + totalCredit;
-                var totalTransactions = dailySales.Count;
+                // If no existing closing or it was rejected, snapshot sales plus transfers.
+                var totals = await ComputeDayTotalsAsync(dto.BranchId, dto.ClosingDate);
 
                 // Create NEW closing record with status = Closed
                 var closing = new DailyClosing
@@ -121,11 +112,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Status = DailyClosingStatus.Closed,  // NEW: Set to Closed, not Pending
                     Remarks = dto.Remarks,
 
-                    TotalTransactions = totalTransactions,
-                    TotalSalesAmount = totalSales,
-                    TotalCashAmount = totalCash,
-                    TotalBankAmount = totalBank,
-                    TotalCreditAmount = totalCredit,
+                    TotalTransactions = totals.Count,
+                    TotalSalesAmount = totals.TotalSales,
+                    TotalCashAmount = totals.Cash,
+                    TotalBankAmount = totals.Bank,
+                    TotalCreditAmount = totals.Credit,
 
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true
@@ -135,7 +126,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var mappedResult = _mapper.Map<DailyClosingDto>(closing);
+                var mappedResult = await MapWithTransfersAsync(closing);
                 _logger.LogInformation("Daily sales CLOSED for branch {BranchId} on {Date}",
                     dto.BranchId, dto.ClosingDate.Date);
 
@@ -196,7 +187,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = _mapper.Map<DailyClosingDto>(closing);
+                var result = await MapWithTransfersAsync(closing);
                 _logger.LogInformation("Daily closing {ClosingId} {Status}", closing.Id, closing.Status);
 
                 return ApiResponse<DailyClosingDto>.Success(result,
@@ -253,27 +244,9 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 if (dailyClosing == null)
                 {
-                    // Calculate amounts from DailySales
-                    var dailySales = await _context.DailySales
-                        .Where(ds => ds.BranchId == dto.BranchId &&
-                                    ds.SaleDate.Date == dto.TransferDate.Date &&
-                                    ds.IsActive)
-                        .ToListAsync();
-
-                    var totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
-                    var totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
-                    var totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
-                    var totalSales = totalCash + totalBank + totalCredit;
-                    var totalTransactions = dailySales.Count;
-
-                    // Get branch for navigation
                     var branch = await _context.Branches.FindAsync(dto.BranchId);
-
-                    // Get user for navigation
                     var user = await _context.Users.FindAsync(userId);
 
-                    // ========== FIX: Create WITHOUT setting status ==========
-                    // Status will default to Pending (0) which is correct
                     dailyClosing = new DailyClosing
                     {
                         Id = Guid.NewGuid(),
@@ -282,15 +255,11 @@ namespace FeruzaShopProject.Infrastructre.Services
                         ClosingDate = dto.TransferDate.Date,
                         ClosedBy = userId,
                         Closer = user,
-                        // Status NOT SET - will use default Pending
-                        TotalTransactions = totalTransactions,
-                        TotalSalesAmount = totalSales,
-                        TotalCashAmount = totalCash,
-                        TotalBankAmount = totalBank,
-                        TotalCreditAmount = totalCredit,
+                        Status = DailyClosingStatus.Pending,
                         CreatedAt = DateTime.UtcNow,
                         IsActive = true
                     };
+                    await ApplyComputedTotalsAsync(dailyClosing);
                     await _context.DailyClosings.AddAsync(dailyClosing);
                     await _context.SaveChangesAsync();
                 }
@@ -308,34 +277,37 @@ namespace FeruzaShopProject.Infrastructre.Services
                         $"Cannot transfer for {dto.TransferDate:yyyy-MM-dd}. This date is already approved and locked.");
                 }
 
-                // Perform the transfer
-                switch (dto.Direction)
+                var available = await ComputeDayTotalsAsync(dto.BranchId, dto.TransferDate);
+                var availableAmount = dto.Direction == TransferDirection.CashToBank
+                    ? available.Cash
+                    : available.Bank;
+                if (availableAmount < dto.Amount)
+                    return ApiResponse<DailyClosingDto>.Fail(
+                        $"Insufficient {(dto.Direction == TransferDirection.CashToBank ? "cash" : "bank")} amount. Available: {availableAmount}, Requested: {dto.Amount}");
+
+                var transfer = new CashBankTransfer
                 {
-                    case TransferDirection.CashToBank:
-                        if (dailyClosing.TotalCashAmount < dto.Amount)
-                            return ApiResponse<DailyClosingDto>.Fail(
-                                $"Insufficient cash amount. Available: {dailyClosing.TotalCashAmount}, Requested: {dto.Amount}");
+                    Id = Guid.NewGuid(),
+                    BranchId = dto.BranchId,
+                    TransferDate = dto.TransferDate.Date,
+                    Direction = dto.Direction,
+                    Amount = dto.Amount,
+                    BankReference = dto.BankTransactionId,
+                    Remarks = dto.Remarks,
+                    CreatedByUserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+                await _context.CashBankTransfers.AddAsync(transfer);
 
-                        dailyClosing.TotalCashAmount -= dto.Amount;
-                        dailyClosing.TotalBankAmount += dto.Amount;
-                        dailyClosing.CashBankTransactionId = dto.BankTransactionId;
-                        break;
-
-                    case TransferDirection.BankToCash:
-                        if (dailyClosing.TotalBankAmount < dto.Amount)
-                            return ApiResponse<DailyClosingDto>.Fail(
-                                $"Insufficient bank amount. Available: {dailyClosing.TotalBankAmount}, Requested: {dto.Amount}");
-
-                        dailyClosing.TotalBankAmount -= dto.Amount;
-                        dailyClosing.TotalCashAmount += dto.Amount;
-                        dailyClosing.BankTransferTransactionId = dto.BankTransactionId;
-                        break;
-                }
+                if (dto.Direction == TransferDirection.CashToBank)
+                    dailyClosing.CashBankTransactionId = dto.BankTransactionId;
+                else
+                    dailyClosing.BankTransferTransactionId = dto.BankTransactionId;
 
                 // ========== FIX: DO NOT change the status ==========
                 // Status remains whatever it was (Pending, Rejected, etc.)
                 // Only update timestamp and remarks
-                dailyClosing.UpdatedAt = DateTime.UtcNow;
                 if (!string.IsNullOrWhiteSpace(dto.Remarks))
                 {
                     dailyClosing.Remarks = string.IsNullOrEmpty(dailyClosing.Remarks)
@@ -343,6 +315,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                         : dailyClosing.Remarks + " | " + dto.Remarks;
                 }
 
+                await _context.SaveChangesAsync();
+                await ApplyComputedTotalsAsync(dailyClosing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -353,7 +327,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Include(dc => dc.Approver)
                     .FirstOrDefaultAsync(dc => dc.Id == dailyClosing.Id);
 
-                var result = _mapper.Map<DailyClosingDto>(refreshedClosing);
+                var result = await MapWithTransfersAsync(refreshedClosing);
 
                 _logger.LogInformation("Transfer completed. Status unchanged: {Status}", refreshedClosing.Status);
                 return ApiResponse<DailyClosingDto>.Success(result, "Transfer completed successfully");
@@ -370,77 +344,30 @@ namespace FeruzaShopProject.Infrastructre.Services
         /// </summary>
         public async Task UpdateDailyClosingAmountsAsync(Guid branchId, DateTime date, PaymentMethod paymentMethod, decimal amount, bool isAddition)
         {
+            _ = paymentMethod;
+            _ = amount;
+            _ = isAddition;
+            // Sales no longer add onto the closing. Recompute the whole day from
+            // sales plus transfer rows so a second save cannot overwrite the first.
             try
             {
-                // Check if date is already closed
-                var isClosed = await IsDateClosedAsync(branchId, date);
-                if (isClosed.Data)
-                {
-                    _logger.LogWarning("Attempted to update closed date {Date} for branch {BranchId}", date, branchId);
-                    return;
-                }
-
                 var dailyClosing = await _context.DailyClosings
-                    .FirstOrDefaultAsync(dc => dc.BranchId == branchId &&
-                                              dc.ClosingDate.Date == date.Date &&
-                                              dc.IsActive);
+                    .Where(dc => dc.BranchId == branchId &&
+                                 dc.ClosingDate.Date == date.Date &&
+                                 dc.IsActive)
+                    .OrderByDescending(dc => dc.UpdatedAt)
+                    .FirstOrDefaultAsync();
 
-                if (dailyClosing == null)
-                {
-                    // Create new daily closing for tracking
-                    dailyClosing = new DailyClosing
-                    {
-                        Id = Guid.NewGuid(),
-                        BranchId = branchId,
-                        ClosingDate = date.Date,
-                        Status = DailyClosingStatus.Pending,
-                        TotalTransactions = 0,
-                        TotalSalesAmount = 0,
-                        TotalCashAmount = 0,
-                        TotalBankAmount = 0,
-                        TotalCreditAmount = 0,
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    await _context.DailyClosings.AddAsync(dailyClosing);
-                }
+                if (dailyClosing == null || dailyClosing.Status == DailyClosingStatus.Approved)
+                    return;
 
-                decimal adjustment = isAddition ? amount : -amount;
-
-                switch (paymentMethod)
-                {
-                    case PaymentMethod.Cash:
-                        dailyClosing.TotalCashAmount += adjustment;
-                        break;
-                    case PaymentMethod.Bank:
-                        dailyClosing.TotalBankAmount += adjustment;
-                        break;
-                    case PaymentMethod.Credit:
-                        dailyClosing.TotalCreditAmount += adjustment;
-                        break;
-                }
-
-                if (isAddition)
-                {
-                    dailyClosing.TotalSalesAmount += amount;
-                    dailyClosing.TotalTransactions += 1;
-                }
-                else
-                {
-                    dailyClosing.TotalSalesAmount -= amount;
-                    dailyClosing.TotalTransactions -= 1;
-                }
-
-                dailyClosing.UpdatedAt = DateTime.UtcNow;
+                await ApplyComputedTotalsAsync(dailyClosing);
                 await _context.SaveChangesAsync();
-
-                _logger.LogDebug("Updated DailyClosing for {Date}: Cash={Cash}, Bank={Bank}",
-                    date.Date, dailyClosing.TotalCashAmount, dailyClosing.TotalBankAmount);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating daily closing amounts");
-                // Don't throw - we don't want to fail the main transaction
+                _logger.LogError(ex, "Error recomputing daily closing amounts");
+                throw;
             }
         }
 
@@ -463,11 +390,16 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 if (closing == null)
                 {
-                    // Return a "not closed" status
                     return ApiResponse<DailyClosingDto>.Success(null, "No closing record found for this date");
                 }
 
-                var result = _mapper.Map<DailyClosingDto>(closing);
+                if (closing.Status != DailyClosingStatus.Approved)
+                {
+                    await ApplyComputedTotalsAsync(closing);
+                    await _context.SaveChangesAsync();
+                }
+
+                var result = await MapWithTransfersAsync(closing);
                 return ApiResponse<DailyClosingDto>.Success(result);
             }
             catch (Exception ex)
@@ -599,7 +531,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Include(dc => dc.Approver)
                     .FirstOrDefaultAsync(dc => dc.Id == newClosing.Id);
 
-                var result = _mapper.Map<DailyClosingDto>(refreshedClosing);
+                var result = await MapWithTransfersAsync(refreshedClosing);
                 _logger.LogInformation("Daily closing {ClosingId} reopened. New closing {NewClosingId}", closing.Id, newClosing.Id);
 
                 return ApiResponse<DailyClosingDto>.Success(result, "Daily sales reopened. You can now edit sales for this date.");
@@ -640,12 +572,12 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .OrderBy(ds => ds.CreatedAt)
                     .ToListAsync();
 
-                // Calculate totals
-                var totalTransactions = dailySales.Count;
-                var totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
-                var totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
-                var totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
-                var totalSales = totalCash + totalBank + totalCredit;
+                var previewTotals = await ComputeDayTotalsAsync(branchId, date);
+                var totalTransactions = previewTotals.Count;
+                var totalCash = previewTotals.Cash;
+                var totalBank = previewTotals.Bank;
+                var totalCredit = previewTotals.Credit;
+                var totalSales = previewTotals.TotalSales;
 
                 // Check if already closed
                 var existingClosing = await _context.DailyClosings
@@ -653,9 +585,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                                               dc.ClosingDate.Date == date.Date &&
                                               dc.IsActive);
 
-                // Calculate transfers (if you have transfer history)
-                decimal transferredFromCash = 0;
-                decimal transferredFromBank = 0;
+                decimal transferredFromCash = previewTotals.CashToBank;
+                decimal transferredFromBank = previewTotals.BankToCash;
 
                 // Map daily sales to DTOs with all fields properly populated
                 var transactionDtos = dailySales.Select(ds => new DailySalesItemDto
@@ -773,11 +704,21 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                     if (closing != null)
                     {
-                        // Use the amounts from DailyClosing (these already include transfers)
-                        totalCash = closing.TotalCashAmount;
-                        totalBank = closing.TotalBankAmount;
-                        totalCredit = closing.TotalCreditAmount;
-                        totalSales = closing.TotalSalesAmount;
+                        if (closing.Status == DailyClosingStatus.Approved)
+                        {
+                            totalCash = closing.TotalCashAmount;
+                            totalBank = closing.TotalBankAmount;
+                            totalCredit = closing.TotalCreditAmount;
+                            totalSales = closing.TotalSalesAmount;
+                        }
+                        else
+                        {
+                            var live = await ComputeDayTotalsAsync(branch.Id, date);
+                            totalCash = live.Cash;
+                            totalBank = live.Bank;
+                            totalCredit = live.Credit;
+                            totalSales = live.TotalSales;
+                        }
 
                         // Update status counts
                         if (closing.Status == DailyClosingStatus.Approved)
@@ -867,17 +808,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                 if (branch == null)
                     return ApiResponse<BranchClosingSummaryDto>.Fail("Branch not found");
 
-                // Get daily sales
-                var dailySales = await _context.DailySales
-                    .Where(ds => ds.BranchId == branchId &&
-                                ds.SaleDate.Date == date.Date &&
-                                ds.IsActive)
-                    .ToListAsync();
-
-                var totalCash = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Cash).Sum(ds => ds.TotalAmount);
-                var totalBank = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Bank).Sum(ds => ds.TotalAmount);
-                var totalCredit = dailySales.Where(ds => ds.PaymentMethod == PaymentMethod.Credit).Sum(ds => ds.TotalAmount);
-                var totalSales = totalCash + totalBank + totalCredit;
+                var detailTotals = await ComputeDayTotalsAsync(branchId, date);
 
                 // Get closing
                 var closing = await _context.DailyClosings
@@ -897,10 +828,18 @@ namespace FeruzaShopProject.Infrastructre.Services
                     Status = closing?.Status,
                     ClosedAt = closing?.ClosedAt,
                     ClosedBy = closing?.Closer?.Name,
-                    TotalSales = totalSales,
-                    TotalCash = totalCash,
-                    TotalBank = totalBank,
-                    TotalCredit = totalCredit,
+                    TotalSales = closing?.Status == DailyClosingStatus.Approved
+                        ? closing.TotalSalesAmount
+                        : detailTotals.TotalSales,
+                    TotalCash = closing?.Status == DailyClosingStatus.Approved
+                        ? closing.TotalCashAmount
+                        : detailTotals.Cash,
+                    TotalBank = closing?.Status == DailyClosingStatus.Approved
+                        ? closing.TotalBankAmount
+                        : detailTotals.Bank,
+                    TotalCredit = closing?.Status == DailyClosingStatus.Approved
+                        ? closing.TotalCreditAmount
+                        : detailTotals.Credit,
                     CashBankTransactionId = closing?.CashBankTransactionId,
                     BankTransferTransactionId = closing?.BankTransferTransactionId
                 };
@@ -963,6 +902,98 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error getting closings by date range");
                 return ApiResponse<List<BranchClosingSummaryDto>>.Fail($"Error: {ex.Message}");
             }
+        }
+
+        private async Task<DailyClosingDto> MapWithTransfersAsync(DailyClosing closing)
+        {
+            var dto = _mapper.Map<DailyClosingDto>(closing);
+            var transfers = await GetCashBankTransfersAsync(closing.BranchId, closing.ClosingDate);
+            dto.Transfers = transfers.Data ?? new List<CashBankTransferDto>();
+            return dto;
+        }
+
+        public async Task<ApiResponse<List<CashBankTransferDto>>> GetCashBankTransfersAsync(Guid branchId, DateTime date)
+        {
+            try
+            {
+                var rows = await _context.CashBankTransfers
+                    .Include(t => t.CreatedByUser)
+                    .Where(t => t.BranchId == branchId &&
+                                t.IsActive &&
+                                t.TransferDate.Date == date.Date)
+                    .OrderBy(t => t.CreatedAt)
+                    .ToListAsync();
+
+                var result = rows.Select(t => new CashBankTransferDto
+                {
+                    Id = t.Id,
+                    BranchId = t.BranchId,
+                    TransferDate = t.TransferDate,
+                    Direction = t.Direction,
+                    Amount = t.Amount,
+                    BankReference = t.BankReference,
+                    Remarks = t.Remarks,
+                    CreatedAt = t.CreatedAt,
+                    CreatedBy = t.CreatedByUser?.Name
+                }).ToList();
+
+                return ApiResponse<List<CashBankTransferDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing cash/bank transfers");
+                return ApiResponse<List<CashBankTransferDto>>.Fail($"Error: {ex.Message}");
+            }
+        }
+
+        private async Task<DayTotals> ComputeDayTotalsAsync(Guid branchId, DateTime date)
+        {
+            var sales = await _context.DailySales
+                .Where(ds => ds.BranchId == branchId &&
+                             ds.IsActive &&
+                             ds.SaleDate.Date == date.Date)
+                .Select(ds => new { ds.PaymentMethod, ds.TotalAmount })
+                .ToListAsync();
+
+            var transfers = await _context.CashBankTransfers
+                .Where(t => t.BranchId == branchId &&
+                            t.IsActive &&
+                            t.TransferDate.Date == date.Date)
+                .Select(t => new { t.Direction, t.Amount })
+                .ToListAsync();
+
+            return new DayTotals(
+                sales.Count,
+                sales.Where(s => s.PaymentMethod == PaymentMethod.Cash).Sum(s => s.TotalAmount),
+                sales.Where(s => s.PaymentMethod == PaymentMethod.Bank).Sum(s => s.TotalAmount),
+                sales.Where(s => s.PaymentMethod == PaymentMethod.Credit).Sum(s => s.TotalAmount),
+                transfers.Where(t => t.Direction == TransferDirection.CashToBank).Sum(t => t.Amount),
+                transfers.Where(t => t.Direction == TransferDirection.BankToCash).Sum(t => t.Amount));
+        }
+
+        private async Task ApplyComputedTotalsAsync(DailyClosing closing)
+        {
+            var totals = await ComputeDayTotalsAsync(closing.BranchId, closing.ClosingDate);
+            closing.TotalTransactions = totals.Count;
+            closing.TotalSalesAmount = totals.TotalSales;
+            closing.TotalCashAmount = totals.Cash;
+            closing.TotalBankAmount = totals.Bank;
+            closing.TotalCreditAmount = totals.Credit;
+            closing.UpdatedAt = DateTime.UtcNow;
+        }
+
+        private readonly record struct DayTotals(
+            int Count,
+            decimal SalesCash,
+            decimal SalesBank,
+            decimal SalesCredit,
+            decimal CashToBank,
+            decimal BankToCash)
+        {
+            public decimal TotalSales => SalesCash + SalesBank + SalesCredit;
+            public decimal Cash => SalesCash - CashToBank + BankToCash;
+            public decimal Bank => SalesBank + CashToBank - BankToCash;
+            public decimal Credit => SalesCredit;
         }
 
         #region Helper Methods

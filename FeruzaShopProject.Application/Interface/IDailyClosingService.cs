@@ -30,6 +30,8 @@ namespace FeruzaShopProject.Application.Interface
         // Transfer between cash and bank
         Task<ApiResponse<DailyClosingDto>> TransferAmountAsync(TransferAmountDto dto);
 
+        Task<ApiResponse<List<CashBankTransferDto>>> GetCashBankTransfersAsync(Guid branchId, DateTime date);
+
         // Get closing status for a date
         Task<ApiResponse<DailyClosingDto>> GetClosingStatusAsync(Guid branchId, DateTime date);
 

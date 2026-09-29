@@ -28,6 +28,21 @@ namespace FeruzaShopProject.Domain.DTOs
         // Bank transaction tracking
         public string? CashBankTransactionId { get; set; }
         public string? BankTransferTransactionId { get; set; }
+
+        public List<CashBankTransferDto> Transfers { get; set; } = new();
+    }
+
+    public class CashBankTransferDto
+    {
+        public Guid Id { get; set; }
+        public Guid BranchId { get; set; }
+        public DateTime TransferDate { get; set; }
+        public TransferDirection Direction { get; set; }
+        public decimal Amount { get; set; }
+        public string? BankReference { get; set; }
+        public string? Remarks { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
     }
 
     public class CloseDailySalesDto

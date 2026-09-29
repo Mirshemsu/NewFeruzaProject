@@ -84,6 +84,25 @@ namespace FeruzaShopProject.API.Controllers
         }
 
         /// <summary>
+        /// Cash to bank and bank to cash moves for one branch and day.
+        /// </summary>
+        [HttpGet("transfers/{branchId}/{date}")]
+        [Authorize(Roles = "Manager,Sales,Finance")]
+        public async Task<ActionResult<ApiResponse<List<CashBankTransferDto>>>> GetTransfers(Guid branchId, DateTime date)
+        {
+            try
+            {
+                var result = await _closingService.GetCashBankTransfersAsync(branchId, date);
+                return result.IsCompletedSuccessfully ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing cash/bank transfers");
+                return StatusCode(500, ApiResponse<List<CashBankTransferDto>>.Fail("Internal server error"));
+            }
+        }
+
+        /// <summary>
         /// Get closing status for a specific date
         /// </summary>
         [HttpGet("status/{branchId}/{date}")]

@@ -204,17 +204,6 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 await _context.SaveChangesAsync();
 
-                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
-                if (dto.PaymentMethod != PaymentMethod.Credit)
-                {
-                    await UpdateDailyClosingAmountsAsync(
-                        salesTransaction.BranchId,
-                        salesTransaction.TransactionDate.Date,
-                        salesTransaction.PaymentMethod,
-                        salesTransaction.TotalAmount,
-                        true);
-                }
-
                 await dbTransaction.CommitAsync();
 
                 // Load related data for response
@@ -669,56 +658,6 @@ namespace FeruzaShopProject.Infrastructre.Services
 
                 await _context.SaveChangesAsync();
 
-                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
-                // Handle case when branch changed
-                if (dto.BranchId.HasValue && dto.BranchId.Value != oldBranchId)
-                {
-                    // Remove from old branch
-                    if (oldPaymentMethod != PaymentMethod.Credit)
-                    {
-                        await UpdateDailyClosingAmountsAsync(
-                            oldBranchId,
-                            existingTransaction.TransactionDate.Date,
-                            oldPaymentMethod,
-                            oldTotalAmount,
-                            false);
-                    }
-
-                    // Add to new branch
-                    if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
-                    {
-                        await UpdateDailyClosingAmountsAsync(
-                            existingTransaction.BranchId,
-                            existingTransaction.TransactionDate.Date,
-                            existingTransaction.PaymentMethod,
-                            newTotalAmount,
-                            true);
-                    }
-                }
-                // Normal update (same branch)
-                else
-                {
-                    if (oldPaymentMethod != PaymentMethod.Credit)
-                    {
-                        await UpdateDailyClosingAmountsAsync(
-                            existingTransaction.BranchId,
-                            existingTransaction.TransactionDate.Date,
-                            oldPaymentMethod,
-                            oldTotalAmount,
-                            false);
-                    }
-
-                    if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
-                    {
-                        await UpdateDailyClosingAmountsAsync(
-                            existingTransaction.BranchId,
-                            existingTransaction.TransactionDate.Date,
-                            existingTransaction.PaymentMethod,
-                            newTotalAmount,
-                            true);
-                    }
-                }
-
                 await transaction.CommitAsync();
 
                 // Reload related data
@@ -868,17 +807,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _context.Transactions.Remove(existingTransaction);
                 await _context.SaveChangesAsync();
 
-                // ========== UPDATE DAILY CLOSING AMOUNTS ==========
-                if (existingTransaction.PaymentMethod != PaymentMethod.Credit)
-                {
-                    await UpdateDailyClosingAmountsAsync(
-                        existingTransaction.BranchId,
-                        existingTransaction.TransactionDate.Date,
-                        existingTransaction.PaymentMethod,
-                        existingTransaction.TotalAmount,
-                        false);
-                }
-
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Successfully deleted transaction: {TransactionId}", id);
@@ -1004,17 +932,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 }
 
                 await _context.SaveChangesAsync();
-
-                // ========== UPDATE DAILY CLOSING AMOUNTS FOR THE PAYMENT ==========
-                if (dto.PaymentMethod != PaymentMethod.Credit)
-                {
-                    await UpdateDailyClosingAmountsAsync(
-                        creditTransaction.BranchId,
-                        businessDate,
-                        dto.PaymentMethod,
-                        dto.Amount,
-                        true);
-                }
 
                 await dbTransaction.CommitAsync();
 
@@ -2031,85 +1948,6 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error in UpdateStockWithMovementAsync for ProductId: {ProductId}, TransactionId: {TransactionId}",
                     productId, transactionId);
                 throw;
-            }
-        }
-
-        private async Task UpdateDailyClosingAmountsAsync(Guid branchId, DateTime date, PaymentMethod paymentMethod, decimal amount, bool isAddition)
-        {
-            try
-            {
-                var dailyClosing = await _context.DailyClosings
-                    .FirstOrDefaultAsync(dc => dc.BranchId == branchId &&
-                                              dc.ClosingDate.Date == date.Date &&
-                                              dc.IsActive);
-
-                if (dailyClosing != null && dailyClosing.Status == DailyClosingStatus.Approved)
-                {
-                    _logger.LogWarning("Attempted to update approved date {Date} for branch {BranchId}", date, branchId);
-                    return;
-                }
-
-                if (dailyClosing != null && dailyClosing.Status == DailyClosingStatus.Closed && date.Date < DateTime.UtcNow.Date)
-                {
-                    _logger.LogWarning("Attempted to update closed past date {Date} for branch {BranchId}", date, branchId);
-                    return;
-                }
-
-                if (dailyClosing == null)
-                {
-                    var user = await _context.Users.FindAsync(await GetCurrentUserIdAsync());
-
-                    dailyClosing = new DailyClosing
-                    {
-                        Id = Guid.NewGuid(),
-                        BranchId = branchId,
-                        ClosingDate = date.Date,
-                        Status = DailyClosingStatus.Pending,
-                        TotalTransactions = 0,
-                        TotalSalesAmount = 0,
-                        TotalCashAmount = 0,
-                        TotalBankAmount = 0,
-                        TotalCreditAmount = 0,
-                        ClosedBy = await GetCurrentUserIdAsync(),
-                        Closer = user,
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true
-                    };
-                    await _context.DailyClosings.AddAsync(dailyClosing);
-                }
-
-                decimal adjustment = isAddition ? amount : -amount;
-
-                switch (paymentMethod)
-                {
-                    case PaymentMethod.Cash:
-                        dailyClosing.TotalCashAmount += adjustment;
-                        break;
-                    case PaymentMethod.Bank:
-                        dailyClosing.TotalBankAmount += adjustment;
-                        break;
-                    case PaymentMethod.Credit:
-                        dailyClosing.TotalCreditAmount += adjustment;
-                        break;
-                }
-
-                if (isAddition)
-                {
-                    dailyClosing.TotalSalesAmount += amount;
-                    dailyClosing.TotalTransactions += 1;
-                }
-                else
-                {
-                    dailyClosing.TotalSalesAmount -= amount;
-                    dailyClosing.TotalTransactions -= 1;
-                }
-
-                dailyClosing.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating daily closing amounts");
             }
         }
 
