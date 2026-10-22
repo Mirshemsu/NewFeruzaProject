@@ -442,7 +442,13 @@ namespace FeruzaShopProject.Infrastructre.Data
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.Name).HasMaxLength(200).IsRequired();
                 entity.Property(c => c.PhoneNumber).HasMaxLength(20).IsRequired();
-                entity.HasIndex(c => c.PhoneNumber).IsUnique();
+                entity.HasIndex(c => new { c.BranchId, c.PhoneNumber })
+                    .IsUnique()
+                    .HasFilter("[IsDirectory] = 1 AND [IsActive] = 1");
+                entity.HasOne(c => c.Branch)
+                    .WithMany()
+                    .HasForeignKey(c => c.BranchId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
             // ========== PAINTER CONFIGURATION ==========
             modelBuilder.Entity<Painter>(entity =>

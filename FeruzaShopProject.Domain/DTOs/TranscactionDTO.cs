@@ -64,6 +64,9 @@ namespace FeruzaShopProject.Domain.DTOs
         [StringLength(20)]
         public string? CustomerPhoneNumber { get; set; }
 
+        /// <summary>Clears the customer on a cash or bank sale.</summary>
+        public bool ClearCustomer { get; set; }
+
         [StringLength(100)]
         public string? PainterName { get; set; }
 

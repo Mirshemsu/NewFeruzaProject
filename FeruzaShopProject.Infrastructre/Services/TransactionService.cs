@@ -87,30 +87,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                         $"Cannot create transaction for {transactionDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
                 }
 
-                // Handle Customer (create if not exists)
-                Guid? customerId = dto.CustomerId;
-                Customer newCustomer = null;
-                if (!customerId.HasValue && !string.IsNullOrWhiteSpace(dto.CustomerName) && !string.IsNullOrWhiteSpace(dto.CustomerPhoneNumber))
+                Guid? customerId = null;
+                if (dto.CustomerId.HasValue)
                 {
-                    var existingCustomer = await _context.Customers
-                        .FirstOrDefaultAsync(c => c.PhoneNumber == dto.CustomerPhoneNumber.Trim());
-
-                    if (existingCustomer != null)
-                    {
-                        customerId = existingCustomer.Id;
-                    }
-                    else
-                    {
-                        newCustomer = new Customer
-                        {
-                            Id = Guid.NewGuid(),
-                            Name = dto.CustomerName.Trim(),
-                            PhoneNumber = dto.CustomerPhoneNumber.Trim(),
-                            CreatedAt = DateTime.UtcNow,
-                            IsActive = true
-                        };
-                        await _context.Customers.AddAsync(newCustomer);
-                    }
+                    var customerError = await EnsureDirectoryCustomerAsync(dto.CustomerId.Value, dto.BranchId);
+                    if (customerError != null)
+                        return ApiResponse<TransactionResponseDto>.Fail(customerError);
+                    customerId = dto.CustomerId;
+                }
+                else if (dto.PaymentMethod == PaymentMethod.Credit)
+                {
+                    return ApiResponse<TransactionResponseDto>.Fail("Select a customer for credit sales.");
                 }
 
                 // Handle Painter (create if not exists)
@@ -157,15 +144,10 @@ namespace FeruzaShopProject.Infrastructre.Services
                 // Ensure TransactionDate is set correctly
                 salesTransaction.TransactionDate = dto.TransactionDate;
 
-                // If we created new customer/painter, we need to save them first to get IDs
-                if (newCustomer != null || newPainter != null)
+                if (newPainter != null)
                 {
                     await _context.SaveChangesAsync();
-
-                    if (newCustomer != null)
-                        salesTransaction.CustomerId = newCustomer.Id;
-                    if (newPainter != null)
-                        salesTransaction.PainterId = newPainter.Id;
+                    salesTransaction.PainterId = newPainter.Id;
                 }
 
                 salesTransaction.Validate();
@@ -430,40 +412,23 @@ namespace FeruzaShopProject.Infrastructre.Services
                     }
                 }
 
-                // ========== HANDLE CUSTOMER UPDATE ==========
-                if (dto.CustomerId.HasValue)
+                var customerBranchId = dto.BranchId ?? existingTransaction.BranchId;
+                if (dto.ClearCustomer)
                 {
+                    if (existingTransaction.PaymentMethod == PaymentMethod.Credit)
+                        return ApiResponse<TransactionResponseDto>.Fail("Credit sales require a customer.");
+                    existingTransaction.CustomerId = null;
+                }
+                else if (dto.CustomerId.HasValue && dto.CustomerId.Value != existingTransaction.CustomerId)
+                {
+                    var customerError = await EnsureDirectoryCustomerAsync(dto.CustomerId.Value, customerBranchId);
+                    if (customerError != null)
+                        return ApiResponse<TransactionResponseDto>.Fail(customerError);
                     existingTransaction.CustomerId = dto.CustomerId.Value;
                 }
-                else if (!string.IsNullOrWhiteSpace(dto.CustomerName) && !string.IsNullOrWhiteSpace(dto.CustomerPhoneNumber))
+                else if (existingTransaction.PaymentMethod == PaymentMethod.Credit && !existingTransaction.CustomerId.HasValue)
                 {
-                    var existingCustomer = await _context.Customers
-                        .FirstOrDefaultAsync(c => c.PhoneNumber == dto.CustomerPhoneNumber.Trim());
-
-                    if (existingCustomer != null)
-                    {
-                        if (existingCustomer.Name != dto.CustomerName.Trim())
-                        {
-                            existingCustomer.Name = dto.CustomerName.Trim();
-                            existingCustomer.UpdatedAt = DateTime.UtcNow;
-                            _context.Customers.Update(existingCustomer);
-                        }
-                        existingTransaction.CustomerId = existingCustomer.Id;
-                    }
-                    else
-                    {
-                        var newCustomer = new Customer
-                        {
-                            Id = Guid.NewGuid(),
-                            Name = dto.CustomerName.Trim(),
-                            PhoneNumber = dto.CustomerPhoneNumber.Trim(),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow,
-                            IsActive = true
-                        };
-                        await _context.Customers.AddAsync(newCustomer);
-                        existingTransaction.CustomerId = newCustomer.Id;
-                    }
+                    return ApiResponse<TransactionResponseDto>.Fail("Select a customer for credit sales.");
                 }
 
                 // ========== HANDLE PAINTER UPDATE ==========
@@ -2160,6 +2125,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                 _logger.LogError(ex, "Error authorizing user");
                 return (false, Guid.Empty, Role.Sales);
             }
+        }
+
+        private async Task<string?> EnsureDirectoryCustomerAsync(Guid customerId, Guid branchId)
+        {
+            var customer = await _context.Customers.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == customerId);
+            if (customer == null || !customer.IsDirectory)
+                return "Select a customer from the branch customer list.";
+            if (customer.BranchId != branchId)
+                return "That customer belongs to another branch.";
+            return null;
         }
 
         private async Task<Guid> GetCurrentUserIdAsync()

@@ -321,10 +321,16 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDirectory")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -342,8 +348,9 @@ namespace FeruzaShopProject.Infrastructre.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique();
+                    b.HasIndex("BranchId", "PhoneNumber")
+                        .IsUnique()
+                        .HasFilter("[IsDirectory] = 1 AND [IsActive] = 1");
 
                     b.ToTable("Customers");
                 });
@@ -1383,6 +1390,16 @@ namespace FeruzaShopProject.Infrastructre.Migrations
                     b.Navigation("BankAccount");
 
                     b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("FeruzaShopProject.Domain.Entities.Customer", b =>
+                {
+                    b.HasOne("FeruzaShopProject.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("FeruzaShopProject.Domain.Entities.DailyClosing", b =>

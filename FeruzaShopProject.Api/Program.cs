@@ -93,6 +93,7 @@ builder.Services.AddScoped<IDailyClosingService, DailyClosingService>();
 builder.Services.AddScoped<IProductTransferService, ProductTransferService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddScoped<ICommissionAccountService, CommissionAccountService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddHttpContextAccessor();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
