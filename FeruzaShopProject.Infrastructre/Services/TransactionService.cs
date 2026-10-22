@@ -342,6 +342,49 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
+        /// <summary>
+        /// A closed or approved day can still receive commission and painter details.
+        /// Price, quantity, product, payment, customer, and remark must stay as saved.
+        /// </summary>
+        private static bool IsCommissionOnlyChange(UpdateTransactionDto dto, Transaction existing)
+        {
+            if (dto.BranchId.HasValue && dto.BranchId.Value != existing.BranchId)
+                return false;
+            if (dto.ProductId.HasValue && dto.ProductId.Value != existing.ProductId)
+                return false;
+            if (dto.CustomerId.HasValue && dto.CustomerId.Value != existing.CustomerId)
+                return false;
+            if (dto.PainterId.HasValue && dto.PainterId.Value != existing.PainterId)
+                return false;
+            if (dto.UnitPrice.HasValue && dto.UnitPrice.Value != existing.UnitPrice)
+                return false;
+            if (dto.Quantity.HasValue && dto.Quantity.Value != existing.Quantity)
+                return false;
+            if (dto.PaymentMethod.HasValue && dto.PaymentMethod.Value != existing.PaymentMethod)
+                return false;
+            if (dto.BankAccountId.HasValue && dto.BankAccountId != existing.BankAccountId)
+                return false;
+            if (dto.CommissionPaid.HasValue && dto.CommissionPaid.Value != existing.CommissionPaid)
+                return false;
+            if (!SameOptionalText(existing.Remark, dto.Remark))
+                return false;
+            if (!SameOptionalText(existing.Customer?.Name, dto.CustomerName))
+                return false;
+            if (!SameOptionalText(existing.Customer?.PhoneNumber, dto.CustomerPhoneNumber))
+                return false;
+            return true;
+        }
+
+        private static bool SameOptionalText(string? existing, string? incoming)
+        {
+            if (incoming == null)
+                return true;
+            return string.Equals(
+                (existing ?? string.Empty).Trim(),
+                incoming.Trim(),
+                StringComparison.Ordinal);
+        }
+
         public async Task<ApiResponse<TransactionResponseDto>> UpdateTransactionAsync(UpdateTransactionDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -364,16 +407,17 @@ namespace FeruzaShopProject.Infrastructre.Services
                     .Select(dc => dc.Status)
                     .FirstOrDefaultAsync();
 
-                if (dateStatus == DailyClosingStatus.Approved)
+                if (dateStatus == DailyClosingStatus.Approved ||
+                    dateStatus == DailyClosingStatus.Closed)
                 {
-                    return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already approved and locked.");
-                }
-
-                if (dateStatus == DailyClosingStatus.Closed)
-                {
-                    return ApiResponse<TransactionResponseDto>.Fail(
-                        $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is already closed. Please wait for finance approval or contact admin.");
+                    if (!IsCommissionOnlyChange(dto, existingTransaction))
+                    {
+                        var stateLabel = dateStatus == DailyClosingStatus.Approved
+                            ? "approved and locked"
+                            : "already closed";
+                        return ApiResponse<TransactionResponseDto>.Fail(
+                            $"Cannot update transaction for {existingTransaction.TransactionDate:yyyy-MM-dd}. This date is {stateLabel}. Only commission, painter name, and painter phone can be changed.");
+                    }
                 }
 
                 // Check if transaction can be updated (e.g., not fully paid credit transaction)
