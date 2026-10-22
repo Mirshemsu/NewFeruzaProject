@@ -1496,6 +1496,24 @@ namespace FeruzaShopProject.Infrastructre.Services
             }
         }
 
+        /// <summary>
+        /// Cash and bank sales sort by the time they belong to. Credit payments
+        /// sort by when the payment was recorded. CreatedAt breaks remaining ties.
+        /// </summary>
+        private static int CompareSalesGridOrder(DailySales a, DailySales b)
+        {
+            var byTime = SalesGridTime(a).CompareTo(SalesGridTime(b));
+            if (byTime != 0) return byTime;
+            return a.CreatedAt.CompareTo(b.CreatedAt);
+        }
+
+        private static DateTime SalesGridTime(DailySales ds)
+        {
+            if (ds.IsCreditPayment)
+                return ds.CreatedAt;
+            return ds.Transaction?.TransactionDate ?? ds.CreatedAt;
+        }
+
         public async Task<ApiResponse<List<TransactionResponseDto>>> GetTransactionsByDateAsync(
             DateTime date,
             Guid? branchId = null,
@@ -1539,9 +1557,8 @@ namespace FeruzaShopProject.Infrastructre.Services
                     dailySalesQuery = dailySalesQuery.Where(ds => ds.PaymentMethod == method);
                 }
 
-                var dailySales = await dailySalesQuery
-                    .OrderBy(ds => ds.CreatedAt)
-                    .ToListAsync();
+                var dailySales = await dailySalesQuery.ToListAsync();
+                dailySales.Sort(CompareSalesGridOrder);
 
                 var result = new List<TransactionResponseDto>();
 
@@ -1551,6 +1568,7 @@ namespace FeruzaShopProject.Infrastructre.Services
                     {
                         var transactionDto = _mapper.Map<TransactionResponseDto>(dailySale.Transaction);
                         await ApplyDailySaleToTransactionDtoAsync(transactionDto, dailySale);
+                        transactionDto.TransactionDate = SalesGridTime(dailySale);
                         result.Add(transactionDto);
                     }
                 }
